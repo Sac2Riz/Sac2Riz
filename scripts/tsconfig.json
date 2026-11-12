@@ -1,0 +1,12 @@
+{
+  // Configuration des SCRIPTS d'outillage (copie, serveur local, dev).
+  // Node les exécute directement ; tsc ne fait que vérifier les types.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["./**/*.ts"]
+}

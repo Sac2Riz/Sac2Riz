@@ -1,0 +1,22 @@
+{
+  // Configuration du WEB WORKER (calculs lourds en arrière-plan).
+  // Ne voit que les types WebWorker : ni DOM, ni Node.
+  // Elle inclut aussi le code « pur » (types, utilitaires, moteur, logique et méta
+  // des jeux) : s'il touchait au DOM par erreur, la vérification échouerait.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "types": [],
+    "rootDir": "..",
+    "outDir": "../../dist"
+  },
+  "include": [
+    "./**/*.ts",
+    "../types/**/*.ts",
+    "../utils/**/*.ts",
+    "../moteur/**/*.ts",
+    "../games/*/meta.ts",
+    "../games/*/logique.ts"
+  ],
+  "exclude": ["../types/vue.ts", "../games/_*/**"]
+}

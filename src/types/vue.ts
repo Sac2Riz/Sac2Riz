@@ -1,0 +1,60 @@
+// LE CONTRAT des modules de jeu — partie AFFICHAGE (utilise le DOM).
+// Ce fichier ne doit jamais être importé par du code pur (moteur, logique, worker).
+
+import type { LogiqueJeu, MetaJeu } from './jeu.ts';
+import type { Json } from './json.ts';
+import type { Reglages } from './sauvegarde.ts';
+
+/** Ce que le socle fournit à la vue d'un jeu. */
+export interface ContexteVue<A extends Json> {
+  /** Joue une action : le socle gère historique, chrono, sauvegarde et fin de partie. */
+  jouer(action: A): void;
+  /** Réglages actuels (lecture seule). */
+  readonly reglages: Readonly<Reglages>;
+  /** Vrai si le mode notes est actif. */
+  modeNotes(): boolean;
+}
+
+/** Vue montée dans la page pour une partie. */
+export interface InstanceVue<D extends Json, E extends Json> {
+  /** Redessine la grille (appelé après chaque action, annulation, rétablissement). */
+  afficher(etat: E, donnees: D, erreurs: readonly number[]): void;
+  /** Valeur saisie via le pavé commun ou le clavier (le jeu sait quelle case est sélectionnée). */
+  saisir(valeur: string): void;
+  /** Bouton « effacer » du socle. */
+  effacer(): void;
+  /** Retire la vue de la page et libère ses écouteurs. */
+  detruire(): void;
+}
+
+/** Pavé de saisie : celui du socle avec les valeurs voulues, ou un panneau propre au jeu. */
+export type ConfigPave =
+  | { readonly type: 'commun'; readonly valeurs: readonly string[] }
+  | { readonly type: 'personnalise' };
+
+export interface VueJeu<D extends Json, E extends Json, A extends Json> {
+  readonly pave: ConfigPave;
+  /** Crée l'affichage du jeu dans le conteneur fourni par le socle. */
+  monter(conteneur: HTMLElement, contexte: ContexteVue<A>): InstanceVue<D, E>;
+}
+
+/**
+ * Point d'entrée d'un jeu (fichier index.ts : « export const jeu = … »).
+ * Logique et vue sont chargées à la demande (import dynamique) : l'accueil
+ * ne télécharge que les métadonnées.
+ */
+export interface ModuleJeu<D extends Json, E extends Json, A extends Json> {
+  readonly meta: MetaJeu;
+  chargerLogique(): Promise<LogiqueJeu<D, E, A>>;
+  chargerVue(): Promise<VueJeu<D, E, A>>;
+}
+
+/** Un jeu quelconque, tel que le socle le manipule. */
+export type ModuleJeuQuelconque = ModuleJeu<Json, Json, Json>;
+
+/** Une ligne du registre (src/games/registre.ts). */
+export type EntreeRegistre = {
+  /** Identique au nom du dossier et à meta.id. */
+  readonly id: string;
+  charger(): Promise<{ readonly jeu: ModuleJeuQuelconque }>;
+};

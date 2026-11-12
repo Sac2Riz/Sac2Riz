@@ -1,0 +1,59 @@
+/* Variables de thème (couleurs, espacements, tailles).
+   Par défaut : suit le système (prefers-color-scheme).
+   Réglage manuel : <html data-theme="clair"> ou <html data-theme="sombre"> (src/socle/theme.ts). */
+
+:root {
+  /* Thème clair */
+  --couleur-fond: #f6f4ef;
+  --couleur-surface: #ffffff;
+  --couleur-case: #ffffff;
+  --couleur-texte: #1c1d21;
+  --couleur-texte-doux: #5b5f6a;
+  --couleur-saisie: #2f5d8a;
+  --couleur-accent: #2f5d8a;
+  --couleur-bordure: #c9c6bd;
+  --couleur-selection: #dbe8f5;
+  --couleur-erreur: #b3261e;
+
+  /* Dimensions communes */
+  --espace-1: 0.5rem;
+  --espace-2: 1rem;
+  --espace-3: 1.5rem;
+  --rayon: 0.6rem;
+  /* Zone tactile minimale recommandée (doigt sur tablette) */
+  --cible-tactile: 3.25rem;
+
+  color-scheme: light;
+}
+
+/* Thème sombre automatique, sauf si l'utilisateur a forcé le thème clair */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) {
+    --couleur-fond: #1c1d21;
+    --couleur-surface: #26282e;
+    --couleur-case: #2b2d34;
+    --couleur-texte: #ecebe7;
+    --couleur-texte-doux: #a5a8b1;
+    --couleur-saisie: #8fbbe6;
+    --couleur-accent: #8fbbe6;
+    --couleur-bordure: #454852;
+    --couleur-selection: #34465c;
+    --couleur-erreur: #f2867d;
+    color-scheme: dark;
+  }
+}
+
+/* Thème sombre forcé */
+:root[data-theme="sombre"] {
+  --couleur-fond: #1c1d21;
+  --couleur-surface: #26282e;
+  --couleur-case: #2b2d34;
+  --couleur-texte: #ecebe7;
+  --couleur-texte-doux: #a5a8b1;
+  --couleur-saisie: #8fbbe6;
+  --couleur-accent: #8fbbe6;
+  --couleur-bordure: #454852;
+  --couleur-selection: #34465c;
+  --couleur-erreur: #f2867d;
+  color-scheme: dark;
+}

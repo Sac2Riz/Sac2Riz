@@ -1,0 +1,33 @@
+{
+  // Options communes à toutes les configurations TypeScript du projet.
+  // Chaque tsconfig.json (appli, worker, tests, scripts) « étend » ce fichier.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    // Rigueur maximale : le compilateur refuse le code ambigu
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // On importe avec l'extension .ts ; tsc la réécrit en .js à la compilation.
+    // Node peut ainsi exécuter directement les .ts (tests, scripts).
+    "rewriteRelativeImportExtensions": true,
+    // Pas de syntaxe propre à TypeScript qui produirait du code (enum, namespace…) :
+    // obligatoire pour que Node exécute les .ts en « effaçant » simplement les types.
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    // Ne revérifie pas les fichiers de types fournis (DOM, Node) : évite des conflits entre eux
+    "skipLibCheck": true,
+    "sourceMap": true
+  }
+}

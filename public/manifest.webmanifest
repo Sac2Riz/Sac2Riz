@@ -1,0 +1,20 @@
+{
+  "name": "Sac2Riz",
+  "short_name": "Sac2Riz",
+  "description": "Jeux de logique à chiffres, 100 % hors ligne.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4ef",
+  "theme_color": "#f6f4ef",
+  "icons": [
+    {
+      "src": "./icones/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

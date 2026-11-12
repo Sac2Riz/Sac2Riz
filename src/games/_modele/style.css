@@ -1,0 +1,26 @@
+/* Styles propres au jeu, chargés par sa vue. Préfixer toutes les classes par l'id du jeu
+   pour ne jamais entrer en conflit avec le socle ou un autre jeu.
+   Utiliser les variables de thème (src/styles/theme.css) pour le clair/sombre. */
+
+.modele-ligne {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--espace-1);
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.modele-case {
+  aspect-ratio: 1;
+  min-height: var(--cible-tactile);
+  font-size: 1.8rem;
+  border: 2px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+  background: var(--couleur-case);
+  color: var(--couleur-saisie);
+}
+
+.modele-case.est-donnee { color: var(--couleur-texte); font-weight: 700; }
+.modele-case.est-note { font-size: 0.9rem; color: var(--couleur-texte-doux); }
+.modele-case.est-selectionnee { background: var(--couleur-selection); }
+.modele-case.est-erreur { color: var(--couleur-erreur); }

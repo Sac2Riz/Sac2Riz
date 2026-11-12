@@ -1,0 +1,13 @@
+{
+  // Configuration des TESTS (exécutés par Node avec « node --test »).
+  // Seuls les tests et les scripts voient les types de Node (@types/node).
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  // Les modules « _xxx » (dont le modèle) sont vérifiés ici puisqu'ils ne sont pas publiés.
+  "include": ["./**/*.ts", "../src/games/_*/**/*.ts"]
+}

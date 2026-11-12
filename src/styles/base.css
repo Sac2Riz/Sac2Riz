@@ -1,0 +1,88 @@
+/* Styles de base du socle. Tablette d'abord : grandes zones tactiles,
+   mise en page qui s'adapte au paysage comme au portrait. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Évite le zoom par double-tape qui gêne la saisie rapide */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--couleur-fond);
+  color: var(--couleur-texte);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  min-height: var(--cible-tactile);
+  min-width: var(--cible-tactile);
+}
+
+.app {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: max(var(--espace-3), env(safe-area-inset-top)) var(--espace-3) var(--espace-3);
+}
+
+/* ---------- Écran d'accueil ---------- */
+
+.accueil-entete {
+  text-align: center;
+  margin-bottom: var(--espace-3);
+}
+
+.accueil-titre {
+  margin: 0;
+  font-size: 2.5rem;
+  color: var(--couleur-accent);
+}
+
+.accueil-sous-titre {
+  margin: 0;
+  color: var(--couleur-texte-doux);
+}
+
+.accueil-jeux {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--espace-2);
+}
+
+.accueil-vide {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--couleur-texte-doux);
+}
+
+.carte-jeu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+  padding: var(--espace-2);
+  text-align: left;
+  background: var(--couleur-surface);
+  border: 1px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+}
+
+.carte-jeu-nom {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.carte-jeu-description {
+  color: var(--couleur-texte-doux);
+}

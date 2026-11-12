@@ -1,0 +1,16 @@
+{
+  // Configuration de l'APPLICATION (code exécuté dans la page du navigateur).
+  // Ne voit que les types du navigateur (DOM), jamais ceux de Node.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    // Même rootDir/outDir que src/worker/tsconfig.json : le code partagé est
+    // compilé au même endroit dans dist/ par les deux configurations.
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  // Le worker a sa propre configuration ; les dossiers « _xxx » ne sont jamais publiés.
+  "exclude": ["src/worker/**", "src/games/_*/**"]
+}
