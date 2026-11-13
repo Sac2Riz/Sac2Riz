@@ -34,7 +34,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run check` | vérification des types (4 configs) + tests. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
 | `npm run test:long` | test de sûreté long du solveur logique (fichiers `tests/**/*.long.ts`, ~30 s, 4100 grilles + couverture des techniques). Hors de `check` ; **à lancer quand on touche au solveur logique** |
-| `npm run bench` | mesure des temps de génération / vérification d'unicité (100 grilles 9x9) |
+| `npm run bench` | mesures : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s) |
+| `npm run packs` | régénère les packs Expert/Diabolique du sudoku classique (~1 min). **À relancer si `VERSION_NOTATION` change** |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
@@ -46,7 +47,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - `src/games/_modele/` : module modèle à copier. Dossiers `_xxx` : testés, **jamais publiés**.
 - 4 configs TypeScript : `tsconfig.json` (appli, DOM), `src/worker/tsconfig.json` (WebWorker + code pur ; même `rootDir`/`outDir` que l'appli),
   `tests/tsconfig.json`, `scripts/tsconfig.json` (Node).
-- Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md).
+- Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
+  `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
 
 ## Conventions
 - Code et commentaires **en français**. Fichiers courts, une responsabilité par fichier.
@@ -77,4 +79,5 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 0 — Fondations (squelette, outillage, contrat, docs).
 - ✅ Étape 1 — Moteur de contraintes (`src/moteur/`), backtracking, générateur, tests, `npm run bench`.
 - ✅ Étape 2a — Solveur logique : 21 techniques (Débutant → Diabolique), étapes expliquées, tests de sûreté.
-- ⏭️ Prochaine : **Étape 2b** — notation (niveau + force), génération par niveau, packs Expert/Diabolique, mesures.
+- ✅ Étape 2b — Notation (niveau + force, seuils mesurés), génération par niveau, packs Expert/Diabolique (200 grilles), bench étendu.
+- ⏭️ Prochaine : **Étape 3** — socle de l'interface + sudoku classique jouable.

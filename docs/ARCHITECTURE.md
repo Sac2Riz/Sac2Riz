@@ -133,6 +133,9 @@ src/moteur/
 ├─ validation.ts       conflits, estComplete, estSolution (pour erreurs() / estTerminee() des jeux)
 ├─ backtracking.ts     compterSolutions, compterSolutionsAvec, estUnique
 ├─ generateur.ts       genererGrilleComplete, retirerChiffres, genererGrille
+├─ notation.ts         noterGrille, noterEtapes, calculerForce, SEUILS_FORCE, VERSION_NOTATION (étape 2b)
+├─ generation-niveau.ts genererParNiveau, CIBLES_ARRET_TOT (étape 2b)
+├─ pack.ts             estPackSudoku (garde), grilleEnTexte, texteEnGrille (étape 2b)
 └─ logique/            solveur logique (étape 2a) — voir ci-dessous
    ├─ contexte.ts      creerContexte(def) : cases qui se voient, régions complètes, formes, rangs
    ├─ etat.ts          etatInitial, appliquerEtape, aDesEffets, contradiction, estRemplie
@@ -190,21 +193,44 @@ src/moteur/
     - `'continuer'` : garder le retrait et poursuivre ;
     - `'refuser'` : remettre les chiffres retirés et passer aux cases suivantes
       (ex. l'énoncé exigerait une technique trop forte pour le niveau visé) ;
-    - `'arreter'` : garder le retrait et terminer (ex. Débutant : s'arrêter vers 40-45 chiffres).
-    À l'étape 2b, le solveur logique s'en servira pour viser un niveau de difficulté.
+    - `'arreter'` : garder le retrait et terminer (ex. Débutant : s'arrêter vers 36-44 chiffres).
 - `genererGrille(def, alea, options)` = les deux à la suite → `{ enonce, solution }`.
 - Le retrait seul ne fabrique pas de cages : la génération des cages du Killer viendra avec cette variante.
+
+### Notation et génération par niveau — `notation.ts`, `generation-niveau.ts` (étape 2b)
+
+- `noterGrille(ctx, enonce)` → `Notation` (niveau, force, techniqueMax, details) ou `null` si le solveur
+  logique est bloqué. `noterEtapes` fait de même à partir d'étapes déjà calculées. Règles et seuils :
+  docs/DIFFICULTE.md. **`VERSION_NOTATION`** est à incrémenter dès qu'un seuil ou une technique change.
+- `genererParNiveau(def, niveau, alea, { tentativesMax = 50, symetrie = 'centrale', cibleIndices, seuils })`
+  → `{ ok: true, enonce, solution, notation, essais }` ou `{ ok: false, raison, essais }`. Chaque essai :
+  grille complète, puis `retirerChiffres` dont la fonction d'acceptation **refuse** un retrait si la grille
+  n'est plus résoluble avec les techniques du niveau, et **arrête** tôt (Débutant, Facile) quand le nombre
+  de chiffres atteint une cible tirée dans `CIBLES_ARRET_TOT`. Contrôle final : niveau exact, sinon essai
+  suivant. Le contexte du solveur est calculé une fois par appel.
 - Génération Expert/Diabolique : nombre de tentatives limité dans le worker ; si échec, grille tirée du pack.
 
 ### Mesure des performances
 
-`npm run bench` (`scripts/bench.ts`) génère 100 grilles 9x9 (graines 1 à 100, reproductibles) et affiche
-moyenne, médiane et maximum du temps de génération et de la vérification d'unicité. Référence PC
-(étape 1) : génération ~1,3 ms en moyenne, ~4,5 ms au pire ; unicité ~0,1 ms en moyenne, ~1,5 ms au pire.
+`npm run bench` (`scripts/bench.ts` + `scripts/bench/`, graines fixes, reproductible ; `--rapide` ou
+`--n=<nombre>` pour réduire l'échantillon) affiche :
+1. génération de grilles minimales et vérification d'unicité (100 grilles 9x9) ;
+2. répartition des niveaux de grilles minimales au hasard (avec et sans symétrie) ;
+3. génération par niveau : taux d'échec, essais, temps moyen/max, chiffres donnés (Expert et Diabolique
+   avec et sans symétrie ; Débutant et Facile avec et sans arrêt tôt) ;
+4. mesures de la force (quartiles du score et des chiffres donnés, part de force haute).
+
+Références PC : voir docs/DIFFICULTE.md (étape 2b) ; moteur seul ~1,3 ms par grille minimale.
 
 ## Packs de grilles
 
-`src/games/<id>/packs/<niveau>.json` : tableau de `Puzzle<D>` pré-générés (via un script de génération).
+`src/games/<id>/packs/<niveau>.json` : `PackSudoku` (`src/types/pack.ts`) =
+`{ version, versionNotation, jeu, niveau, grilles: [{ graine, enonce, solution, notation }] }`, grilles en
+texte (81 chiffres, 0 = vide), une grille par ligne. Générés par `npm run packs`
+(`scripts/generer-packs.ts`, graines 1, 2, 3…, une graine en échec est sautée). La garde `estPackSudoku`
+(`src/moteur/pack.ts`) vérifie forme, cohérence énoncé/solution, notation compatible avec le niveau et
+**`versionNotation` = `VERSION_NOTATION`** ; les tests vérifient en plus l'unicité, la notation recalculée
+et la reproductibilité depuis la graine. **Si `VERSION_NOTATION` change, relancer `npm run packs`.**
 Copiés dans `dist/` à côté du module ; chargés par `fetch(new URL('./packs/expert.json', import.meta.url))`.
 
 ## PWA (étape 5)

@@ -2,6 +2,27 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 2b] — Notation et génération par niveau — 2026-11-13
+
+### Ajouté
+- `src/moteur/notation.ts` : `noterGrille` / `noterEtapes` (niveau, force 1-10, technique max, détails ;
+  `null` si essai-erreur), `mesurerNotation`, `calculerForce`, seuils `SEUILS_FORCE` mesurés
+  (Débutant ≤ 39 chiffres ; Facile score ≥ 4 ou ≤ 30 ; Moyen score ≥ 4 ou ≤ 26 ; Difficile score ≥ 3 ou ≤ 26)
+  et `VERSION_NOTATION` (= 1).
+- `src/moteur/generation-niveau.ts` : `genererParNiveau` (refus des retraits qui dépassent le niveau,
+  arrêt tôt Débutant 36-44 / Facile 30-35 chiffres, contrôle final du niveau, `tentativesMax`, symétrie).
+- `src/types/pack.ts` (`PackSudoku`, `GrillePack`, `VERSION_FORMAT_PACK`) et `src/moteur/pack.ts`
+  (garde `estPackSudoku`, `grilleEnTexte`, `texteEnGrille`).
+- `npm run packs` (`scripts/generer-packs.ts`) : packs `expert.json` et `diabolique.json` de 200 grilles
+  dans `src/games/sudoku-classique/packs/` (~81 et ~86 Ko, ~19 Ko compressés chacun).
+- Tests : `notation.test.ts`, `generation-niveau.test.ts`, `pack.test.ts` (189 tests au total).
+
+### Modifié
+- `npm run bench` découpé en `scripts/bench/` et étendu : répartition des niveaux, génération par niveau
+  (temps, essais, échecs, chiffres donnés ; Expert/Diabolique avec et sans symétrie), mesures de force.
+  Options `--rapide` et `--n=<nombre>`.
+- docs/DIFFICULTE.md : seuils de force, mesures, génération par niveau, packs, note sur le niveau Diabolique.
+
 ## [Étape 2a] — Solveur logique — 2026-11-13
 
 ### Ajouté

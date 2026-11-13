@@ -65,25 +65,90 @@ Remarques :
 
 ## Score de force (1 à 10)
 
-En plus du niveau, chaque grille reçoit une **force** qui affine la position dans le niveau :
+En plus du niveau, chaque grille reçoit une **force** qui affine la position dans le niveau
+(`src/moteur/notation.ts`) :
 
 1. **Plage de base** : celle du niveau de la technique la plus dure (ex. Moyen → 5-6).
 2. **Placement dans la plage** (niveaux à deux valeurs : Débutant, Facile, Moyen, Difficile) :
-   la valeur haute est retenue si la grille est « dure pour son niveau », selon :
-   - le **nombre de fois** où des techniques du niveau max (ou du niveau juste en dessous) sont nécessaires ;
-   - le **nombre de chiffres donnés** (peu de chiffres → plus dur).
-   Les seuils exacts seront fixés et testés à l'étape 2b, puis documentés ici.
+   la valeur haute est retenue si la grille est « dure pour son niveau », c'est-à-dire si
+   **score ≥ S ou chiffres donnés ≤ C**, avec :
+   - **score** = nombre d'étapes du niveau max + ½ × nombre d'étapes du niveau juste en dessous ;
+     ce niveau inférieur n'est compté **que s'il est au moins Moyen** : les singletons (Débutant, Facile)
+     sont les étapes de « remplissage » de toute grille et ne disent rien de sa difficulté ;
+   - **chiffres donnés** : peu de chiffres → plus dur.
 3. Expert = 9 et Diabolique = 10 (plage d'une seule valeur).
+
+### Seuils (figés à l'étape 2b, `SEUILS_FORCE`, `VERSION_NOTATION` = 1)
+
+| Niveau | Force basse / haute | Force haute si | Part en force haute (mesurée) |
+|---|---|---|---|
+| Débutant | 1 / 2 | ≤ 39 chiffres donnés (score non utilisé : il vaut à peu près le nombre de cases vides) | 54 % |
+| Facile | 3 / 4 | score ≥ 4 ou ≤ 30 chiffres | 52 % |
+| Moyen | 5 / 6 | score ≥ 4 ou ≤ 26 chiffres | 53 % |
+| Difficile | 7 / 8 | score ≥ 3 ou ≤ 26 chiffres | 53 % |
+
+Les seuils visent environ une grille sur deux en force haute (mesure : `npm run bench`, 100 à 200 grilles
+générées par niveau). Ils sont vérifiés par `tests/moteur/notation.test.ts`.
+
+**`VERSION_NOTATION`** (`src/moteur/notation.ts`) : à **incrémenter** dès qu'un seuil, une technique ou
+l'ordre des techniques change, puis régénérer les packs (`npm run packs`) : un pack d'une autre version
+est refusé par sa garde de validation.
 
 La force est enregistrée dans `Notation` (`force`, `techniqueMax`, `details` = nombre d'utilisations de
 chaque technique) et alimente la **force moyenne** des statistiques.
 
+### Note sur le niveau Diabolique
+
+Le niveau Diabolique regroupe des grilles allant d'**une seule chaîne courte** à **plusieurs chaînes
+longues**, avec une force fixe de 10 (mesure : de 1 à 9,5 étapes « score » selon les grilles). Si le
+ressenti en jeu le justifie, une **graduation interne** pourra être ajoutée plus tard à partir du détail
+des techniques (`details`), en incrémentant `VERSION_NOTATION`.
+
 ## Génération par niveau
+
+`genererParNiveau` (`src/moteur/generation-niveau.ts`) : à chaque essai, une grille complète au hasard puis
+un retrait de chiffres piloté par la fonction d'acceptation de `retirerChiffres` :
+
+- un retrait est **refusé** si la grille n'est plus résoluble avec les techniques du niveau demandé
+  (niveau dépassé ou essai-erreur nécessaire) ;
+- **arrêt tôt** (Débutant, Facile) : le retrait s'arrête dès que le nombre de chiffres donnés atteint une
+  cible tirée au hasard dans la plage du niveau (`CIBLES_ARRET_TOT`) :
+  **Débutant 36-44, Facile 30-35** (sans arrêt tôt, ces grilles n'auraient que ~28-29 chiffres) ;
+- **contrôle final** : la grille doit être exactement du niveau demandé (pas plus facile), sinon essai suivant,
+  au plus `tentativesMax` essais (50 par défaut) ;
+- **symétrie centrale** conservée pour tous les niveaux, Expert et Diabolique compris (sans symétrie : moins
+  d'essais mais plus longs, temps moyen un peu plus élevé et pire cas nettement plus long).
+
+Mesures (PC, sudoku 9x9, 100 grilles par niveau, graines 1 à 100, au plus 200 essais, aucun échec) :
+
+| Niveau | Essais moy / max | Temps moy / max | Chiffres donnés moy (min-max) |
+|---|---|---|---|
+| Débutant | 1,0 / 1 | 4 / 8 ms | 39,4 (35-44) |
+| Facile | 2,4 / 9 | 15 / 59 ms | 31,4 (29-35) |
+| Moyen | 7,4 / 31 | 63 / 244 ms | 27,1 (23-31) |
+| Difficile | 14,1 / 56 | 119 / 453 ms | 27,9 (23-31) |
+| Expert | 17,6 / 75 | 159 / 641 ms | 27,9 (24-32) |
+| Diabolique | 9,4 / 40 | 95 / 365 ms | 27,5 (24-32) |
+
+Avec la limite par défaut de 50 essais, environ 6 % des générations Expert échouent (13 graines sur 213
+lors de la génération du pack) ; c'est ce que couvre le pack. Sur tablette, compter des temps 3 à 5 fois
+plus longs.
+
+Répartition des niveaux de grilles **minimales** générées au hasard (500 grilles, symétrie centrale) :
+Débutant 11 %, Facile 53 %, Moyen 10 %, Difficile 5 %, Expert 5 %, Diabolique 10 %, essai-erreur 6 %.
+
+### Utilisation dans l'appli (étape 3)
 
 - Débutant à Difficile : génération à la demande dans le worker, réserve de 2-3 grilles d'avance.
 - **Expert et Diabolique** : génération en arrière-plan avec un nombre de **tentatives limité**
   (`tentativesMax`), plus un **pack JSON embarqué** de grilles pré-générées pour qu'une grille soit
   toujours disponible immédiatement.
+
+### Packs (`src/games/sudoku-classique/packs/`)
+
+`expert.json` et `diabolique.json` : **200 grilles chacun**, générés par `npm run packs` (graines 1, 2, 3…,
+~30 s et ~20 s sur PC). Taille : ~81 Ko et ~86 Ko (~415-440 octets par grille), **~19 Ko** chacun une fois
+compressés (gzip, comme servis par GitHub Pages).
 
 ## Jeux qui ne sont pas des sudokus
 

@@ -34,13 +34,17 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Note pour la variante irrégulière : la génération d'une grille complète par backtracking y est parfois très
   lente (plusieurs secondes) ; à traiter quand cette variante sera ajoutée.
 
-### ⏭️ Étape 2b — Notation et génération par niveau
-- `noter` : niveau (technique la plus dure) + force 1-10 (seuils mesurés, documentés et testés).
-- Génération par niveau via la fonction d'acceptation de `retirerChiffres` (refus si le niveau est dépassé,
-  arrêt tôt pour Débutant/Facile, contrôle final du niveau, `tentativesMax`).
-- Script de génération des packs ; packs JSON Expert et Diabolique dans `src/games/sudoku-classique/packs/`,
-  avec garde de validation.
-- Tests de cohérence de la notation ; mesures (temps par niveau, taux de réussite, répartition des forces).
+### ✅ Étape 2b — Notation et génération par niveau
+- `noterGrille` (`src/moteur/notation.ts`) : niveau (technique la plus dure) + force 1-10 ; seuils mesurés
+  (~50 % de force haute par niveau), documentés, testés ; `VERSION_NOTATION`.
+- `genererParNiveau` (`src/moteur/generation-niveau.ts`) via la fonction d'acceptation de `retirerChiffres` :
+  refus si le niveau est dépassé, arrêt tôt Débutant (36-44 chiffres) / Facile (30-35), contrôle final du
+  niveau, `tentativesMax`. Symétrie centrale conservée pour tous les niveaux.
+- `npm run packs` : packs `expert.json` et `diabolique.json` (200 grilles chacun, ~19 Ko compressés) dans
+  `src/games/sudoku-classique/packs/`, garde `estPackSudoku` (format et version de notation).
+- `npm run bench` étendu : répartition des niveaux, temps/essais/échecs/chiffres par niveau, mesures de force.
+- Tests : notation (seuils, cohérence, rejet), génération par niveau, packs (garde, unicité, notation, graines).
+- Piste : graduation interne du niveau Diabolique si le ressenti en jeu le justifie (voir DIFFICULTE.md).
 
 ## Étape 3 — Socle de l'interface + sudoku classique jouable
 - Accueil complet (Continuer, choix du niveau), écran de partie.
