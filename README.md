@@ -34,8 +34,8 @@ nécessaires pour la résoudre. Aucune grille n'exige de tâtonner au hasard.
 | Diabolique | ★★★★★ | chaînes logiques |
 
 Une note de force de 1 à 10 précise la difficulté à l'intérieur de chaque niveau.
-Au programme aussi : mode notes, annuler et rétablir sans limite, indices expliqués, chronomètre,
-statistiques, thème clair ou sombre.
+Et aussi : notes (avec remplissage automatique), annuler et rétablir sans limite, indices expliqués pas à
+pas, vérification des erreurs au choix, chronomètre, statistiques par niveau, thème clair ou sombre.
 
 ## Sous le capot
 

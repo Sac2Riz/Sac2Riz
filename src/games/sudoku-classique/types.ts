@@ -20,13 +20,27 @@ export type EtatSudoku = {
   readonly notes: readonly (readonly number[])[];
 };
 
+/** Nouvelles notes d'une case (action « definir-notes »). */
+export type NotesCase = {
+  readonly cellule: number;
+  /** Notes triées, sans doublon. */
+  readonly notes: readonly number[];
+};
+
 /**
  * A : une action du joueur.
- * - placer : pose un chiffre (et retire ce chiffre des notes de la ligne, de la colonne et du bloc) ;
+ * - placer : pose un chiffre et retire ce chiffre des notes de la ligne, de la colonne et du bloc ;
+ * - placer-seul : pose un chiffre sans toucher aux notes des autres cases (réglage « retrait
+ *   automatique des notes » désactivé). Le choix est inscrit dans l'action : rejouer l'historique
+ *   donne toujours le même résultat, même si le réglage change ensuite ;
  * - noter : ajoute ou retire une note ;
- * - effacer : vide la case (chiffre et notes).
+ * - effacer : vide la case (chiffre et notes) ;
+ * - definir-notes : remplace les notes de plusieurs cases vides d'un coup (« Remplir les notes »,
+ *   éliminations d'un indice) : une seule action, donc un seul « Annuler ».
  */
 export type ActionSudoku =
   | { readonly type: 'placer'; readonly cellule: number; readonly valeur: number }
+  | { readonly type: 'placer-seul'; readonly cellule: number; readonly valeur: number }
   | { readonly type: 'noter'; readonly cellule: number; readonly valeur: number }
-  | { readonly type: 'effacer'; readonly cellule: number };
+  | { readonly type: 'effacer'; readonly cellule: number }
+  | { readonly type: 'definir-notes'; readonly changements: readonly NotesCase[] };

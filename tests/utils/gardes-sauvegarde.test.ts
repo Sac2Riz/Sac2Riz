@@ -13,6 +13,7 @@ import {
   estPartieSauvegardee,
   estPuzzle,
   estReglages,
+  estReglagesEnregistres,
   estStatsJeu,
 } from '../../src/utils/gardes-sauvegarde.ts';
 import { puzzleFactice } from '../socle/aide.ts';
@@ -88,6 +89,14 @@ describe('gardes des données conservées', () => {
     assert.ok(estReglages(REGLAGES_PAR_DEFAUT));
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'theme', 'violet')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'verifierErreurs', 'oui')), false);
+    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 1)), false);
+    assert.equal(estReglages({ theme: 'clair', verifierErreurs: true }), false, "forme de l'étape 3b : incomplète");
+  });
+
+  test("estReglagesEnregistres : forme actuelle ou forme de l'étape 3b", () => {
+    assert.ok(estReglagesEnregistres(REGLAGES_PAR_DEFAUT));
+    assert.ok(estReglagesEnregistres({ theme: 'sombre', verifierErreurs: false }));
+    assert.equal(estReglagesEnregistres({ theme: 'sombre' }), false);
   });
 
   test('estEntreeReserve : le puzzle doit être du jeu et du niveau annoncés', () => {

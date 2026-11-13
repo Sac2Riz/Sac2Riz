@@ -4,14 +4,32 @@
 // - sauvegarder : appelé après chaque action (et quand l'appli passe en arrière-plan) ;
 // - abandonner : la partie en cours est remplacée par une nouvelle (le joueur a confirmé) :
 //   elle compte comme abandonnée dans les statistiques, puis elle est supprimée ;
-// - terminer : grille finie : statistiques mises à jour, partie supprimée.
+// - terminer : grille finie : statistiques mises à jour, partie supprimée ; renvoie le record
+//   battu ou non (une partie avec indices ne peut pas battre le record).
 // Les écritures sont mises en série (une à la fois, dans l'ordre d'appel) : une sauvegarde
 // lancée avant la fin de partie ne peut pas réécrire la partie après sa suppression.
 
 import type { Force, Niveau } from '../types/niveaux.ts';
 import type { PartieSauvegardee, StatsJeu } from '../types/sauvegarde.ts';
-import { enregistrerAbandon, enregistrerTerminee, statsVides } from './stats.ts';
+import { enregistrerAbandon, enregistrerTerminee, estNouveauRecord, statsVides } from './stats.ts';
 import type { Stockage } from './stockage/stockage.ts';
+
+/** Partie terminée, telle qu'enregistrée dans les statistiques. */
+export type PartieTerminee = {
+  readonly jeu: string;
+  readonly niveau: Niveau;
+  readonly tempsMs: number;
+  readonly force: Force;
+  readonly indicesUtilises: number;
+};
+
+/** Ce que la fin de partie apprend des statistiques. */
+export type BilanRecord = {
+  /** Vrai si ce temps est le nouveau meilleur temps du niveau. */
+  readonly nouveauRecord: boolean;
+  /** Meilleur temps avant cette partie (null s'il n'y en avait pas). */
+  readonly ancienRecordMs: number | null;
+};
 
 export interface ServiceParties {
   lire(jeu: string): Promise<PartieSauvegardee | null>;
@@ -19,7 +37,7 @@ export interface ServiceParties {
   /** Compte la partie en cours de ce jeu comme abandonnée et la supprime (rien s'il n'y en a pas). */
   abandonner(jeu: string): Promise<void>;
   /** Enregistre une partie terminée dans les statistiques et supprime la partie en cours. */
-  terminer(jeu: string, niveau: Niveau, tempsMs: number, force: Force): Promise<void>;
+  terminer(partie: PartieTerminee): Promise<BilanRecord>;
   /** Supprime la partie en cours sans toucher aux statistiques (partie illisible). */
   oublier(jeu: string): Promise<void>;
   stats(jeu: string): Promise<StatsJeu>;
@@ -49,10 +67,16 @@ export function creerServiceParties(stockage: Stockage): ServiceParties {
         await stockage.ecrire('stats', jeu, enregistrerAbandon(await lireStats(jeu), partie.puzzle.notation.niveau));
         await stockage.supprimer('parties', jeu);
       }),
-    terminer: (jeu, niveau, tempsMs, force) =>
+    terminer: ({ jeu, niveau, tempsMs, force, indicesUtilises }) =>
       enSerie(async () => {
-        await stockage.ecrire('stats', jeu, enregistrerTerminee(await lireStats(jeu), niveau, tempsMs, force));
+        const avant = await lireStats(jeu);
+        const bilan: BilanRecord = {
+          nouveauRecord: estNouveauRecord(avant[niveau], tempsMs, indicesUtilises),
+          ancienRecordMs: avant[niveau].meilleurTempsMs,
+        };
+        await stockage.ecrire('stats', jeu, enregistrerTerminee(avant, niveau, tempsMs, force, indicesUtilises));
         await stockage.supprimer('parties', jeu);
+        return bilan;
       }),
     oublier: (jeu) => enSerie(() => stockage.supprimer('parties', jeu)),
     stats: (jeu) => enSerie(() => lireStats(jeu)),

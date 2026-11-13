@@ -2,6 +2,43 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 3c] — Indices, erreurs, réglages, statistiques, fin de partie — 2026-11-13
+
+### Ajouté
+- Indices en deux temps : mise en évidence (régions, cases et candidats du motif, éliminations barrées en
+  rouge, chiffre à placer en vert) avec le nom et l'explication de la technique dans un bandeau à la place
+  du pavé, puis « Appliquer » (placement ou éliminations, annulable). Compteur d'indices sur le bouton,
+  augmenté dès que l'indice est montré, sauvegardé avec la partie.
+- Indices du sudoku (`games/sudoku-classique/indice.ts`) : chiffre faux d'abord, puis première étape du
+  solveur logique à partir des chiffres posés et des notes fiables du joueur.
+- Bouton « Remplir les notes » : une seule action annulable qui remplace les notes de toutes les cases vides
+  par leurs candidats possibles.
+- Écran des réglages (fenêtre, depuis l'accueil et pendant la partie) : vérification des erreurs, mise en
+  évidence, retrait automatique des notes, thème (Automatique / Clair / Sombre).
+- Écran des statistiques par jeu et par niveau (terminées, abandonnées, meilleur temps, temps moyen, force
+  moyenne) et écran de fin de partie (temps, niveau, force, technique la plus difficile, indices, record).
+- Actions du sudoku `placer-seul` (pose sans retrait des notes) et `definir-notes` (notes de plusieurs cases).
+- Socle : `ecran-reglages.ts`, `ecran-stats.ts`, `ecran-fin.ts`, `bilan-fin.ts`, `reglages.ts` ;
+  `compterIndice` (partie), `estNouveauRecord`, `forceMoyenne`, `lignesStats` (stats).
+- Tests : `sudoku-indices.test.ts`, `reglages.test.ts`, `bilan-fin.test.ts`, compléments (sudoku, stats,
+  service des parties, partie, gardes, contrat des modules) : 326 tests.
+
+### Modifié
+- Contrat des jeux : `Indice` (titre, explication, marques, libellé, action), `indice(etat, donnees, options)`,
+  `remplirNotes` facultatif, `nomTechnique` ; vue : `afficher({ etat, donnees, erreurs, indice })` et
+  `contexte.reglages()` (fonction : réglages modifiables pendant la partie). Module `_modele` adapté.
+- Statistiques : une partie terminée avec des indices compte (terminées, moyennes) mais ne peut pas battre le
+  meilleur temps ; `terminer` reçoit la partie terminée et renvoie le record battu ou non.
+- Réglages : nouveaux champs `miseEnEvidence` et `retraitAutoNotes` ; les réglages enregistrés à l'étape 3b
+  sont complétés à la lecture (le thème choisi est conservé).
+- Accueil : le bouton « Thème » est remplacé par « Statistiques » et « Réglages » (le thème est dans les réglages).
+- Navigation : une seule entrée d'historique hors de l'accueil (partie, statistiques, fin de partie) ; le
+  bouton retour d'Android ramène toujours à l'accueil.
+
+### Vérifié
+- Le worker n'est limité que par son budget de temps : aucune limite d'essais par défaut quand `doitArreter`
+  est fourni (corrigé à l'étape 3b, tests existants dans `generation-niveau.test.ts` et `traitement.test.ts`).
+
 ## [Étape 3b — corrections] — Thème clair, génération sans limite d'essais — 2026-11-13
 
 ### Ajouté

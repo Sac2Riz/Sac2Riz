@@ -47,14 +47,46 @@ export type ResultatGeneration<D extends Json> =
   | { readonly ok: true; readonly donnees: D; readonly notation: Notation }
   | { readonly ok: false; readonly raison: string };
 
-/** Indice proposé au joueur. */
-export type Indice<A extends Json> = {
-  /** Action qui applique l'indice. */
-  readonly action: A;
-  /** Explication en français (ex. « Singleton caché dans la ligne 3 »). */
-  readonly explication: string;
-  /** Cases à mettre en évidence. */
+/** Candidats d'une case cités par un indice (motif ou éliminations). */
+export type CandidatsIndice = {
+  readonly cellule: number;
+  readonly valeurs: readonly number[];
+};
+
+/** Ce que la grille met en évidence pendant le 1er temps d'un indice (avant de l'appliquer). */
+export type MarquesIndice = {
+  /** Cases du motif. */
   readonly cellules: readonly number[];
+  /** Cases des régions concernées (ligne, colonne, bloc…), en fond plus léger. */
+  readonly zones: readonly number[];
+  /** Candidats qui forment le motif (affichés même si le joueur ne les a pas notés). */
+  readonly candidats: readonly CandidatsIndice[];
+  /** Candidats que l'indice retire (affichés barrés). */
+  readonly eliminations: readonly CandidatsIndice[];
+  /** Chiffres que l'indice pose. */
+  readonly placements: readonly { readonly cellule: number; readonly valeur: number }[];
+};
+
+/**
+ * Indice proposé au joueur, en deux temps : d'abord la mise en évidence (marques) avec
+ * l'explication, puis, si le joueur le demande, l'action (placement ou éliminations).
+ */
+export type Indice<A extends Json> = {
+  /** Nom de la technique (« Paire nue ») ou de la situation (« Chiffre faux »). */
+  readonly titre: string;
+  /** Explication en français (ex. « Dans la ligne 3, le 7 ne peut aller qu'en L3C5. »). */
+  readonly explication: string;
+  readonly marques: MarquesIndice;
+  /** Libellé du bouton qui applique l'indice (« Placer le 7 », « Retirer 3 candidats »). */
+  readonly libelleAction: string;
+  /** Action qui applique l'indice (annulable comme tout coup). */
+  readonly action: A;
+};
+
+/** Réglages du joueur qui changent les actions produites par le jeu. */
+export type OptionsJeu = {
+  /** Poser un chiffre retire cette note des cases qui voient la case. */
+  readonly retraitAutoNotes: boolean;
 };
 
 /**
@@ -85,7 +117,17 @@ export interface LogiqueJeu<D extends Json, E extends Json, A extends Json> {
   estTerminee(etat: E, donnees: D): boolean;
 
   /** Prochain coup conseillé, ou null s'il n'y en a pas. */
-  indice(etat: E, donnees: D): Indice<A> | null;
+  indice(etat: E, donnees: D, options: OptionsJeu): Indice<A> | null;
+
+  /**
+   * Facultatif (jeux avec des notes) : UNE action qui remplace les notes de toutes les cases vides
+   * par tous leurs candidats possibles, ou null si cela ne changerait rien. Le socle n'affiche le
+   * bouton « Remplir les notes » que si le jeu fournit cette fonction.
+   */
+  remplirNotes?(etat: E, donnees: D): A | null;
+
+  /** Nom affiché d'une technique (Notation.techniqueMax), pour l'écran de fin de partie. */
+  nomTechnique(id: string): string;
 
   // Gardes de type : vérifient une valeur venant d'une sauvegarde ou d'un import
   // (on ne fait jamais confiance à un fichier) avant de l'utiliser comme D, E ou A.

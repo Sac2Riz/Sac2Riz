@@ -5,7 +5,8 @@
 // - jouer : applique l'action ; une action sans effet (état identique) n'est pas enregistrée,
 //   pour que « Annuler » annule toujours quelque chose de visible ;
 // - annuler / rétablir : déplacent le curseur de l'historique et recalculent l'état ;
-// - une partie terminée (grille juste et complète) est figée : chrono arrêté, plus d'action.
+// - une partie terminée (grille juste et complète) est figée : chrono arrêté, plus d'action ;
+// - compterIndice : un indice montré compte, même s'il n'est pas appliqué.
 // versSauvegarde / depuisSauvegarde font le lien avec PartieSauvegardee (stockage).
 
 import type { LogiqueJeu, Puzzle } from '../types/jeu.ts';
@@ -87,6 +88,11 @@ export function annuler(logique: Logique, partie: Partie): Partie {
 
 export function retablir(logique: Logique, partie: Partie): Partie {
   return peutRetablirPartie(partie) ? recalculer(logique, partie, retablirHistorique(partie.historique)) : partie;
+}
+
+/** Un indice a été montré au joueur : le compteur augmente, qu'il l'applique ou non. */
+export function compterIndice(partie: Partie): Partie {
+  return partie.terminee ? partie : { ...partie, indicesUtilises: partie.indicesUtilises + 1 };
 }
 
 /** Pause demandée par le joueur (bouton) ou reprise. */

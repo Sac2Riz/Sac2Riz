@@ -89,5 +89,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 3b — Sudoku classique jouable (direction visuelle « Ardoise ») : accueil, grille, pavé, notes,
   annuler/rétablir, chrono, sauvegarde et reprise ; nouvelle partie sur une partie en cours = confirmation,
   puis la partie remplacée compte comme abandonnée (compteur séparé).
-- ⏭️ Prochaine : **Étape 3c** — indices expliqués, vérification des erreurs, réglages, statistiques,
-  écran de fin de partie.
+- ✅ Étape 3c — Indices en deux temps (mise en évidence puis application) avec compteur, vérification des
+  erreurs, « Remplir les notes », réglages, statistiques par jeu et niveau, écran de fin de partie
+  (une partie avec indices ne bat pas le record).
+- ⏭️ Prochaine : **Étape 4** — Chiffres casés.

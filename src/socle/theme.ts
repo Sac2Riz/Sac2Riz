@@ -1,11 +1,11 @@
 // Thème clair/sombre.
 // Par défaut (« systeme »), le CSS suit le réglage de la tablette (prefers-color-scheme) ;
 // sinon l'attribut data-theme sur <html> force le thème choisi (voir src/styles/theme.css).
-// Le choix se fait depuis l'accueil (bouton « Thème ») et est enregistré dans les réglages.
+// Le choix se fait dans l'écran des réglages et est enregistré avec eux.
 
 import type { Theme } from '../types/sauvegarde.ts';
 
-/** Ordre du bouton « Thème » : chaque toucher passe au suivant. */
+/** Ordre des choix de thème dans l'écran des réglages. */
 export const ORDRE_THEMES: readonly Theme[] = ['systeme', 'clair', 'sombre'];
 
 export const NOMS_THEMES: Readonly<Record<Theme, string>> = {
@@ -13,12 +13,6 @@ export const NOMS_THEMES: Readonly<Record<Theme, string>> = {
   clair: 'Clair',
   sombre: 'Sombre',
 };
-
-/** Thème suivant dans l'ordre Automatique → Clair → Sombre → Automatique (pur). */
-export function themeSuivant(theme: Theme): Theme {
-  const i = ORDRE_THEMES.indexOf(theme);
-  return ORDRE_THEMES[(i + 1) % ORDRE_THEMES.length] ?? 'systeme';
-}
 
 /** Couleur de la barre d'état d'Android (= --couleur-fond de theme.css). */
 const COULEUR_BARRE = { clair: '#eef1f4', sombre: '#151a21' } as const;

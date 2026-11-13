@@ -1,17 +1,15 @@
-// Tests du choix de thème (partie pure : ordre du bouton « Thème » et noms affichés).
+// Tests du choix de thème (partie pure : liste des choix et noms affichés).
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { NOMS_THEMES, ORDRE_THEMES, themeSuivant } from '../../src/socle/theme.ts';
+import { NOMS_THEMES, ORDRE_THEMES } from '../../src/socle/theme.ts';
 
 describe('thème', () => {
-  test('Automatique → Clair → Sombre → Automatique', () => {
-    assert.equal(themeSuivant('systeme'), 'clair');
-    assert.equal(themeSuivant('clair'), 'sombre');
-    assert.equal(themeSuivant('sombre'), 'systeme');
+  test('Automatique, Clair, Sombre, dans cet ordre', () => {
+    assert.deepEqual(ORDRE_THEMES, ['systeme', 'clair', 'sombre']);
   });
 
-  test('chaque thème a un nom affiché et une place dans le cycle', () => {
+  test('chaque thème a un nom affiché', () => {
     assert.deepEqual([...ORDRE_THEMES].sort(), Object.keys(NOMS_THEMES).sort());
-    assert.equal(NOMS_THEMES.clair, 'Clair');
+    assert.equal(NOMS_THEMES.systeme, 'Automatique');
   });
 });

@@ -7,6 +7,7 @@ import {
   annuler,
   changerPause,
   changerVisibilitePartie,
+  compterIndice,
   depuisSauvegarde,
   jouer,
   nouvellePartie,
@@ -72,6 +73,16 @@ describe('partie : jouer, annuler, rétablir', () => {
     assert.equal(peutAnnulerPartie(p), false);
     assert.equal(annuler(logique, p), p);
     assert.equal(jouer(logique, p, { type: 'effacer', cellule: 5 }, T0), p);
+  });
+
+  test('compteur d\'indices : +1 par indice montré, sauvegardé, figé en fin de partie', () => {
+    let p = compterIndice(compterIndice(debut()));
+    assert.equal(p.indicesUtilises, 2);
+    assert.equal(p.historique.actions.length, 0, 'montrer un indice ne joue aucun coup');
+    const reprise = depuisSauvegarde(logique, versSauvegarde(logique, p, T0, DATE), T0, true);
+    assert.equal(reprise?.indicesUtilises, 2);
+    p = jouer(logique, jouer(logique, p, placer(4, 5), T0), placer(5, 6), T0);
+    assert.equal(compterIndice(p), p, 'partie terminée : plus d\'indice');
   });
 });
 

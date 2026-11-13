@@ -1,7 +1,7 @@
 // LE CONTRAT des modules de jeu — partie AFFICHAGE (utilise le DOM).
 // Ce fichier ne doit jamais être importé par du code pur (moteur, logique, worker).
 
-import type { LogiqueJeu, MetaJeu, Puzzle } from './jeu.ts';
+import type { LogiqueJeu, MarquesIndice, MetaJeu, Puzzle } from './jeu.ts';
 import type { Json } from './json.ts';
 import type { Niveau } from './niveaux.ts';
 import type { Reglages } from './sauvegarde.ts';
@@ -10,16 +10,26 @@ import type { Reglages } from './sauvegarde.ts';
 export interface ContexteVue<A extends Json> {
   /** Joue une action : le socle gère historique, chrono, sauvegarde et fin de partie. */
   jouer(action: A): void;
-  /** Réglages actuels (lecture seule). */
-  readonly reglages: Readonly<Reglages>;
+  /** Réglages actuels (ils peuvent changer pendant la partie : les relire à chaque affichage). */
+  reglages(): Readonly<Reglages>;
   /** Vrai si le mode notes est actif. */
   modeNotes(): boolean;
 }
 
+/** Ce que la vue doit dessiner. */
+export type AffichageVue<D extends Json, E extends Json> = {
+  readonly etat: E;
+  readonly donnees: D;
+  /** Cases fausses à signaler (vide si la vérification des erreurs est désactivée). */
+  readonly erreurs: readonly number[];
+  /** Indice affiché (1er temps : cases et candidats à mettre en évidence), ou null. */
+  readonly indice: MarquesIndice | null;
+};
+
 /** Vue montée dans la page pour une partie. */
 export interface InstanceVue<D extends Json, E extends Json> {
-  /** Redessine la grille (appelé après chaque action, annulation, rétablissement). */
-  afficher(etat: E, donnees: D, erreurs: readonly number[]): void;
+  /** Redessine la grille (après chaque action, annulation, rétablissement, changement de réglage). */
+  afficher(affichage: AffichageVue<D, E>): void;
   /** Valeur saisie via le pavé commun ou le clavier (le jeu sait quelle case est sélectionnée). */
   saisir(valeur: string): void;
   /** Bouton « effacer » du socle. */

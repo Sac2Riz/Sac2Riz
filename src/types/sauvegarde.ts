@@ -10,14 +10,29 @@ export type Theme = 'systeme' | 'clair' | 'sombre';
 export type Reglages = {
   /** « systeme » suit le thème clair/sombre de la tablette. */
   readonly theme: Theme;
-  /** Signale les chiffres faux dès qu'ils sont posés. */
+  /** Signale les chiffres faux (comparaison avec la solution). */
   readonly verifierErreurs: boolean;
+  /** Met en évidence la ligne, la colonne, le bloc de la case choisie et les chiffres identiques. */
+  readonly miseEnEvidence: boolean;
+  /** Poser un chiffre retire cette note des cases de sa ligne, de sa colonne et de son bloc. */
+  readonly retraitAutoNotes: boolean;
 };
 
 export const REGLAGES_PAR_DEFAUT: Reglages = {
   theme: 'systeme',
   verifierErreurs: false,
+  miseEnEvidence: true,
+  retraitAutoNotes: true,
 };
+
+/** Réglages enregistrés avant l'étape 3c (seulement le thème et la vérification des erreurs). */
+export type ReglagesV1 = {
+  readonly theme: Theme;
+  readonly verifierErreurs: boolean;
+};
+
+/** Ce que le magasin « reglages » peut contenir : forme actuelle ou ancienne (complétée à la lecture). */
+export type ReglagesEnregistres = Reglages | ReglagesV1;
 
 /**
  * Partie en cours, sauvegardée automatiquement.

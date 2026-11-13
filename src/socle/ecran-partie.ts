@@ -1,23 +1,29 @@
-// ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau, chrono, pause),
-// grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir) et pavé commun.
+// ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau, chrono, réglages,
+// pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, remplir les notes,
+// indice) et pavé commun.
 //
 // L'état de la partie est une valeur « Partie » (partie.ts, code pur) remplacée à chaque
 // changement ; après chaque action, elle est redessinée et SAUVEGARDÉE.
 // Chrono : pause automatique quand l'appli passe en arrière-plan (visibilitychange), pause
 // manuelle avec le bouton (la grille est alors masquée).
+// Indice en deux temps : 1) la grille met en évidence le motif et un bandeau (à la place du pavé)
+// donne la technique et son explication — le compteur d'indices augmente dès ce moment ;
+// 2) « Appliquer » joue l'action de l'indice (annulable). Toute autre action ferme le bandeau.
 // Clavier physique : chiffres, Retour arrière/Suppr (effacer), N (notes), Ctrl+Z / Ctrl+Y.
 
+import type { Indice } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX } from '../types/niveaux.ts';
 import type { Reglages } from '../types/sauvegarde.ts';
 import type { ContexteVue, VueJeu } from '../types/vue.ts';
-import { informer } from './dialogue.ts';
+import type { BilanFin } from './bilan-fin.ts';
 import { boutonIcone, bouton, creer } from './dom.ts';
 import { etoiles, formaterTemps } from './format.ts';
 import {
   annuler,
   changerPause,
   changerVisibilitePartie,
+  compterIndice,
   jouer,
   peutAnnulerPartie,
   peutRetablirPartie,
@@ -27,7 +33,7 @@ import {
   type Logique,
   type Partie,
 } from './partie.ts';
-import type { ServiceParties } from './service-parties.ts';
+import type { BilanRecord, ServiceParties } from './service-parties.ts';
 import { estVisible, surveillerVisibilite } from './visibilite.ts';
 
 export type OptionsEcranPartie = {
@@ -35,10 +41,15 @@ export type OptionsEcranPartie = {
   readonly logique: Logique;
   readonly vue: VueJeu<Json, Json, Json>;
   readonly partie: Partie;
-  readonly reglages: Reglages;
+  /** Réglages actuels (ils peuvent changer pendant la partie). */
+  readonly reglages: () => Reglages;
+  /** Ouvre l'écran des réglages ; se résout à sa fermeture. */
+  readonly ouvrirReglages: () => Promise<void>;
   readonly parties: ServiceParties;
   /** Retour à l'accueil (appelé après la dernière sauvegarde). */
   readonly quitter: () => void;
+  /** Grille terminée (statistiques déjà enregistrées) : affiche l'écran de fin. */
+  readonly finir: (bilan: BilanFin) => void;
   /** Horloge en millisecondes (Date.now). */
   readonly maintenant: () => number;
 };
@@ -47,12 +58,16 @@ export type OptionsEcranPartie = {
 export type EcranPartie = { readonly quitter: () => Promise<void> };
 
 const RAFRAICHISSEMENT_CHRONO_MS = 250;
+/** Pause entre la dernière case remplie et l'écran de fin (on voit la grille complète). */
+const DELAI_FIN_MS = 600;
 
 export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const { logique, vue } = o;
   let partie = o.partie;
   let modeNotes = false;
   let ferme = false;
+  /** Indice montré (1er temps), ou null. */
+  let indice: Indice<Json> | null = null;
   const niveau = partie.puzzle.notation.niveau;
 
   // ---------- Construction de l'écran ----------
@@ -64,8 +79,9 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   titre.append(creer('span', 'partie-niveau', INFOS_NIVEAUX[niveau].nom), creer('span', 'partie-etoiles', etoiles(niveau)));
   const chrono = creer('span', 'partie-chrono');
   chrono.setAttribute('role', 'timer');
+  const reglages = boutonIcone('bouton-icone', '⚙', 'Réglages', () => void ouvrirReglages());
   const pause = boutonIcone('bouton-icone', '❙❙', 'Mettre en pause', () => basculerPause());
-  barre.append(retour, titre, chrono, pause);
+  barre.append(retour, titre, chrono, reglages, pause);
 
   const zoneGrille = creer('div', 'partie-grille');
   const voilePause = creer('div', 'partie-pause');
@@ -79,7 +95,23 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const outilEffacer = outil('⌫', 'Effacer', () => instance.effacer());
   const outilAnnuler = outil('↶', 'Annuler', () => changer(annuler(logique, partie)));
   const outilRetablir = outil('↷', 'Rétablir', () => changer(retablir(logique, partie)));
+  // « Remplir les notes » seulement pour les jeux qui le proposent
+  const remplir = logique.remplirNotes;
+  const outilRemplir =
+    remplir === undefined
+      ? null
+      : outil('▦', 'Remplir', () => {
+          const action = remplir.call(logique, partie.etat, partie.puzzle.donnees);
+          if (action !== null) changer(jouer(logique, partie, action, o.maintenant()));
+        });
+  if (outilRemplir !== null) outilRemplir.setAttribute('aria-label', 'Remplir les notes');
+  const outilIndice = outil('💡', 'Indice', () => montrerIndice());
+  const compteurIndices = creer('small', 'outil-compteur');
+  outilIndice.append(compteurIndices);
   outils.append(outilNotes, outilEffacer, outilAnnuler, outilRetablir);
+  if (outilRemplir !== null) outils.append(outilRemplir);
+  outils.append(outilIndice);
+  outils.classList.toggle('avec-remplir', outilRemplir !== null);
 
   const pave = creer('div', 'partie-pave');
   const touches = new Map<string, { bouton: HTMLButtonElement; reste: HTMLElement }>();
@@ -93,8 +125,24 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     }
   }
 
+  // Bandeau de l'indice (1er temps) : à la place du pavé
+  const bandeau = creer('section', 'partie-indice');
+  bandeau.setAttribute('aria-live', 'polite');
+  bandeau.setAttribute('aria-labelledby', 'partie-indice-titre');
+  const bandeauTitre = creer('h2', 'partie-indice-titre');
+  bandeauTitre.id = 'partie-indice-titre';
+  const bandeauTexte = creer('p', 'partie-indice-texte');
+  const appliquer = bouton('bouton bouton-principal', '', () => appliquerIndice());
+  const fermerIndice = bouton('bouton bouton-secondaire', 'Fermer', () => {
+    indice = null;
+    dessiner();
+  });
+  const bandeauBoutons = creer('div', 'partie-indice-boutons');
+  bandeauBoutons.append(fermerIndice, appliquer);
+  bandeau.append(bandeauTitre, bandeauTexte, bandeauBoutons);
+
   // Ordre du DOM = ordre de lecture ; la disposition portrait/paysage est faite en CSS (grid-template-areas)
-  ecran.append(barre, zoneGrille, outils, pave);
+  ecran.append(barre, zoneGrille, outils, pave, bandeau);
   o.conteneur.replaceChildren(ecran);
 
   const contexte: ContexteVue<Json> = {
@@ -120,11 +168,19 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     chrono.textContent = formaterTemps(tempsMs(partie, o.maintenant()));
   }
 
+  function dessinerIndice(): void {
+    ecran.classList.toggle('avec-indice', indice !== null);
+    if (indice === null) return;
+    bandeauTitre.textContent = `💡 ${indice.titre}`;
+    bandeauTexte.textContent = indice.explication;
+    appliquer.textContent = indice.libelleAction;
+  }
+
   function dessiner(): void {
     const { etat } = partie;
     const donnees = partie.puzzle.donnees;
-    const erreurs = o.reglages.verifierErreurs ? logique.erreurs(etat, donnees) : [];
-    instance.afficher(etat, donnees, erreurs);
+    const erreurs = o.reglages().verifierErreurs ? logique.erreurs(etat, donnees) : [];
+    instance.afficher({ etat, donnees, erreurs, indice: indice === null ? null : indice.marques });
 
     const restants = vue.restants(etat, donnees);
     for (const [valeur, { bouton: touche, reste }] of touches) {
@@ -141,6 +197,12 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     outilEffacer.disabled = bloque;
     outilAnnuler.disabled = bloque || !peutAnnulerPartie(partie);
     outilRetablir.disabled = bloque || !peutRetablirPartie(partie);
+    if (outilRemplir !== null) outilRemplir.disabled = bloque;
+    outilIndice.disabled = bloque;
+    outilIndice.classList.toggle('est-actif', indice !== null);
+    const n = partie.indicesUtilises;
+    compteurIndices.textContent = n > 0 ? String(n) : '';
+    outilIndice.setAttribute('aria-label', n > 0 ? `Indice (${n} utilisé${n > 1 ? 's' : ''})` : 'Indice');
     for (const { bouton: touche } of touches.values()) touche.disabled = bloque;
     pause.disabled = partie.terminee;
     pause.setAttribute('aria-label', enPause() ? 'Reprendre' : 'Mettre en pause');
@@ -149,6 +211,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     if (iconePause !== null) iconePause.textContent = enPause() ? '▶' : '❙❙';
     ecran.classList.toggle('est-en-pause', enPause());
     ecran.classList.toggle('mode-notes', modeNotes);
+    dessinerIndice();
     dessinerChrono();
   }
 
@@ -166,6 +229,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     if (ferme || suivante === partie) return;
     const finie = !partie.terminee && suivante.terminee;
     partie = suivante;
+    indice = null; // la grille a changé : l'indice affiché n'est plus d'actualité
     dessiner();
     if (finie) void finir();
     else void sauvegarder();
@@ -182,15 +246,65 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     void sauvegarder();
   }
 
+  /** 1er temps : montre l'indice et compte-le (même s'il n'est pas appliqué ensuite). */
+  function montrerIndice(): void {
+    if (enPause() || partie.terminee) return;
+    if (indice !== null) {
+      indice = null; // second toucher sur « Indice » : referme le bandeau
+      dessiner();
+      return;
+    }
+    const trouve = logique.indice(partie.etat, partie.puzzle.donnees, { retraitAutoNotes: o.reglages().retraitAutoNotes });
+    if (trouve === null) return;
+    partie = compterIndice(partie);
+    indice = trouve;
+    dessiner();
+    void sauvegarder();
+  }
+
+  /** 2e temps : joue l'action de l'indice (un coup comme un autre : annulable). */
+  function appliquerIndice(): void {
+    if (indice === null) return;
+    const { action } = indice;
+    indice = null;
+    const suivante = jouer(logique, partie, action, o.maintenant());
+    if (suivante === partie) dessiner();
+    else changer(suivante);
+  }
+
+  async function ouvrirReglages(): Promise<void> {
+    await o.ouvrirReglages();
+    if (!ferme) dessiner(); // vérification des erreurs, mise en évidence… pris en compte tout de suite
+  }
+
   async function finir(): Promise<void> {
     const temps = tempsMs(partie, o.maintenant());
+    const { notation } = partie.puzzle;
+    let record: BilanRecord = { nouveauRecord: false, ancienRecordMs: null };
     try {
-      await o.parties.terminer(partie.puzzle.jeu, niveau, temps, partie.puzzle.notation.force);
+      record = await o.parties.terminer({
+        jeu: partie.puzzle.jeu,
+        niveau,
+        tempsMs: temps,
+        force: notation.force,
+        indicesUtilises: partie.indicesUtilises,
+      });
     } catch (erreur) {
       console.error('Statistiques non enregistrées :', erreur);
     }
-    await informer('Bravo !', `Grille ${INFOS_NIVEAUX[niveau].nom} terminée en ${formaterTemps(temps)}.`, 'Retour à l\'accueil');
-    await quitter();
+    // Laisse voir un instant la grille complète avant l'écran de fin
+    await new Promise((r) => setTimeout(r, DELAI_FIN_MS));
+    if (ferme) return; // le joueur est déjà reparti vers l'accueil (statistiques enregistrées)
+    liberer();
+    o.finir({
+      jeu: partie.puzzle.jeu,
+      niveau,
+      force: notation.force,
+      tempsMs: temps,
+      technique: logique.nomTechnique(notation.techniqueMax),
+      indicesUtilises: partie.indicesUtilises,
+      ...record,
+    });
   }
 
   // ---------- Événements ----------
@@ -228,16 +342,24 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   }
   document.addEventListener('keydown', auClavier);
 
-  async function quitter(): Promise<void> {
+  /** Arrête minuterie et écouteurs, retire la vue. */
+  function liberer(): void {
     if (ferme) return;
     ferme = true;
     clearInterval(minuterie);
     arreterVisibilite();
     document.removeEventListener('keydown', auClavier);
+    instance.detruire();
+  }
+
+  let enSortie = false;
+  async function quitter(): Promise<void> {
+    if (ferme || enSortie) return;
+    enSortie = true;
     // Fige le chrono à l'instant du départ (la sauvegarde ne compte plus le temps passé hors de la partie)
     partie = changerVisibilitePartie(partie, false, o.maintenant());
     await sauvegarder();
-    instance.detruire();
+    liberer();
     o.quitter();
   }
 

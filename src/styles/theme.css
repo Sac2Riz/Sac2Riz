@@ -25,6 +25,10 @@
   --couleur-note: #6b7686;
   --couleur-erreur: #b3261e;
   --couleur-erreur-fond: #f8e1df;
+  /* Indices : cases du motif (fond ambré), candidats du motif, chiffre à placer */
+  --couleur-indice: #8a5a00;
+  --couleur-indice-fond: #fbeec4;
+  --couleur-place: #1d7a3c;
   /* Voile derrière les fenêtres (confirmation, chargement, pause) */
   --couleur-voile: rgb(29 37 48 / 45%);
 
@@ -62,6 +66,9 @@
     --couleur-note: #8c98a9;
     --couleur-erreur: #f2867d;
     --couleur-erreur-fond: #3d2326;
+    --couleur-indice: #f2c75c;
+    --couleur-indice-fond: #43391b;
+    --couleur-place: #7fd49b;
     --couleur-voile: rgb(5 8 12 / 65%);
     color-scheme: dark;
   }
@@ -85,6 +92,9 @@
   --couleur-note: #8c98a9;
   --couleur-erreur: #f2867d;
   --couleur-erreur-fond: #3d2326;
+  --couleur-indice: #f2c75c;
+  --couleur-indice-fond: #43391b;
+  --couleur-place: #7fd49b;
   --couleur-voile: rgb(5 8 12 / 65%);
   color-scheme: dark;
 }

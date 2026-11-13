@@ -63,8 +63,17 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
 - **Export/import** de toutes les données (`FichierExport`, fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`) ;
   à l'import, chaque champ est validé (gardes de type des jeux pour D/E/A).
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
-  Bouton « Thème » de l'accueil : Automatique → Clair → Sombre, enregistré dans les réglages ; la couleur
-  de la barre d'état d'Android suit le thème choisi (`src/socle/theme.ts`).
+  Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
+  suit le thème choisi (`src/socle/theme.ts`).
+- **Réglages** (`Reglages`) : thème, vérification des erreurs, mise en évidence, retrait automatique des
+  notes. Écran en fenêtre (`<dialog>`) ouvert depuis l'accueil et pendant une partie ; chaque changement
+  s'applique tout de suite. Des réglages enregistrés par une version plus ancienne (forme `ReglagesV1`)
+  sont complétés par les valeurs par défaut à la lecture (`socle/reglages.ts`, `completerReglages`).
+- **Indices en deux temps** avec compteur : 1) mise en évidence (régions, cases et candidats du motif,
+  éliminations barrées, chiffre à placer) et explication dans un bandeau qui remplace le pavé — le compteur
+  augmente dès ce moment ; 2) « Appliquer » joue l'action de l'indice (annulable comme tout coup).
+- **Fin de partie** : écran de bilan (temps, niveau, force, technique la plus difficile, indices, record).
+  Une partie terminée **avec indices** compte dans les statistiques mais **ne peut pas battre le record**.
 - **Réserve de grilles** : 3 grilles d'avance par jeu et par niveau, en IndexedDB, réalimentées par le worker
   pour un démarrage instantané. Repli sur les **packs JSON embarqués** du jeu (Expert, Diabolique).
 
@@ -92,18 +101,43 @@ src/socle/
 └─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono)
 ```
 
+### Indices du sudoku classique (étape 3c) — `games/sudoku-classique/indice.ts`
+
+1. Un chiffre faux est signalé en premier (action : l'effacer).
+2. Sinon, **première étape** du solveur logique (la technique la plus simple qui avance). Le solveur part des
+   chiffres posés et des **notes du joueur quand elles sont fiables** : une case dont les notes contiennent le
+   bon chiffre garde ses notes (candidats calculés ∩ notes) ; sinon, candidats calculés. La solution reste donc
+   toujours parmi les candidats (l'étape est juste) et une élimination déjà faite n'est pas reproposée.
+   Placement → action `placer` (ou `placer-seul` sans retrait automatique) ; éliminations → action
+   `definir-notes` qui fixe les notes des cases concernées (leurs candidats moins ceux éliminés).
+3. Filet de sécurité (solveur bloqué) : le chiffre d'une case.
+
+Actions du sudoku : `placer` (retire la note des voisines), `placer-seul` (sans retrait : le choix est inscrit
+dans l'action pour que rejouer l'historique donne toujours le même état), `noter`, `effacer`,
+`definir-notes` (notes de plusieurs cases d'un coup : « Remplir les notes », éliminations d'un indice ; une
+seule action, donc un seul « Annuler »). « Remplir les notes » calcule les candidats à partir des seuls
+chiffres posés (jamais de la solution) et **remplace** les notes existantes.
+
 ### Interface du sudoku jouable (étape 3b)
 
 ```
 src/socle/
 ├─ partie.ts          PARTIE EN COURS (pur) : historique + chrono + état ; jouer, annuler, rétablir,
 │                     pause, visibilité, fin de partie ; versSauvegarde / depuisSauvegarde
-├─ stats.ts           statistiques (pur) : enregistrerTerminee, enregistrerAbandon, tempsMoyenMs
+├─ stats.ts           statistiques (pur) : enregistrerTerminee (sans record si indices), enregistrerAbandon,
+│                     estNouveauRecord, tempsMoyenMs, forceMoyenne, lignesStats (tableau affiché)
 ├─ service-parties.ts partie en cours et statistiques dans le stockage (écritures mises en série)
 ├─ format.ts          formaterTemps (« 12:34 »), etoiles (pur)
-├─ app.ts             navigation accueil ↔ partie, confirmation, chargement, bouton retour d'Android
-├─ accueil.ts         écran d'accueil : « Continuer », choix du niveau
-├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils, pavé, chrono, sauvegarde, clavier
+├─ app.ts             navigation (accueil, partie, statistiques, fin), confirmation, chargement,
+│                     bouton retour d'Android, réglages appliqués et enregistrés
+├─ accueil.ts         écran d'accueil : « Continuer », choix du niveau, menu Statistiques / Réglages
+├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Remplir les notes et Indice),
+│                     pavé, bandeau de l'indice, chrono, sauvegarde, clavier
+├─ ecran-reglages.ts  fenêtre des réglages (étape 3c)
+├─ ecran-stats.ts     écran des statistiques par jeu et par niveau (étape 3c)
+├─ ecran-fin.ts       écran de fin de partie (étape 3c)
+├─ bilan-fin.ts       lignes du bilan de fin et message sur le record (pur, étape 3c)
+├─ reglages.ts        completerReglages : réglages anciens complétés (pur, étape 3c)
 ├─ dialogue.ts        confirmer / informer (élément <dialog>)
 ├─ chargement.ts      indicateur de chargement (visible après 0,25 s) avec Annuler
 └─ dom.ts             petits utilitaires DOM (creer, bouton, boutonIcone)
@@ -116,9 +150,14 @@ src/socle/
   et prévient le joueur.
 - **Écran de partie** : redessine puis **sauvegarde après chaque action**, et aussi quand l'appli passe en
   arrière-plan (Android peut alors la fermer). Le chrono est en pause automatique en arrière-plan ; la pause
-  manuelle **masque la grille**. Fin de partie : statistiques enregistrées, partie en cours supprimée, message
-  « Bravo » (l'écran de fin complet viendra en 3c). Clavier physique : chiffres, Retour arrière/Suppr, N
-  (notes), Ctrl+Z / Ctrl+Y ; les flèches sont gérées par la vue du jeu.
+  manuelle **masque la grille**. Fin de partie : statistiques enregistrées (`terminer` renvoie le record battu
+  ou non et l'ancien record), partie en cours supprimée, puis écran de fin. Clavier physique : chiffres,
+  Retour arrière/Suppr, N (notes), Ctrl+Z / Ctrl+Y ; les flèches sont gérées par la vue du jeu.
+- **Outils** : Notes, Effacer, Annuler, Rétablir, Remplir les notes (si le jeu fournit `remplirNotes`), Indice
+  (avec le nombre d'indices utilisés). Toute action ferme le bandeau d'un indice affiché.
+- **Navigation** : en quittant l'accueil (partie, statistiques), **une** entrée est ajoutée à l'historique du
+  navigateur ; l'écran de fin et la partie suivante la réutilisent. Le bouton retour d'Android ramène
+  toujours à l'accueil.
 - **Mise en page** (`src/styles/base.css`) : portrait = barre, grille, outils, pavé sur une ligne ; paysage
   = grille à gauche sur toute la hauteur, barre + pavé 3 × 3 + outils à droite. La grille est placée dans un
   conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
@@ -169,11 +208,19 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 | `noter(donnees)` | `Notation` (niveau, force, technique max, détails) ou `null` si l'essai-erreur est nécessaire |
 | `etatInitial(donnees)` | état E en début de partie |
 | `appliquer(etat, action, donnees)` | **nouvel** état (jamais de mutation) |
-| `erreurs(etat, donnees)` | cases fausses |
+| `erreurs(etat, donnees)` | cases fausses (comparaison avec la solution) |
 | `estTerminee(etat, donnees)` | grille complète et juste |
-| `indice(etat, donnees)` | `{ action, explication, cellules }` ou `null` |
+| `indice(etat, donnees, options)` | `Indice` ou `null` (voir ci-dessous) ; `options.retraitAutoNotes` = réglage du joueur |
+| `remplirNotes?(etat, donnees)` | facultatif : UNE action qui remplace les notes des cases vides par tous leurs candidats, ou `null` |
+| `nomTechnique(id)` | nom affiché de `Notation.techniqueMax` (écran de fin) |
 | `estDonnees` / `estEtat` / `estAction` | gardes de type pour relire sauvegardes et imports |
 | `migrer?(ancien, version)` | facultatif : conversion d'un ancien format |
+
+**`Indice<A>`** (deux temps) : `titre` (technique), `explication`, `marques` (`MarquesIndice` :
+`cellules` du motif, `zones` = cases des régions concernées, `candidats` du motif, `eliminations`,
+`placements`), `libelleAction` (« Placer le 7 en L3C5 », « Retirer 3 candidats ») et `action`.
+Le socle affiche titre et explication, la vue dessine les marques, puis le socle joue l'action si le joueur
+le demande.
 
 Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`, `notation`, `donnees`).
 `alea` est un générateur **à graine** (`src/utils/alea.ts`) : même graine → même grille.
@@ -182,7 +229,10 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 
 - `pave` : `{ type: 'commun', valeurs: ['1', …] }` pour le pavé du socle, ou `{ type: 'personnalise' }`
   (ex. chiffres casés, qui affiche sa propre liste de nombres).
-- `monter(conteneur, contexte)` → `InstanceVue` : `afficher(etat, donnees, erreurs)`, `saisir(valeur)`, `effacer()`, `detruire()`.
+- `monter(conteneur, contexte)` → `InstanceVue` : `afficher({ etat, donnees, erreurs, indice })` (`indice` =
+  marques à dessiner, ou `null`), `saisir(valeur)`, `effacer()`, `detruire()`.
+- `contexte` : `jouer(action)`, `modeNotes()`, `reglages()` — une **fonction** : les réglages peuvent changer
+  pendant la partie (mise en évidence, retrait automatique des notes), la vue les relit à chaque affichage.
   Le conteneur est dimensionné par le socle (`container-type: size`).
 - `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée
   (petit nombre sur la touche, touche estompée à 0), ou `null`.
@@ -256,8 +306,8 @@ src/moteur/
   retire des candidats de toutes les cases qui voient sa case.
 - **Technique** : `{ id, niveau, nom, chercher(ctx, etat) }` ; `chercher` renvoie la **première occurrence
   utile** de son motif sous forme d'**`Etape`**, ou `null`. Une étape (JSON) décrit : technique, niveau,
-  cases et candidats du motif, régions, placements, éliminations, explication en français. Elle servira
-  aux indices expliqués (étape 3).
+  cases et candidats du motif, régions, placements, éliminations, explication en français. Elle sert
+  aux indices expliqués (étape 3c, `games/sudoku-classique/indice.ts`).
 - **Effet réel obligatoire** : `construireEtape` ne garde que les placements dans des cases vides et les
   éliminations de candidats encore présents ; s'il ne reste rien, elle renvoie `null` et la technique passe
   au motif suivant. Le solveur a un garde-fou : une étape sans effet lève une erreur (au lieu de boucler).

@@ -22,9 +22,16 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
    - `generer` doit garantir une solution unique et consulter `doitArreter()` entre deux essais (budget de temps du worker).
    - `noter` : critères du jeu, documentés dans [DIFFICULTE.md](DIFFICULTE.md).
    - Gardes `estDonnees` / `estEtat` / `estAction` strictes : elles protègent l'import de fichiers.
+   - `indice(etat, donnees, options)` : renvoie un indice en deux temps (titre, explication, marques à
+     mettre en évidence, libellé du bouton, action). Respecter `options.retraitAutoNotes` si le jeu a des notes.
+   - `nomTechnique(id)` : nom affiché de `notation.techniqueMax` (écran de fin de partie).
+   - `remplirNotes` (facultatif) : seulement pour un jeu avec des notes ; le socle n'affiche le bouton
+     « Remplir les notes » que si elle existe. Une seule action, pour qu'un seul « Annuler » suffise.
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
 4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Choisir le pavé commun ou `{ type: 'personnalise' }`.
-   Ne jamais modifier l'état : appeler `contexte.jouer(action)`. `restants` donne le nombre de chiffres
+   Ne jamais modifier l'état : appeler `contexte.jouer(action)`. `afficher` reçoit `{ etat, donnees,
+   erreurs, indice }` : dessiner les marques de l'indice quand il n'est pas `null`. Relire
+   `contexte.reglages()` à chaque affichage (réglages modifiables en cours de partie). `restants` donne le nombre de chiffres
    restant à poser pour chaque touche du pavé (ou `null`). La vue doit remplir le conteneur reçu
    (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour une grille carrée).
 5. **`style.css`** : classes préfixées par l'id, couleurs via les variables de thème.

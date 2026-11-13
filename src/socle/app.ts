@@ -5,22 +5,28 @@
 //   2. grille obtenue (réserve, pack ou génération urgente avec indicateur de chargement) ;
 //   3. SEULEMENT ALORS l'ancienne partie compte comme abandonnée et est remplacée
 //      (si le joueur annule le chargement, son ancienne partie reste intacte).
-// Bouton « retour » d'Android pendant une partie : retour à l'accueil (une entrée est ajoutée à
-// l'historique du navigateur en entrant dans la partie), sans quitter l'appli.
+// Écrans : accueil, partie, statistiques, fin de partie ; les réglages sont une fenêtre par-dessus.
+// Bouton « retour » d'Android hors de l'accueil : retour à l'accueil (UNE entrée est ajoutée à
+// l'historique du navigateur en quittant l'accueil ; la fin de partie et la partie suivante
+// réutilisent cette entrée), sans quitter l'appli.
 
 import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX, type Niveau } from '../types/niveaux.ts';
 import type { Reglages } from '../types/sauvegarde.ts';
 import type { ModuleJeuQuelconque, VueJeu } from '../types/vue.ts';
 import { afficherAccueil, type JeuAccueil } from './accueil.ts';
+import type { BilanFin } from './bilan-fin.ts';
 import { afficherChargement } from './chargement.ts';
 import { confirmer, informer } from './dialogue.ts';
-import { afficherPartie, type EcranPartie } from './ecran-partie.ts';
+import { afficherFin } from './ecran-fin.ts';
+import { afficherPartie } from './ecran-partie.ts';
+import { ouvrirReglages } from './ecran-reglages.ts';
+import { afficherStats } from './ecran-stats.ts';
 import { formaterTemps } from './format.ts';
 import { depuisSauvegarde, nouvellePartie, versSauvegarde, type Logique, type Partie } from './partie.ts';
 import type { ServiceParties } from './service-parties.ts';
 import type { ServiceReserve } from './reserve.ts';
-import { appliquerTheme, themeSuivant } from './theme.ts';
+import { appliquerTheme } from './theme.ts';
 import { estVisible } from './visibilite.ts';
 
 export type OptionsApp = {
@@ -29,22 +35,41 @@ export type OptionsApp = {
   readonly parties: ServiceParties;
   readonly reserve: ServiceReserve;
   readonly reglages: Reglages;
-  /** Enregistre les réglages modifiés (thème choisi à l'accueil). */
+  /** Enregistre les réglages modifiés (écran des réglages). */
   readonly enregistrerReglages: (reglages: Reglages) => Promise<void>;
 };
 
+/** Écran autre que l'accueil : quitter() y revient (bouton retour d'Android). */
+type EcranCourant = { readonly quitter: () => Promise<void> };
+
 export function demarrerApp(o: OptionsApp): void {
   const maintenant = (): number => Date.now();
-  let ecranPartie: EcranPartie | null = null;
+  let ecranCourant: EcranCourant | null = null;
   /** Vrai pendant une opération (chargement, confirmation) : ignore les doubles touchers. */
   let occupe = false;
   let reglages = o.reglages;
 
-  function changerTheme(): Reglages['theme'] {
-    reglages = { ...reglages, theme: themeSuivant(reglages.theme) };
+  // ---------- Réglages ----------
+  function changerReglages(nouveaux: Reglages): void {
+    reglages = nouveaux;
     appliquerTheme(reglages.theme);
     o.enregistrerReglages(reglages).catch((erreur: unknown) => console.error('Réglages non enregistrés :', erreur));
-    return reglages.theme;
+  }
+
+  const afficherReglages = (): Promise<void> => ouvrirReglages(() => reglages, changerReglages);
+
+  // ---------- Navigation ----------
+  /** En quittant l'accueil : une entrée dans l'historique du navigateur (une seule). */
+  function entrer(ecran: EcranCourant): void {
+    if (history.state === null) history.pushState({ ecran: 'autre' }, '');
+    ecranCourant = ecran;
+  }
+
+  /** Retour à l'accueil ; retire l'entrée ajoutée si on revient par un bouton de l'écran. */
+  function sortir(): void {
+    ecranCourant = null;
+    if (history.state !== null) history.back();
+    void accueil();
   }
 
   function moduleDe(id: string): ModuleJeuQuelconque {
@@ -63,12 +88,26 @@ export function demarrerApp(o: OptionsApp): void {
     const jeux: JeuAccueil[] = await Promise.all(
       o.jeux.map(async (module) => ({ module, partie: await o.parties.lire(module.meta.id) })),
     );
-    if (ecranPartie !== null) return; // une partie a été ouverte entre-temps
+    if (ecranCourant !== null) return; // un autre écran a été ouvert entre-temps
     afficherAccueil(o.racine, jeux, {
       continuer: (jeu) => void enSecurite(() => continuer(jeu)),
       nouvelle: (jeu, niveau) => void enSecurite(() => nouvelle(jeu, niveau)),
-      theme: reglages.theme,
-      changerTheme,
+      statistiques: () => void enSecurite(statistiques),
+      reglages: () => void afficherReglages(),
+    });
+  }
+
+  async function statistiques(): Promise<void> {
+    const jeux = await Promise.all(o.jeux.map(async ({ meta }) => ({ meta, stats: await o.parties.stats(meta.id) })));
+    entrer({ quitter: async () => sortir() });
+    afficherStats(o.racine, jeux, sortir);
+  }
+
+  function fin(bilan: BilanFin): void {
+    entrer({ quitter: async () => sortir() });
+    afficherFin(o.racine, bilan, {
+      accueil: sortir,
+      nouvelle: () => void enSecurite(() => nouvelle(bilan.jeu, bilan.niveau)),
     });
   }
 
@@ -88,21 +127,19 @@ export function demarrerApp(o: OptionsApp): void {
   }
 
   function ouvrir(logique: Logique, vue: VueJeu<Json, Json, Json>, partie: Partie): void {
-    history.pushState({ ecran: 'partie' }, '');
-    ecranPartie = afficherPartie({
+    // entrer() avant l'affichage : ecranCourant n'est jamais null pendant la partie
+    entrer({ quitter: () => Promise.resolve() });
+    ecranCourant = afficherPartie({
       conteneur: o.racine,
       logique,
       vue,
       partie,
-      reglages,
+      reglages: () => reglages,
+      ouvrirReglages: afficherReglages,
       parties: o.parties,
       maintenant,
-      quitter: () => {
-        ecranPartie = null;
-        // Retour par le bouton de l'écran : on retire aussi l'entrée ajoutée à l'historique
-        if (history.state !== null) history.back();
-        void accueil();
-      },
+      quitter: sortir,
+      finir: fin,
     });
   }
 
@@ -155,7 +192,7 @@ export function demarrerApp(o: OptionsApp): void {
   // Au démarrage (y compris après un rechargement en pleine partie), on part de l'accueil.
   history.replaceState(null, '');
   window.addEventListener('popstate', () => {
-    if (ecranPartie !== null) void ecranPartie.quitter();
+    if (ecranCourant !== null) void ecranCourant.quitter();
   });
 
   void accueil();

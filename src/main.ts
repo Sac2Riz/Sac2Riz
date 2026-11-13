@@ -11,8 +11,8 @@ import { creerServiceParties } from './socle/service-parties.ts';
 import { ouvrirStockageIndexedDB } from './socle/stockage/indexeddb.ts';
 import { creerStockageMemoire } from './socle/stockage/memoire.ts';
 import { CLE_REGLAGES, type Stockage } from './socle/stockage/stockage.ts';
+import { completerReglages } from './socle/reglages.ts';
 import { appliquerTheme } from './socle/theme.ts';
-import { REGLAGES_PAR_DEFAUT } from './types/sauvegarde.ts';
 import { creerAlea, graineAleatoire } from './utils/alea.ts';
 
 /** IndexedDB, ou à défaut (navigation privée, stockage bloqué) un stockage en mémoire, perdu à la fermeture. */
@@ -30,7 +30,8 @@ async function demarrer(): Promise<void> {
   if (racine === null) throw new Error('Élément #app introuvable dans index.html');
 
   const stockage = await ouvrirStockage();
-  const reglages = (await stockage.lire('reglages', CLE_REGLAGES)) ?? REGLAGES_PAR_DEFAUT;
+  // Des réglages d'une ancienne version sont complétés (le thème choisi est conservé)
+  const reglages = completerReglages(await stockage.lire('reglages', CLE_REGLAGES));
   appliquerTheme(reglages.theme);
 
   // Charge uniquement les points d'entrée (index.ts) des jeux : métadonnées pour l'accueil

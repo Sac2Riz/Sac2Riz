@@ -11,14 +11,14 @@ import type {
   EntreeReserve,
   EtatPack,
   PartieSauvegardee,
-  Reglages,
+  ReglagesEnregistres,
   StatsJeu,
 } from '../../types/sauvegarde.ts';
 import {
   estEntreeReserve,
   estEtatPack,
   estPartieSauvegardee,
-  estReglages,
+  estReglagesEnregistres,
   estStatsJeu,
 } from '../../utils/gardes-sauvegarde.ts';
 
@@ -32,8 +32,8 @@ export type ContenuMagasins = {
   readonly packsJoues: EtatPack;
   /** Statistiques (clé = id du jeu). */
   readonly stats: StatsJeu;
-  /** Réglages (une seule clé : CLE_REGLAGES). */
-  readonly reglages: Reglages;
+  /** Réglages (une seule clé : CLE_REGLAGES). Une ancienne forme est complétée à la lecture (socle/reglages.ts). */
+  readonly reglages: ReglagesEnregistres;
 };
 
 export type NomMagasin = keyof ContenuMagasins;
@@ -49,7 +49,7 @@ export const GARDES: { readonly [M in NomMagasin]: (valeur: unknown) => valeur i
   reserve: estEntreeReserve,
   packsJoues: estEtatPack,
   stats: estStatsJeu,
-  reglages: estReglages,
+  reglages: estReglagesEnregistres,
 };
 
 /** Clé d'un couple jeu/niveau (magasin packsJoues). Les ids de jeu sont en kebab-case : pas de « / ». */

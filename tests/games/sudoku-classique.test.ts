@@ -1,5 +1,6 @@
-// Tests propres au sudoku classique : règles des actions (retrait automatique des notes),
-// gardes de type, indices, chiffres restants du pavé et conversion des packs.
+// Tests propres au sudoku classique : règles des actions (retrait automatique des notes,
+// remplir les notes), gardes de type, chiffres restants du pavé et conversion des packs.
+// Les indices ont leur propre fichier (sudoku-indices.test.ts).
 // (Le contrat commun est vérifié par registre.test.ts.)
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -60,6 +61,45 @@ describe('sudoku : actions', () => {
     assert.deepEqual(etat.notes[voisine], [5, 7], 'l\'ancien état est intact (annuler le retrouve)');
   });
 
+  test('placer-seul : pose le chiffre sans toucher aux notes des autres cases', () => {
+    const etat = jouerTout(logique.etatInitial(donnees), [
+      { type: 'noter', cellule: voisine, valeur: 5 },
+      { type: 'noter', cellule: cible, valeur: 2 },
+    ]);
+    const apres = logique.appliquer(etat, { type: 'placer-seul', cellule: cible, valeur: 5 }, donnees);
+    assert.equal(apres.valeurs[cible], 5);
+    assert.deepEqual(apres.notes[cible], [], 'la case remplie perd ses propres notes');
+    assert.deepEqual(apres.notes[voisine], [5], 'la voisine garde sa note');
+  });
+
+  test('definir-notes : remplace les notes des cases vides listées, ignore les cases remplies', () => {
+    const donnee = ENONCE_UNIQUE.findIndex((v) => v !== 0);
+    const etat = jouerTout(logique.etatInitial(donnees), [
+      { type: 'noter', cellule: cible, valeur: 9 },
+      { type: 'placer', cellule: lointaine, valeur: 1 },
+    ]);
+    const apres = logique.appliquer(
+      etat,
+      {
+        type: 'definir-notes',
+        changements: [
+          { cellule: cible, notes: [1, 3] },
+          { cellule: voisine, notes: [4] },
+          { cellule: lointaine, notes: [2] },
+          { cellule: donnee, notes: [2] },
+        ],
+      },
+      donnees,
+    );
+    assert.deepEqual(apres.notes[cible], [1, 3]);
+    assert.deepEqual(apres.notes[voisine], [4]);
+    assert.deepEqual(apres.notes[lointaine], [], 'case remplie : pas de note');
+    assert.deepEqual(apres.notes[donnee], [], 'case donnée : pas de note');
+    assert.ok(logique.estEtat(apres));
+    const inutile: ActionSudoku = { type: 'definir-notes', changements: [{ cellule: donnee, notes: [2] }] };
+    assert.equal(logique.appliquer(etat, inutile, donnees), etat, 'sans effet : état renvoyé tel quel');
+  });
+
   test('les notes sont triées et basculent', () => {
     let etat = logique.etatInitial(donnees);
     etat = jouerTout(etat, [
@@ -102,26 +142,44 @@ describe('sudoku : actions', () => {
   });
 });
 
-describe('sudoku : indices', () => {
-  test('un chiffre faux est signalé en premier (action : l\'effacer)', () => {
+describe('sudoku : remplir les notes', () => {
+  const remplir = logique.remplirNotes;
+  if (remplir === undefined) throw new Error('le sudoku doit proposer « Remplir les notes »');
+
+  test('une seule action : tous les candidats possibles de chaque case vide, notes existantes remplacées', () => {
     const cible = vides[0] ?? 0;
-    const faux = ((SOLUTION_UNIQUE[cible] ?? 1) % 9) + 1;
-    const etat = logique.appliquer(logique.etatInitial(donnees), { type: 'placer', cellule: cible, valeur: faux }, donnees);
-    const indice = logique.indice(etat, donnees);
-    assert.deepEqual(indice?.action, { type: 'effacer', cellule: cible });
+    const etat = jouerTout(logique.etatInitial(donnees), [{ type: 'noter', cellule: cible, valeur: 9 }]);
+    const action = remplir(etat, donnees);
+    assert.ok(action !== null && action.type === 'definir-notes');
+    const apres = logique.appliquer(etat, action, donnees);
+    for (const c of vides) {
+      const attendues = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !VOISINES[c]?.some((v) => ENONCE_UNIQUE[v] === n));
+      assert.deepEqual(apres.notes[c], attendues, `case ${c}`);
+      assert.ok(attendues.includes(SOLUTION_UNIQUE[c] ?? 0), 'la solution est toujours parmi les candidats');
+    }
+    assert.equal(remplir(apres, donnees), null, 'déjà rempli : rien à faire');
+    assert.ok(logique.estAction(action));
+  });
+});
+
+describe('sudoku : nouvelles actions et noms des techniques', () => {
+  test('gardes de placer-seul et definir-notes', () => {
+    assert.ok(logique.estAction({ type: 'placer-seul', cellule: 4, valeur: 2 }));
+    assert.ok(logique.estAction({ type: 'definir-notes', changements: [{ cellule: 2, notes: [1, 5] }, { cellule: 3, notes: [] }] }));
+    assert.equal(logique.estAction({ type: 'definir-notes', changements: [] }), false, 'au moins un changement');
+    assert.equal(logique.estAction({ type: 'definir-notes', changements: [{ cellule: 2, notes: [5, 1] }] }), false, 'notes triées');
+    assert.equal(
+      logique.estAction({ type: 'definir-notes', changements: [{ cellule: 2, notes: [1] }, { cellule: 2, notes: [3] }] }),
+      false,
+      'une case au plus une fois',
+    );
+    assert.equal(logique.estAction({ type: 'definir-notes', changements: [{ cellule: 81, notes: [1] }] }), false);
   });
 
-  test('sinon, un placement juste avec une explication', () => {
-    const indice = logique.indice(logique.etatInitial(donnees), donnees);
-    assert.ok(indice !== null && indice.action.type === 'placer');
-    assert.equal(indice.action.valeur, SOLUTION_UNIQUE[indice.action.cellule]);
-    assert.ok(indice.explication.length > 0);
-    assert.ok(indice.cellules.includes(indice.action.cellule));
-  });
-
-  test('aucun indice sur une grille terminée', () => {
-    const fini: EtatSudoku = { valeurs: SOLUTION_UNIQUE, notes: SOLUTION_UNIQUE.map(() => []) };
-    assert.equal(logique.indice(fini, donnees), null);
+  test('nomTechnique : nom affiché, identifiant inconnu rendu tel quel', () => {
+    assert.equal(logique.nomTechnique('x-wing'), 'X-Wing');
+    assert.equal(logique.nomTechnique('paire-nue'), 'Paire nue');
+    assert.equal(logique.nomTechnique('inconnue'), 'inconnue');
   });
 });
 

@@ -91,23 +91,26 @@ button:disabled {
   text-align: center;
 }
 
-/* Choix du thème : en haut à droite de l'en-tête sur un écran large, sous le titre sinon */
-.bouton-theme {
+/* Menu (Statistiques, Réglages) : en haut à droite sur un écran large, sous le titre sinon */
+.accueil-menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--espace-1);
+  margin-top: var(--espace-1);
+}
+
+.bouton-menu {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: var(--espace-1);
   padding: 0.4rem 0.9rem;
   font-size: 0.95rem;
   background: transparent;
 }
 
-.bouton-theme-valeur {
-  font-weight: 700;
-}
-
 @media (min-width: 40rem) {
-  .bouton-theme {
+  .accueil-menu {
     position: absolute;
     top: 0;
     right: 0;
@@ -299,8 +302,12 @@ button:disabled {
 .partie-outils {
   grid-area: outils;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
+}
+
+.partie-outils.avec-remplir {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .outil {
@@ -320,6 +327,24 @@ button:disabled {
 
 .outil .icone {
   font-size: 1.2rem;
+}
+
+/* Nombre d'indices utilisés, en pastille sur le bouton « Indice » */
+.outil {
+  position: relative;
+}
+
+.outil-compteur {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--couleur-indice);
+}
+
+.outil.est-actif .outil-compteur {
+  color: inherit;
 }
 
 .outil.est-actif {
@@ -369,6 +394,43 @@ button:disabled {
   color: var(--couleur-accent);
 }
 
+/* Bandeau de l'indice (1er temps) : prend la place du pavé */
+.partie-indice {
+  grid-area: pave;
+  display: none;
+  align-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--couleur-indice);
+  border-radius: var(--rayon);
+  background: var(--couleur-indice-fond);
+}
+
+.partie.avec-indice .partie-indice {
+  display: grid;
+}
+
+.partie.avec-indice .partie-pave {
+  display: none;
+}
+
+.partie-indice-titre {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.partie-indice-texte {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.partie-indice-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espace-1);
+}
+
 @media (orientation: landscape) {
   .partie {
     max-width: none;
@@ -397,6 +459,19 @@ button:disabled {
     gap: 0.15rem;
     min-height: 4.5rem;
     font-size: 0.85rem;
+  }
+
+  /* Colonne étroite : outils sur deux lignes */
+  .partie-outils,
+  .partie-outils.avec-remplir {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Écran étroit en portrait (téléphone) : icônes seules */
+@media (orientation: portrait) and (max-width: 32rem) {
+  .outil-libelle {
+    display: none;
   }
 }
 
@@ -435,6 +510,233 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  gap: var(--espace-1);
+}
+
+.bouton-secondaire {
+  background: transparent;
+}
+
+/* ---------- Réglages (fenêtre) ---------- */
+
+.dialogue-reglages {
+  width: min(32rem, calc(100vw - 2rem));
+  max-width: none;
+}
+
+.reglage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espace-2);
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--couleur-bordure);
+  cursor: pointer;
+}
+
+.reglage-textes {
+  display: grid;
+}
+
+.reglage-titre {
+  font-weight: 600;
+}
+
+.reglage-detail {
+  font-size: 0.9rem;
+  color: var(--couleur-texte-doux);
+}
+
+/* Interrupteur : case à cocher redessinée (grande zone tactile) */
+.reglage-interrupteur {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 3.25rem;
+  height: 1.9rem;
+  margin: 0;
+  border-radius: 1rem;
+  background: var(--couleur-bordure);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.reglage-interrupteur::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--couleur-texte-doux);
+  transition: transform 0.15s;
+}
+
+.reglage-interrupteur:checked {
+  background: var(--couleur-accent);
+}
+
+.reglage-interrupteur:checked::after {
+  background: var(--couleur-sur-accent);
+  transform: translateX(1.35rem);
+}
+
+.reglage-theme {
+  flex-wrap: wrap;
+  cursor: default;
+}
+
+.choix-theme {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.choix-theme-bouton {
+  padding: 0.4rem 0.8rem;
+}
+
+.choix-theme-bouton[aria-checked="true"] {
+  background: var(--couleur-accent);
+  border-color: var(--couleur-accent);
+  color: var(--couleur-sur-accent);
+}
+
+/* ---------- Écrans secondaires (statistiques) ---------- */
+
+.ecran-stats {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: max(var(--espace-3), env(safe-area-inset-top)) max(var(--espace-3), env(safe-area-inset-right))
+    max(var(--espace-3), env(safe-area-inset-bottom)) max(var(--espace-3), env(safe-area-inset-left));
+  display: grid;
+  gap: var(--espace-3);
+}
+
+.ecran-barre {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+}
+
+.ecran-titre {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.stats-defilement {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--couleur-bordure);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stats-table th:first-child {
+  text-align: left;
+}
+
+.stats-table thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--couleur-texte-doux);
+}
+
+.stats-table tbody th {
+  font-weight: 600;
+}
+
+.stats-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--couleur-texte-doux);
+}
+
+/* ---------- Fin de partie ---------- */
+
+.ecran-fin {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--espace-3);
+}
+
+.fin-carte {
+  width: min(30rem, 100%);
+  display: grid;
+  gap: var(--espace-2);
+  padding: var(--espace-3);
+  background: var(--couleur-surface);
+  border: 1px solid var(--couleur-bordure);
+  border-radius: calc(var(--rayon) * 1.5);
+  text-align: center;
+}
+
+.fin-titre {
+  margin: 0;
+  font-size: 2.2rem;
+  color: var(--couleur-accent);
+}
+
+.fin-sous-titre {
+  margin: -0.75rem 0 0;
+  color: var(--couleur-texte-doux);
+}
+
+.fin-bilan {
+  display: grid;
+  margin: 0;
+  text-align: left;
+}
+
+.fin-ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espace-2);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--couleur-bordure);
+}
+
+.fin-ligne dt {
+  color: var(--couleur-texte-doux);
+}
+
+.fin-ligne dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-record {
+  margin: 0;
+  color: var(--couleur-texte-doux);
+}
+
+.fin-record.est-record {
+  padding: 0.6rem;
+  border-radius: var(--rayon);
+  background: var(--couleur-indice-fond);
+  color: var(--couleur-texte);
+  font-weight: 700;
+}
+
+.fin-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--espace-1);
 }
 

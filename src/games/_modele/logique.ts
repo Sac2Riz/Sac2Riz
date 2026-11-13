@@ -3,7 +3,7 @@
 // Le fichier doit exporter « logique » : le worker le charge sous ce nom.
 
 import type { Alea } from '../../types/alea.ts';
-import type { Indice, LogiqueJeu, OptionsGeneration, ResultatGeneration } from '../../types/jeu.ts';
+import type { Indice, LogiqueJeu, OptionsGeneration, OptionsJeu, ResultatGeneration } from '../../types/jeu.ts';
 import type { Json } from '../../types/json.ts';
 import { INFOS_NIVEAUX, NIVEAUX, type Niveau, type Notation } from '../../types/niveaux.ts';
 import { estEntierEntre, estObjet, estTableauDe } from '../../utils/gardes-json.ts';
@@ -95,15 +95,27 @@ function estTerminee(etat: EtatModele, donnees: DonneesModele): boolean {
   return etat.valeurs.every((v, i) => v === donnees.solution[i]);
 }
 
-function indice(etat: EtatModele, donnees: DonneesModele): Indice<ActionModele> | null {
+/**
+ * Indice en deux temps : les marques (cases, candidats) sont montrées avec l'explication,
+ * puis l'action est jouée si le joueur le demande. Les options (réglages du joueur) ne
+ * changent rien pour ce jeu sans retrait automatique des notes.
+ */
+function indice(etat: EtatModele, donnees: DonneesModele, _options: OptionsJeu): Indice<ActionModele> | null {
   const cellule = etat.valeurs.findIndex((v, i) => v !== donnees.solution[i]);
   const valeur = donnees.solution[cellule];
   if (cellule < 0 || valeur === undefined) return null;
   return {
-    action: { type: 'placer', cellule, valeur },
+    titre: 'Déduction',
     explication: `Le seul chiffre manquant possible en case ${cellule + 1} est ${valeur}.`,
-    cellules: [cellule],
+    marques: { cellules: [cellule], zones: [], candidats: [], eliminations: [], placements: [{ cellule, valeur }] },
+    libelleAction: `Placer le ${valeur}`,
+    action: { type: 'placer', cellule, valeur },
   };
+}
+
+/** Nom affiché d'une technique (Notation.techniqueMax). */
+function nomTechnique(id: string): string {
+  return id === 'modele-deduction' ? 'Déduction' : id;
 }
 
 // ---------- Gardes de type (validation des sauvegardes et imports) ----------
@@ -145,6 +157,7 @@ export const logique: LogiqueJeu<DonneesModele, EtatModele, ActionModele> = {
   erreurs,
   estTerminee,
   indice,
+  nomTechnique,
   estDonnees,
   estEtat,
   estAction,

@@ -61,14 +61,28 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
     assert.ok(logique.estEtat(etat));
     assert.equal(logique.estTerminee(etat, donnees), false);
     for (let coups = 0; coups < 1000 && !logique.estTerminee(etat, donnees); coups++) {
-      const indice = logique.indice(etat, donnees);
+      const indice = logique.indice(etat, donnees, { retraitAutoNotes: true });
       assert.ok(indice !== null, 'un indice doit exister tant que la grille n\'est pas finie');
       assert.ok(logique.estAction(indice.action));
+      assert.ok(indice.titre.length > 0 && indice.explication.length > 0 && indice.libelleAction.length > 0);
       const avant = geler(etat);
       etat = logique.appliquer(avant, indice.action, donnees); // lèverait une erreur si mutation
     }
     assert.ok(logique.estTerminee(etat, donnees));
     assert.deepEqual(logique.erreurs(etat, donnees), []);
+
+    // Nom affiché de la technique la plus difficile (écran de fin)
+    assert.ok(logique.nomTechnique(r1.notation.techniqueMax).length > 0);
+
+    // « Remplir les notes » (facultatif) : une action valide, sans mutation
+    if (logique.remplirNotes !== undefined) {
+      const initial = geler(logique.etatInitial(donnees));
+      const action = logique.remplirNotes(initial, donnees);
+      if (action !== null) {
+        assert.ok(logique.estAction(action));
+        assert.ok(logique.estEtat(logique.appliquer(initial, action, donnees)));
+      }
+    }
   }
 
   // Les gardes rejettent des valeurs absurdes

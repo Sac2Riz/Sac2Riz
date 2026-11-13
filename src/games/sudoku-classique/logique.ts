@@ -1,26 +1,28 @@
 // LOGIQUE du sudoku classique : implémente LogiqueJeu (src/types/jeu.ts).
 // Code PUR : aucun accès au DOM, aucune mutation. Le worker charge l'export « logique ».
-// Génération, notation et indices s'appuient sur le moteur (src/moteur/).
+// Génération, notation et indices (indice.ts) s'appuient sur le moteur (src/moteur/).
 
 import type { Alea } from '../../types/alea.ts';
-import type { Indice, LogiqueJeu, OptionsGeneration, ResultatGeneration } from '../../types/jeu.ts';
+import type { LogiqueJeu, OptionsGeneration, ResultatGeneration } from '../../types/jeu.ts';
 import type { Json } from '../../types/json.ts';
 import type { Niveau, Notation } from '../../types/niveaux.ts';
 import { genererParNiveau } from '../../moteur/generation-niveau.ts';
-import { creerContexte } from '../../moteur/logique/contexte.ts';
-import { appliquerEtape, etatInitial as etatLogiqueInitial } from '../../moteur/logique/etat.ts';
-import { prochaineEtape } from '../../moteur/logique/solveur.ts';
 import { noterGrille } from '../../moteur/notation.ts';
-import { definitionClassique } from '../../moteur/regions.ts';
 import { estSolution } from '../../moteur/validation.ts';
 import { estEntierEntre, estObjet, estTableauDe } from '../../utils/gardes-json.ts';
-import { nomCase, VOISINES } from './geometrie.ts';
+import { CONTEXTE, DEFINITION } from './definition.ts';
+import { VOISINES } from './geometrie.ts';
+import { cellulesFausses, indice, nomTechnique } from './indice.ts';
 import { META } from './meta.ts';
-import { NOMBRE_CASES, TAILLE, type ActionSudoku, type DonneesSudoku, type EtatSudoku } from './types.ts';
-
-/** Définition de la grille (9 lignes, 9 colonnes, 9 blocs 3 × 3) et contexte du solveur, calculés une fois. */
-const DEFINITION = definitionClassique(TAILLE, 3, 3);
-const CONTEXTE = creerContexte(DEFINITION);
+import { remplirNotes } from './notes.ts';
+import {
+  NOMBRE_CASES,
+  TAILLE,
+  type ActionSudoku,
+  type DonneesSudoku,
+  type EtatSudoku,
+  type NotesCase,
+} from './types.ts';
 
 // ---------- Génération et notation ----------
 
@@ -45,10 +47,13 @@ function remplacer<T>(tableau: readonly T[], indice: number, valeur: T): T[] {
   return tableau.map((v, i) => (i === indice ? valeur : v));
 }
 
-/** Pose un chiffre : la case perd ses notes, et ses voisines perdent la note de ce chiffre. */
-function placer(etat: EtatSudoku, cellule: number, valeur: number): EtatSudoku {
+/**
+ * Pose un chiffre : la case perd ses notes ; avec retrait automatique, ses voisines perdent
+ * aussi la note de ce chiffre.
+ */
+function placer(etat: EtatSudoku, cellule: number, valeur: number, retrait: boolean): EtatSudoku {
   if (etat.valeurs[cellule] === valeur) return etat;
-  const voisines = new Set(VOISINES[cellule]);
+  const voisines = new Set(retrait ? VOISINES[cellule] : []);
   const notes = etat.notes.map((n, i) => {
     if (i === cellule) return [];
     return voisines.has(i) && n.includes(valeur) ? n.filter((v) => v !== valeur) : n;
@@ -71,13 +76,27 @@ function effacer(etat: EtatSudoku, cellule: number): EtatSudoku {
   return { valeurs: remplacer(etat.valeurs, cellule, 0), notes: remplacer(etat.notes, cellule, []) };
 }
 
+/** Remplace les notes des cases listées ; les cases remplies (ou données) sont laissées telles quelles. */
+function definirNotes(etat: EtatSudoku, changements: readonly NotesCase[], donnees: DonneesSudoku): EtatSudoku {
+  const nouvelles = new Map(
+    changements
+      .filter(({ cellule }) => donnees.enonce[cellule] === 0 && etat.valeurs[cellule] === 0)
+      .map(({ cellule, notes }) => [cellule, notes]),
+  );
+  if (nouvelles.size === 0) return etat;
+  return { valeurs: etat.valeurs, notes: etat.notes.map((n, i) => nouvelles.get(i) ?? n) };
+}
+
 /** Une action sans effet renvoie l'état reçu, tel quel (le socle ne l'enregistre alors pas). */
 function appliquer(etat: EtatSudoku, action: ActionSudoku, donnees: DonneesSudoku): EtatSudoku {
+  if (action.type === 'definir-notes') return definirNotes(etat, action.changements, donnees);
   // Une case donnée ne se modifie jamais
   if (donnees.enonce[action.cellule] !== 0) return etat;
   switch (action.type) {
     case 'placer':
-      return placer(etat, action.cellule, action.valeur);
+      return placer(etat, action.cellule, action.valeur, true);
+    case 'placer-seul':
+      return placer(etat, action.cellule, action.valeur, false);
     case 'noter':
       return noterCase(etat, action.cellule, action.valeur);
     case 'effacer':
@@ -86,56 +105,11 @@ function appliquer(etat: EtatSudoku, action: ActionSudoku, donnees: DonneesSudok
 }
 
 function erreurs(etat: EtatSudoku, donnees: DonneesSudoku): readonly number[] {
-  const fausses: number[] = [];
-  etat.valeurs.forEach((v, i) => {
-    if (v !== 0 && v !== donnees.solution[i]) fausses.push(i);
-  });
-  return fausses;
+  return cellulesFausses(etat, donnees);
 }
 
 function estTerminee(etat: EtatSudoku, donnees: DonneesSudoku): boolean {
   return etat.valeurs.every((v, i) => v === donnees.solution[i]);
-}
-
-/**
- * Indice (version simple, les indices détaillés arrivent à l'étape 3c) :
- * - un chiffre faux est signalé en premier (action : l'effacer) ;
- * - sinon, le solveur logique avance depuis les chiffres posés jusqu'à sa première étape qui
- *   place un chiffre ; l'indice est ce placement, avec l'explication de la technique.
- */
-function indice(etat: EtatSudoku, donnees: DonneesSudoku): Indice<ActionSudoku> | null {
-  const faute = erreurs(etat, donnees)[0];
-  if (faute !== undefined) {
-    return {
-      action: { type: 'effacer', cellule: faute },
-      explication: `Le chiffre de la case ${nomCase(faute)} est faux.`,
-      cellules: [faute],
-    };
-  }
-  if (estTerminee(etat, donnees)) return null;
-
-  let etatLogique = etatLogiqueInitial(CONTEXTE, etat.valeurs);
-  for (let etape = prochaineEtape(CONTEXTE, etatLogique); etape !== null; etape = prochaineEtape(CONTEXTE, etatLogique)) {
-    const placement = etape.placements[0];
-    if (placement !== undefined) {
-      return {
-        action: { type: 'placer', cellule: placement.cellule, valeur: placement.valeur },
-        explication: etape.explication,
-        cellules: [...new Set([...etape.cellules, placement.cellule])],
-      };
-    }
-    etatLogique = appliquerEtape(CONTEXTE, etatLogique, etape);
-  }
-
-  // Filet de sécurité (le solveur est bloqué) : on donne directement le chiffre d'une case vide
-  const cellule = etat.valeurs.findIndex((v) => v === 0);
-  const valeur = donnees.solution[cellule];
-  if (cellule < 0 || valeur === undefined) return null;
-  return {
-    action: { type: 'placer', cellule, valeur },
-    explication: `La case ${nomCase(cellule)} contient un ${valeur}.`,
-    cellules: [cellule],
-  };
 }
 
 // ---------- Gardes de type (validation des sauvegardes et imports) ----------
@@ -174,10 +148,23 @@ function estEtat(v: Json): v is EtatSudoku {
   );
 }
 
+const estCellule = (v: unknown): v is number => estEntierEntre(v, 0, NOMBRE_CASES - 1);
+
+function estNotesCase(v: unknown): v is NotesCase {
+  return estObjet(v) && estCellule(v['cellule']) && estNotes(v['notes']);
+}
+
+/** Changements de notes : au moins un, chaque case au plus une fois. */
+function estChangements(v: unknown): v is readonly NotesCase[] {
+  return estTableauDe(v, estNotesCase) && v.length > 0 && new Set(v.map((c) => c.cellule)).size === v.length;
+}
+
 function estAction(v: Json): v is ActionSudoku {
-  if (!estObjet(v) || !estEntierEntre(v['cellule'], 0, NOMBRE_CASES - 1)) return false;
+  if (!estObjet(v)) return false;
+  if (v['type'] === 'definir-notes') return estChangements(v['changements']);
+  if (!estCellule(v['cellule'])) return false;
   if (v['type'] === 'effacer') return true;
-  return (v['type'] === 'placer' || v['type'] === 'noter') && estChiffre(v['valeur']);
+  return (v['type'] === 'placer' || v['type'] === 'placer-seul' || v['type'] === 'noter') && estChiffre(v['valeur']);
 }
 
 // ---------- Export : l'objet qui respecte le contrat ----------
@@ -191,6 +178,8 @@ export const logique: LogiqueJeu<DonneesSudoku, EtatSudoku, ActionSudoku> = {
   erreurs,
   estTerminee,
   indice,
+  remplirNotes: (etat) => remplirNotes(etat),
+  nomTechnique,
   estDonnees,
   estEtat,
   estAction,

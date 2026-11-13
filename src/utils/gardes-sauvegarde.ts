@@ -11,6 +11,8 @@ import type {
   EtatPack,
   PartieSauvegardee,
   Reglages,
+  ReglagesEnregistres,
+  ReglagesV1,
   StatsJeu,
   StatsNiveau,
   Theme,
@@ -86,13 +88,26 @@ export function estStatsJeu(valeur: unknown): valeur is StatsJeu {
 
 const THEMES: readonly Theme[] = ['systeme', 'clair', 'sombre'];
 
-export function estReglages(valeur: unknown): valeur is Reglages {
+/** Réglages de l'étape 3b (thème et vérification des erreurs seulement). */
+export function estReglagesV1(valeur: unknown): valeur is ReglagesV1 {
   if (!estObjet(valeur)) return false;
   const { theme, verifierErreurs } = valeur;
   // « as » sans risque : élargit le tableau (lecture seule) pour pouvoir y chercher un texte quelconque
   return (
     typeof theme === 'string' && (THEMES as readonly string[]).includes(theme) && typeof verifierErreurs === 'boolean'
   );
+}
+
+/** Réglages complets (forme actuelle). */
+export function estReglages(valeur: unknown): valeur is Reglages {
+  if (!estObjet(valeur)) return false;
+  const { miseEnEvidence, retraitAutoNotes } = valeur;
+  return estReglagesV1(valeur) && typeof miseEnEvidence === 'boolean' && typeof retraitAutoNotes === 'boolean';
+}
+
+/** Contenu acceptable du magasin « reglages » : forme actuelle ou ancienne (complétée à la lecture). */
+export function estReglagesEnregistres(valeur: unknown): valeur is ReglagesEnregistres {
+  return estReglagesV1(valeur);
 }
 
 /** Entrée de la réserve : le puzzle doit être du jeu et du niveau annoncés. */

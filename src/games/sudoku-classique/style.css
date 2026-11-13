@@ -98,3 +98,18 @@
   outline-offset: -3px;
   z-index: 1;
 }
+
+/* Indice affiché (1er temps) : régions concernées en fond léger, motif sur fond ambré, candidats du motif en couleur,
+   candidats éliminés barrés en rouge, chiffre à placer en vert */
+.sudoku-classique-case.est-zone-indice { background: var(--couleur-zone); }
+.sudoku-classique-case.est-indice { background: var(--couleur-indice-fond); }
+.sudoku-classique-note.est-motif { color: var(--couleur-indice); font-weight: 800; }
+.sudoku-classique-note.est-eliminee {
+  color: var(--couleur-erreur);
+  font-weight: 800;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  background: var(--couleur-erreur-fond);
+  border-radius: 30%;
+}
+.sudoku-classique-case.est-a-placer { color: var(--couleur-place); font-weight: 700; }

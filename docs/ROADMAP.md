@@ -88,11 +88,27 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Corrections après test sur tablette : choix du thème (Automatique / Clair / Sombre) depuis l'accueil,
   enregistré ; le worker n'est plus limité que par son budget de temps (plus de limite de 50 essais).
 
-### Étape 3c — Indices, erreurs, réglages, statistiques, fin de partie
-- Indices expliqués (étapes du solveur logique, cases mises en évidence) avec compteur.
-- Vérification des erreurs (réglage), écran des réglages (le choix du thème y sera repris ; il est déjà sur l'accueil).
-- Statistiques par jeu et par niveau.
-- Écran de fin de partie (temps, force, indices, record).
+### ✅ Étape 3c — Indices, erreurs, réglages, statistiques, fin de partie
+- **Indices en deux temps** : 1) mise en évidence (régions, cases et candidats du motif, éliminations barrées,
+  chiffre à placer) et explication de la technique dans un bandeau ; 2) « Appliquer » joue le placement ou les
+  éliminations (annulable). Compteur d'indices : +1 dès que l'indice est montré (**décision de
+  l'utilisateur**). Le solveur part des chiffres posés et des notes fiables du joueur ; un chiffre faux est
+  signalé en premier.
+- **Vérification des erreurs** (réglage) : chiffres faux en rouge, par comparaison avec la solution.
+- **Remplir les notes** : une seule action annulable qui **remplace** les notes des cases vides par tous
+  leurs candidats (**décision de l'utilisateur**).
+- **Réglages** (fenêtre, depuis l'accueil et la partie) : vérification des erreurs, mise en évidence, retrait
+  automatique des notes, thème (repris de l'accueil). Réglages de l'étape 3b complétés à la lecture.
+- **Statistiques** par jeu et par niveau : terminées, abandonnées, meilleur temps, temps moyen, force moyenne.
+- **Fin de partie** : temps, niveau, force, technique la plus difficile, indices, record. Une partie terminée
+  avec indices compte mais ne peut pas battre le record.
+- Contrat : `Indice` en deux temps, `indice(etat, donnees, options)`, `remplirNotes` (facultatif),
+  `nomTechnique`, `afficher({ … })`, `contexte.reglages()`. Actions du sudoku `placer-seul` et
+  `definir-notes` (anciennes parties toujours lisibles, `versionFormat` inchangé).
+- Vérifié : le worker n'est limité que par son budget de temps (aucune limite d'essais par défaut ; tests
+  dans `generation-niveau.test.ts` et `traitement.test.ts`).
+- Tests : indices (dont éliminations et notes du joueur), remplir les notes, nouvelles actions, réglages,
+  statistiques et record, compteur d'indices, bilan de fin (326 tests) ; parcours vérifié dans Edge.
 
 ## Étape 4 — Chiffres casés
 - Grille type mots croisés, liste de nombres à placer (barrés une fois placés).

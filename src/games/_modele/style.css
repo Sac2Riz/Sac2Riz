@@ -24,3 +24,4 @@
 .modele-case.est-note { font-size: 0.9rem; color: var(--couleur-texte-doux); }
 .modele-case.est-selectionnee { background: var(--couleur-selection); }
 .modele-case.est-erreur { color: var(--couleur-erreur); }
+.modele-case.est-indice { outline: 3px solid var(--couleur-indice); outline-offset: -3px; }

@@ -28,7 +28,7 @@ function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionModele>): In
   conteneur.append(ligne);
 
   return {
-    afficher(etat, donnees, erreurs) {
+    afficher({ etat, donnees, erreurs, indice }) {
       cases.forEach((bouton, i) => {
         const valeur = etat.valeurs[i] ?? 0;
         const notes = etat.notes[i] ?? [];
@@ -36,6 +36,7 @@ function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionModele>): In
         bouton.classList.toggle('est-donnee', (donnees.donnes[i] ?? 0) !== 0);
         bouton.classList.toggle('est-note', valeur === 0 && notes.length > 0);
         bouton.classList.toggle('est-erreur', erreurs.includes(i));
+        bouton.classList.toggle('est-indice', indice !== null && indice.cellules.includes(i));
       });
     },
     saisir(texte) {

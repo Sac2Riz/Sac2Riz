@@ -2,11 +2,15 @@
 // Elle ne modifie jamais l'état : elle appelle contexte.jouer(action) et le socle la rappelle
 // ensuite via afficher().
 //
-// Mises en évidence autour de la case sélectionnée : sa ligne, sa colonne et son bloc ;
-// les autres cases portant le même chiffre, et ce chiffre dans les notes.
+// Mises en évidence autour de la case sélectionnée (réglage « mise en évidence ») : sa ligne, sa
+// colonne et son bloc ; les autres cases portant le même chiffre, et ce chiffre dans les notes.
+// Indice affiché (1er temps) : régions concernées en fond léger, cases du motif sur fond ambré, candidats du motif en couleur,
+// candidats éliminés barrés en rouge (dessinés même si le joueur ne les a pas notés), chiffre à
+// placer en vert ; les autres mises en évidence sont alors suspendues.
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
-import type { ContexteVue, InstanceVue, VueJeu } from '../../types/vue.ts';
+import type { MarquesIndice } from '../../types/jeu.ts';
+import type { AffichageVue, ContexteVue, InstanceVue, VueJeu } from '../../types/vue.ts';
 import { blocDe, colonneDe, ligneDe, seVoient } from './geometrie.ts';
 import { NOMBRE_CASES, TAILLE, type ActionSudoku, type DonneesSudoku, type EtatSudoku } from './types.ts';
 
@@ -24,6 +28,26 @@ const FLECHES: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [0, -1],
   ArrowRight: [0, 1],
 };
+
+/** Marques d'un indice, rangées par case pour le dessin. */
+type MarquesParCase = {
+  readonly cellules: ReadonlySet<number>;
+  readonly zones: ReadonlySet<number>;
+  readonly motif: ReadonlyMap<number, readonly number[]>;
+  readonly eliminees: ReadonlyMap<number, readonly number[]>;
+  readonly placees: ReadonlyMap<number, number>;
+};
+
+function rangerMarques(indice: MarquesIndice | null): MarquesParCase | null {
+  if (indice === null) return null;
+  return {
+    cellules: new Set(indice.cellules),
+    zones: new Set(indice.zones),
+    motif: new Map(indice.candidats.map((c) => [c.cellule, c.valeurs])),
+    eliminees: new Map(indice.eliminations.map((c) => [c.cellule, c.valeurs])),
+    placees: new Map(indice.placements.map((p) => [p.cellule, p.valeur])),
+  };
+}
 
 function creerCase(cellule: number, choisir: (cellule: number) => void): Case {
   const bouton = document.createElement('button');
@@ -46,11 +70,17 @@ function creerCase(cellule: number, choisir: (cellule: number) => void): Case {
   return { bouton, chiffre, notes };
 }
 
+/** Action produite par une touche du pavé, selon le mode notes et le réglage du retrait des notes. */
+function typePose(contexte: ContexteVue<ActionSudoku>): 'noter' | 'placer' | 'placer-seul' {
+  if (contexte.modeNotes()) return 'noter';
+  return contexte.reglages().retraitAutoNotes ? 'placer' : 'placer-seul';
+}
+
 function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionSudoku>): InstanceVue<DonneesSudoku, EtatSudoku> {
   chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
 
   let selection: number | null = null;
-  let dernier: { etat: EtatSudoku; donnees: DonneesSudoku; erreurs: ReadonlySet<number> } | null = null;
+  let dernier: AffichageVue<DonneesSudoku, EtatSudoku> | null = null;
 
   // Grille = 9 blocs (séparés par un trait épais), chacun de 9 cases (séparées par un trait fin)
   const plateau = document.createElement('div');
@@ -78,26 +108,41 @@ function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionSudoku>): In
 
   function dessiner(): void {
     if (dernier === null) return;
-    const { etat, donnees, erreurs } = dernier;
-    const valeurSelection = selection === null ? 0 : (etat.valeurs[selection] ?? 0);
+    const { etat, donnees } = dernier;
+    const erreurs = new Set(dernier.erreurs);
+    const marques = rangerMarques(dernier.indice);
+    // Pendant un indice, seules ses marques sont mises en évidence
+    const evidence = contexte.reglages().miseEnEvidence && marques === null;
+    const valeurSelection = selection === null || !evidence ? 0 : (etat.valeurs[selection] ?? 0);
     cases.forEach((c, cellule) => {
       const valeur = etat.valeurs[cellule] ?? 0;
       const notes = etat.notes[cellule] ?? [];
       const donnee = (donnees.enonce[cellule] ?? 0) !== 0;
-      c.chiffre.textContent = valeur === 0 ? '' : String(valeur);
+      const placee = marques?.placees.get(cellule);
+      const motif = marques?.motif.get(cellule) ?? [];
+      const eliminees = marques?.eliminees.get(cellule) ?? [];
+      c.chiffre.textContent = valeur !== 0 ? String(valeur) : placee !== undefined ? String(placee) : '';
       c.notes.forEach((note, i) => {
         const n = i + 1;
-        const presente = valeur === 0 && notes.includes(n);
+        const vide = valeur === 0 && placee === undefined;
+        const estMotif = vide && motif.includes(n);
+        const estEliminee = vide && eliminees.includes(n);
+        const presente = vide && (notes.includes(n) || estMotif || estEliminee);
         note.textContent = presente ? String(n) : '';
         note.classList.toggle('est-meme', presente && n === valeurSelection);
+        note.classList.toggle('est-motif', estMotif && !estEliminee);
+        note.classList.toggle('est-eliminee', estEliminee);
       });
       const classes = c.bouton.classList;
       classes.toggle('est-donnee', donnee);
       classes.toggle('est-saisie', !donnee && valeur !== 0);
       classes.toggle('est-erreur', erreurs.has(cellule));
-      classes.toggle('est-selection', cellule === selection);
-      classes.toggle('est-zone', selection !== null && seVoient(cellule, selection));
+      classes.toggle('est-selection', marques === null && cellule === selection);
+      classes.toggle('est-zone', evidence && selection !== null && seVoient(cellule, selection));
       classes.toggle('est-meme', valeurSelection !== 0 && cellule !== selection && valeur === valeurSelection);
+      classes.toggle('est-indice', marques !== null && (marques.cellules.has(cellule) || eliminees.length > 0));
+      classes.toggle('est-zone-indice', marques !== null && marques.zones.has(cellule));
+      classes.toggle('est-a-placer', placee !== undefined && valeur === 0);
       const contenu = valeur !== 0 ? `${valeur}${donnee ? ', donné' : ''}` : notes.length > 0 ? `notes ${notes.join(' ')}` : 'vide';
       c.bouton.setAttribute('aria-label', `Ligne ${ligneDe(cellule) + 1}, colonne ${colonneDe(cellule) + 1} : ${contenu}`);
       c.bouton.setAttribute('aria-selected', String(cellule === selection));
@@ -117,14 +162,14 @@ function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionSudoku>): In
   document.addEventListener('keydown', auClavier);
 
   return {
-    afficher(etat, donnees, erreurs) {
-      dernier = { etat, donnees, erreurs: new Set(erreurs) };
+    afficher(affichage) {
+      dernier = affichage;
       dessiner();
     },
     saisir(texte) {
       const valeur = Number(texte);
       if (selection === null || !Number.isInteger(valeur) || valeur < 1 || valeur > TAILLE) return;
-      contexte.jouer({ type: contexte.modeNotes() ? 'noter' : 'placer', cellule: selection, valeur });
+      contexte.jouer({ type: typePose(contexte), cellule: selection, valeur });
     },
     effacer() {
       if (selection !== null) contexte.jouer({ type: 'effacer', cellule: selection });
