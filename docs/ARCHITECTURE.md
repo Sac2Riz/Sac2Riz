@@ -51,15 +51,66 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   **effacer**, **annuler/rétablir illimité**, **chronomètre** avec pause, **indices** avec compteur,
   **vérification des erreurs** (si activée dans les réglages).
 - **Historique** : la partie est la liste des actions `A` + un curseur. L'état courant = `etatInitial` puis
-  `appliquer` de chaque action jusqu'au curseur (instantanés gardés en mémoire pour la rapidité).
+  `appliquer` de chaque action jusqu'au curseur.
   Annuler = curseur − 1 ; rétablir = curseur + 1 ; une nouvelle action efface les actions après le curseur.
 - **Sauvegarde automatique** (IndexedDB) après chaque action : `PartieSauvegardee` (`src/types/sauvegarde.ts`).
 - **Statistiques** par jeu et par niveau : parties terminées, meilleur temps, temps moyen, force moyenne (`StatsNiveau`).
 - **Export/import** de toutes les données (`FichierExport`, fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`) ;
   à l'import, chaque champ est validé (gardes de type des jeux pour D/E/A).
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
-- **Réserve de grilles** : 2-3 grilles d'avance par jeu et par niveau, en IndexedDB, réalimentées par le worker
+- **Réserve de grilles** : 3 grilles d'avance par jeu et par niveau, en IndexedDB, réalimentées par le worker
   pour un démarrage instantané. Repli sur les **packs JSON embarqués** du jeu (Expert, Diabolique).
+
+### Services du socle (étape 3a, sans interface, testés sous Node)
+
+Tout ce qui dépend du navigateur est **injecté** (fabrique du worker, base IndexedDB, minuteur
+`Programmer`, horloge, `Journal`, document pour la visibilité, chargeur de packs) : les tests fournissent
+des versions factices (`tests/socle/aide.ts` : horloge qu'on avance à la main, faux worker, faux générateur).
+
+```
+src/socle/
+├─ environnement.ts   types Programmer / Annulation / Journal + versions réelles (setTimeout, console)
+├─ client-worker.ts   client typé du worker (file à priorités, annulation, garde-fou)
+├─ calculs.ts         fabrique du VRAI worker (new Worker) + creerClientNavigateur()
+├─ stockage/
+│  ├─ stockage.ts     interface Stockage, magasins et leurs gardes, cleJeuNiveau, prefixeReserve
+│  ├─ schema.ts       VERSION_SCHEMA, MIGRATIONS, migrer()
+│  ├─ memoire.ts      implémentation en mémoire (tests)
+│  ├─ indexeddb.ts    implémentation IndexedDB (navigateur)
+│  └─ persistance.ts  demande de stockage persistant (navigator.storage.persist)
+├─ packs.ts           grilles des packs, jamais resservies avant épuisement
+├─ reserve.ts         réserve de grilles d'avance, obtenirGrille, réalimentation
+├─ historique.ts      annuler / rétablir (pur, générique)
+├─ chrono.ts          chronomètre avec pauses manuelle et automatique (pur)
+└─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono en 3b)
+```
+
+- **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond')` renvoie
+  `{ resultat, annuler }` ; le résultat (`ok` + puzzle, `echec`, `erreur`, `annule`) ne rejette jamais.
+  Une seule demande à la fois chez le worker ; les urgentes passent devant. Annuler une demande en attente
+  la retire de la file ; annuler celle en cours **arrête le worker** (un calcul synchrone ne lit pas ses
+  messages) et un nouveau est créé pour la suivante. Garde-fou : pas de réponse après budget + marge
+  (4 s + 10 s) → worker arrêté, résultat `erreur`. Les réponses d'un ancien worker sont ignorées ; la grille
+  reçue est vérifiée (`estPuzzle`).
+- **Stockage** : interface `Stockage` (`lire`, `ecrire`, `supprimer`, `lister(prefixe)`, `compter(prefixe)`,
+  `prendrePremier(prefixe)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
+  `reserve` (clé `<jeu>/<niveau>/<horodatage>-<compteur>`), `packsJoues` (clé `<jeu>/<niveau>`), `stats`
+  (clé = id du jeu), `reglages` (clé unique). Toute valeur relue passe par la garde de son magasin
+  (`src/utils/gardes-sauvegarde.ts`) : une entrée invalide est ignorée. **`prendrePremier` est atomique**
+  (lecture + suppression dans une seule transaction IndexedDB) : une grille n'est jamais servie deux fois,
+  même avec deux onglets. À l'ouverture, IndexedDB applique les **migrations** manquantes
+  (`onupgradeneeded`) puis demande le **stockage persistant** (résultat simplement journalisé).
+  Pour changer le schéma : ajouter une migration à la fin de `MIGRATIONS`, ne jamais modifier les anciennes.
+- **Packs** (`creerServicePacks`) : pour chaque jeu/niveau, un ordre mélangé des grilles et une position
+  (`EtatPack`) ; pack épuisé → nouvel ordre (cycle suivant) qui ne commence pas par la dernière grille servie ;
+  taille du pack changée → nouvel ordre. Tirages d'un même jeu/niveau mis en série.
+- **Réserve** (`creerServiceReserve`) : `obtenirGrille(jeu, niveau)` → réserve, sinon pack, sinon
+  génération **urgente** relancée immédiatement (abandon après 3 erreurs techniques d'affilée), annulable ;
+  puis réalimentation. `reapprovisionner(jeu, niveau)` : une grille à la fois, ordre = jeu et niveau en
+  cours, puis ses autres niveaux du plus facile au plus difficile, puis les autres jeux ; couple en échec mis
+  de côté 30 s, 2 min puis 10 min (les autres continuent) ; une urgence annule la demande de fond en cours.
+- **Chrono** : `{ cumulMs, depuis, pauseManuelle, masque, termine }` ; tourne seulement sans pause manuelle,
+  appli visible et partie non terminée. Les deux pauses sont indépendantes.
 
 ## Contrat des modules de jeu
 
@@ -72,7 +123,7 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 | Membre | Rôle |
 |---|---|
 | `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat` |
-| `generer(niveau, alea, { tentativesMax })` | `{ ok: true, donnees, notation }` ou `{ ok: false, raison }` (exécuté dans le worker) |
+| `generer(niveau, alea, { doitArreter })` | `{ ok: true, donnees, notation }` ou `{ ok: false, raison }` (exécuté dans le worker) |
 | `noter(donnees)` | `Notation` (niveau, force, technique max, détails) ou `null` si l'essai-erreur est nécessaire |
 | `etatInitial(donnees)` | état E en début de partie |
 | `appliquer(etat, action, donnees)` | **nouvel** état (jamais de mutation) |
@@ -106,7 +157,10 @@ Les tests (`tests/games/registre.test.ts`) vérifient automatiquement chaque jeu
 ### Worker
 
 Messages typés dans `src/types/worker.ts`. Le worker charge `../games/<id>/logique.js` par convention
-(id validé en kebab-case) : il ne dépend ni du registre ni du DOM.
+(id validé en kebab-case) : il ne dépend ni du registre ni du DOM. La demande `generer` porte un
+**budget de temps** `budgetMs` : le worker passe au jeu `doitArreter = () => maintenant() >= échéance`, que
+`generer` consulte entre deux essais (réponse `echec` si le budget est épuisé). Le traitement est dans
+`src/worker/traitement.ts` (testable sous Node) ; `generation.ts` ne fait que brancher `postMessage`.
 
 ## Moteur de contraintes (famille sudoku, étapes 1-2)
 
@@ -202,13 +256,14 @@ src/moteur/
 - `noterGrille(ctx, enonce)` → `Notation` (niveau, force, techniqueMax, details) ou `null` si le solveur
   logique est bloqué. `noterEtapes` fait de même à partir d'étapes déjà calculées. Règles et seuils :
   docs/DIFFICULTE.md. **`VERSION_NOTATION`** est à incrémenter dès qu'un seuil ou une technique change.
-- `genererParNiveau(def, niveau, alea, { tentativesMax = 50, symetrie = 'centrale', cibleIndices, seuils })`
+- `genererParNiveau(def, niveau, alea, { tentativesMax = 50, symetrie = 'centrale', cibleIndices, seuils, doitArreter = null })`
   → `{ ok: true, enonce, solution, notation, essais }` ou `{ ok: false, raison, essais }`. Chaque essai :
   grille complète, puis `retirerChiffres` dont la fonction d'acceptation **refuse** un retrait si la grille
   n'est plus résoluble avec les techniques du niveau, et **arrête** tôt (Débutant, Facile) quand le nombre
   de chiffres atteint une cible tirée dans `CIBLES_ARRET_TOT`. Contrôle final : niveau exact, sinon essai
   suivant. Le contexte du solveur est calculé une fois par appel.
-- Génération Expert/Diabolique : nombre de tentatives limité dans le worker ; si échec, grille tirée du pack.
+- Dans le worker : génération limitée par un budget de temps (`doitArreter`) ; si la réserve est vide,
+  grille tirée du pack (Expert/Diabolique).
 
 ### Mesure des performances
 

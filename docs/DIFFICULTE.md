@@ -115,7 +115,8 @@ un retrait de chiffres piloté par la fonction d'acceptation de `retirerChiffres
   cible tirée au hasard dans la plage du niveau (`CIBLES_ARRET_TOT`) :
   **Débutant 36-44, Facile 30-35** (sans arrêt tôt, ces grilles n'auraient que ~28-29 chiffres) ;
 - **contrôle final** : la grille doit être exactement du niveau demandé (pas plus facile), sinon essai suivant,
-  au plus `tentativesMax` essais (50 par défaut) ;
+  au plus `tentativesMax` essais (50 par défaut), ou jusqu'à ce que `doitArreter()` réponde vrai
+  (budget de temps, consulté avant chaque essai sauf le premier) ;
 - **symétrie centrale** conservée pour tous les niveaux, Expert et Diabolique compris (sans symétrie : moins
   d'essais mais plus longs, temps moyen un peu plus élevé et pire cas nettement plus long).
 
@@ -137,12 +138,15 @@ plus longs.
 Répartition des niveaux de grilles **minimales** générées au hasard (500 grilles, symétrie centrale) :
 Débutant 11 %, Facile 53 %, Moyen 10 %, Difficile 5 %, Expert 5 %, Diabolique 10 %, essai-erreur 6 %.
 
-### Utilisation dans l'appli (étape 3)
+### Utilisation dans l'appli (étape 3a)
 
-- Débutant à Difficile : génération à la demande dans le worker, réserve de 2-3 grilles d'avance.
-- **Expert et Diabolique** : génération en arrière-plan avec un nombre de **tentatives limité**
-  (`tentativesMax`), plus un **pack JSON embarqué** de grilles pré-générées pour qu'une grille soit
-  toujours disponible immédiatement.
+- Dans le worker, la génération est limitée par un **budget de temps** (`budgetMs`, 4 s par défaut :
+  pire cas PC ~0,65 s × 5 pour une tablette) plutôt que par un nombre d'essais fixe.
+- **Réserve** de 3 grilles d'avance par jeu et par niveau, réalimentée en arrière-plan ; un échec
+  (budget épuisé) est retenté après 30 s, 2 min, puis 10 min.
+- Réserve vide : **pack JSON embarqué** s'il existe (Expert, Diabolique), sinon génération urgente relancée
+  immédiatement jusqu'à réussir (Débutant à Difficile : quelques dixièmes de seconde).
+- Détail des services : docs/ARCHITECTURE.md, « Services du socle ».
 
 ### Packs (`src/games/sudoku-classique/packs/`)
 

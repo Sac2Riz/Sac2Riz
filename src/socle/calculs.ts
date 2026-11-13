@@ -1,36 +1,26 @@
-// Côté page : démarrage du Web Worker de calcul et échange de messages typés.
-// (L'API complète — génération à la demande, réserve de grilles — arrive à l'étape 3.)
+// Côté page : création du vrai Web Worker de calcul, branché sur le client (client-worker.ts).
+// Seul fichier qui appelle « new Worker » : le client, lui, reste testable sous Node.
 
-import type { DemandeWorker, ReponseWorker } from '../types/worker.ts';
+import type { DemandeWorker } from '../types/worker.ts';
+import { creerClientWorker, type ClientWorker, type FabriqueCanal } from './client-worker.ts';
 
-let worker: Worker | null = null;
-
-/** Crée le worker au premier appel, puis renvoie toujours le même. */
-function obtenirWorker(): Worker {
-  if (worker === null) {
-    // URL du fichier compilé (.js) : c'est une adresse, pas un import de source
-    worker = new Worker(new URL('../worker/generation.js', import.meta.url), { type: 'module' });
-  }
-  return worker;
-}
-
-function envoyer(demande: DemandeWorker): void {
-  obtenirWorker().postMessage(demande);
-}
-
-/** Vérifie que le worker répond ; renvoie vrai s'il est prêt. */
-export function verifierWorker(delaiMs = 5000): Promise<boolean> {
-  return new Promise((resoudre) => {
-    const w = obtenirWorker();
-    const minuterie = setTimeout(() => resoudre(false), delaiMs);
-    const ecouteur = (evenement: MessageEvent<ReponseWorker>): void => {
-      if (evenement.data.type === 'pret') {
-        clearTimeout(minuterie);
-        w.removeEventListener('message', ecouteur);
-        resoudre(true);
-      }
-    };
-    w.addEventListener('message', ecouteur);
-    envoyer({ type: 'ping' });
+/** Crée un worker module ; ses messages et ses plantages sont transmis aux récepteurs. */
+export const fabriqueCanalNavigateur: FabriqueCanal = (recepteurs) => {
+  // URL du fichier compilé (.js) : c'est une adresse, pas un import de source
+  const worker = new Worker(new URL('../worker/generation.js', import.meta.url), { type: 'module' });
+  worker.addEventListener('message', (evenement: MessageEvent<unknown>) => recepteurs.message(evenement.data));
+  worker.addEventListener('error', (evenement) => {
+    evenement.preventDefault(); // l'erreur est traitée : pas de message rouge en double dans la console
+    recepteurs.erreur(evenement.message || 'erreur inconnue');
   });
+  worker.addEventListener('messageerror', () => recepteurs.erreur('message illisible'));
+  return {
+    envoyer: (demande: DemandeWorker) => worker.postMessage(demande),
+    arreter: () => worker.terminate(),
+  };
+};
+
+/** Client du worker pour l'appli (minuteur réel, graines imprévisibles, budget par défaut). */
+export function creerClientNavigateur(): ClientWorker {
+  return creerClientWorker({ fabrique: fabriqueCanalNavigateur });
 }

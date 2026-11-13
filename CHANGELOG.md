@@ -2,6 +2,33 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 3a] — Services sans interface — 2026-11-13
+
+### Ajouté
+- `src/socle/client-worker.ts` : client typé du worker (file à priorités urgent/fond, une demande à la fois,
+  annulation par retrait de la file ou arrêt/recréation du worker, garde-fou si le worker ne répond plus,
+  résultats `ok` / `echec` / `erreur` / `annule`) ; `calculs.ts` fournit la fabrique du vrai worker.
+- `src/socle/stockage/` : interface `Stockage` (magasins `parties`, `reserve`, `packsJoues`, `stats`,
+  `reglages`, prise atomique `prendrePremier`), implémentations IndexedDB et en mémoire, schéma versionné
+  avec migrations (`VERSION_SCHEMA` = 1), demande de stockage persistant (`navigator.storage.persist()`).
+- `src/socle/packs.ts` : grilles de pack jamais resservies avant épuisement, nouvel ordre ensuite.
+- `src/socle/reserve.ts` : réserve de 3 grilles par jeu et par niveau ; `obtenirGrille` (réserve → pack →
+  génération urgente relancée immédiatement) ; réalimentation en arrière-plan (jeu et niveau en cours, puis
+  les autres niveaux du plus facile au plus difficile, puis les autres jeux), relance après 30 s / 2 min / 10 min.
+- `src/socle/historique.ts` (annuler/rétablir), `chrono.ts` (pauses manuelle et automatique), `visibilite.ts`
+  (surveillance de `visibilitychange`, à brancher en 3b), `environnement.ts` (minuteur et journal injectables).
+- `src/worker/traitement.ts` : traitement des demandes du worker séparé de `postMessage` (testable).
+- Types `EntreeReserve`, `EtatPack` ; gardes `src/utils/gardes-sauvegarde.ts` ; `estJson`, `estNombreEntre`.
+- Tests : `tests/socle/` (client, stockage, schéma, persistance, packs, réserve, historique, chrono,
+  visibilité), `tests/worker/traitement.test.ts`, gardes (266 tests au total).
+
+### Modifié
+- Génération limitée par un **budget de temps** : option `doitArreter` de `genererParNiveau`,
+  `OptionsGeneration` du contrat des jeux (`doitArreter` remplace `tentativesMax`), message `generer` du
+  worker avec `budgetMs` (4 s par défaut).
+- docs/ROADMAP.md : étape 3 découpée en 3a / 3b / 3c ; ARCHITECTURE.md (services du socle), DIFFICULTE.md,
+  AJOUTER_UN_JEU.md mis à jour.
+
 ## [Étape 2b] — Notation et génération par niveau — 2026-11-13
 
 ### Ajouté

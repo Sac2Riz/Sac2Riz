@@ -39,7 +39,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
-- `src/socle/` : interface commune (accueil, pavé, chrono, historique, réglages, stats, thème…).
+- `src/socle/` : interface commune (accueil, pavé, chrono, historique, réglages, stats, thème…) et services
+  (client du worker, stockage `stockage/`, réserve, packs) ; tout ce qui touche au navigateur y est injecté
+  pour être testé sous Node.
 - `src/moteur/` : moteur de contraintes (régions unicité/somme), backtracking, générateur, solveur logique (`logique/`) :
   une technique par fichier dans `logique/techniques/`, une étape renvoyée **seulement si elle a un effet réel**.
 - `src/games/<id>/` : un jeu = un dossier (`meta.ts`, `types.ts`, `logique.ts`, `vue.ts`, `index.ts`, `style.css`, `packs/`).
@@ -80,4 +82,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 1 — Moteur de contraintes (`src/moteur/`), backtracking, générateur, tests, `npm run bench`.
 - ✅ Étape 2a — Solveur logique : 21 techniques (Débutant → Diabolique), étapes expliquées, tests de sûreté.
 - ✅ Étape 2b — Notation (niveau + force, seuils mesurés), génération par niveau, packs Expert/Diabolique (200 grilles), bench étendu.
-- ⏭️ Prochaine : **Étape 3** — socle de l'interface + sudoku classique jouable.
+- ✅ Étape 3a — Services sans interface : client du worker (budget de temps, annulation), stockage
+  (IndexedDB + mémoire, schéma versionné), réserve de grilles, packs, historique, chrono.
+- ⏭️ Prochaine : **Étape 3b** — sudoku classique jouable (module, accueil, grille, pavé, notes,
+  annuler/rétablir, sauvegarde et reprise). Point à trancher avec l'utilisateur : nouvelle partie sur
+  une partie en cours = abandon dans les statistiques ?

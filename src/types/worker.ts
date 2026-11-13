@@ -15,13 +15,20 @@ export type DemandeWorker =
       readonly jeu: string;
       readonly niveau: Niveau;
       readonly graine: number;
-      readonly tentativesMax: number;
+      /** Budget de temps en millisecondes : au-delà, le worker abandonne et répond « echec ». */
+      readonly budgetMs: number;
     };
 
 /** Messages renvoyés par le worker à la page. */
 export type ReponseWorker =
   | { readonly type: 'pret' }
   | { readonly type: 'genere'; readonly requete: number; readonly puzzle: Puzzle<Json> }
-  /** Génération abandonnée (ex. nombre de tentatives atteint) : la page se rabat sur un pack. */
+  /** Génération abandonnée (budget de temps épuisé) : la page relance plus tard ou se rabat sur un pack. */
   | { readonly type: 'echec'; readonly requete: number; readonly raison: string }
   | { readonly type: 'erreur'; readonly requete: number | null; readonly message: string };
+
+/** Demande de génération seule (utile au client et au traitement dans le worker). */
+export type DemandeGeneration = Extract<DemandeWorker, { readonly type: 'generer' }>;
+
+/** Budget de temps maximal accepté par le worker pour une demande (garde-fou). */
+export const BUDGET_MAX_MS = 600_000;

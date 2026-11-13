@@ -40,8 +40,9 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
 
   for (const niveau of jeu.meta.niveaux) {
     // Génération reproductible
-    const r1 = logique.generer(niveau, creerAlea(99), { tentativesMax: 50 });
-    const r2 = logique.generer(niveau, creerAlea(99), { tentativesMax: 50 });
+    const sansLimite = { doitArreter: () => false };
+    const r1 = logique.generer(niveau, creerAlea(99), sansLimite);
+    const r2 = logique.generer(niveau, creerAlea(99), sansLimite);
     assert.ok(r1.ok, `génération ${niveau} échouée`);
     assert.deepEqual(r1, r2, 'même graine → même grille');
 

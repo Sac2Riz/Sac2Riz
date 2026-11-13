@@ -34,8 +34,12 @@ export type Puzzle<D extends Json> = {
 };
 
 export type OptionsGeneration = {
-  /** Nombre maximal d'essais avant d'abandonner (utile pour Expert et Diabolique). */
-  readonly tentativesMax: number;
+  /**
+   * Budget de temps : generer() doit consulter cette fonction entre deux essais et abandonner
+   * (résultat { ok: false }) dès qu'elle répond vrai. Le worker la construit à partir de
+   * l'horloge ; le code du jeu reste pur (il ne lit jamais l'horloge lui-même).
+   */
+  readonly doitArreter: () => boolean;
 };
 
 /** Résultat de generer() ; le worker l'enveloppe ensuite dans un Puzzle (avec jeu et graine). */

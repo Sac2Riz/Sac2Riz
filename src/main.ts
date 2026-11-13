@@ -2,7 +2,7 @@
 
 import { REGISTRE } from './games/registre.ts';
 import { afficherAccueil } from './socle/accueil.ts';
-import { verifierWorker } from './socle/calculs.ts';
+import { creerClientNavigateur } from './socle/calculs.ts';
 import { appliquerTheme } from './socle/theme.ts';
 import { REGLAGES_PAR_DEFAUT } from './types/sauvegarde.ts';
 
@@ -16,7 +16,8 @@ async function demarrer(): Promise<void> {
   const jeux = await Promise.all(REGISTRE.map(async (entree) => (await entree.charger()).jeu));
   afficherAccueil(racine, jeux);
 
-  const pret = await verifierWorker();
+  // Les services (réserve, stockage, partie) seront branchés à l'étape 3b
+  const pret = await creerClientNavigateur().verifier(5000);
   console.info(pret ? 'Worker de calcul prêt.' : 'Le worker de calcul ne répond pas.');
 }
 

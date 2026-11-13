@@ -7,7 +7,8 @@
 //   - pour Débutant et Facile, le retrait s'arrête tôt dès qu'il reste assez peu de chiffres
 //     donnés (on garde des grilles aérées, avec beaucoup de chiffres).
 // Contrôle final : la grille obtenue doit être exactement du niveau demandé (pas plus facile),
-// sinon on recommence, au plus tentativesMax fois.
+// sinon on recommence, au plus tentativesMax fois, ou jusqu'à ce que doitArreter() réponde vrai
+// (budget de temps fixé par le worker : le moteur, pur, ne lit jamais l'horloge lui-même).
 
 import type { Alea } from '../types/alea.ts';
 import type { DefinitionGrille } from '../types/grille.ts';
@@ -43,6 +44,11 @@ export type OptionsGenerationNiveau = {
   /** Arrêt tôt (null = jamais). */
   readonly cibleIndices: PlageIndices | null;
   readonly seuils: SeuilsForce;
+  /**
+   * Consultée avant chaque essai sauf le premier : vrai = abandonner (budget de temps épuisé).
+   * null = seul tentativesMax limite la génération.
+   */
+  readonly doitArreter: (() => boolean) | null;
 };
 
 export type ResultatGenerationNiveau =
@@ -58,20 +64,30 @@ export type ResultatGenerationNiveau =
 
 /** Options par défaut pour un niveau (l'arrêt tôt dépend du niveau). */
 export function optionsParDefaut(niveau: Niveau): OptionsGenerationNiveau {
-  return { tentativesMax: 50, symetrie: 'centrale', cibleIndices: CIBLES_ARRET_TOT[niveau], seuils: SEUILS_FORCE };
+  return {
+    tentativesMax: 50,
+    symetrie: 'centrale',
+    cibleIndices: CIBLES_ARRET_TOT[niveau],
+    seuils: SEUILS_FORCE,
+    doitArreter: null,
+  };
 }
 
-/** Génère une grille exactement du niveau demandé, ou échoue après tentativesMax essais. */
+/** Génère une grille exactement du niveau demandé, ou échoue (tentativesMax atteint ou doitArreter). */
 export function genererParNiveau(
   definition: DefinitionGrille,
   niveau: Niveau,
   alea: Alea,
   options: Partial<OptionsGenerationNiveau> = {},
 ): ResultatGenerationNiveau {
-  const { tentativesMax, symetrie, cibleIndices, seuils } = { ...optionsParDefaut(niveau), ...options };
+  const { tentativesMax, symetrie, cibleIndices, seuils, doitArreter } = { ...optionsParDefaut(niveau), ...options };
   const ctx = creerContexteAvec(compiler(definition));
 
   for (let essai = 1; essai <= tentativesMax; essai++) {
+    // Au moins un essai, même si le budget est déjà épuisé
+    if (essai > 1 && doitArreter !== null && doitArreter()) {
+      return { ok: false, raison: `Budget de temps épuisé après ${essai - 1} essais (niveau ${niveau})`, essais: essai - 1 };
+    }
     const solution = genererGrilleComplete(definition, alea);
     const cible = cibleIndices === null ? 0 : cibleIndices.min + alea.entier(cibleIndices.max - cibleIndices.min + 1);
     const enonce = retirerChiffres(definition, solution, alea, {

@@ -1,5 +1,5 @@
 // Tests de la génération par niveau : niveau exact, unicité, symétrie, arrêt tôt,
-// reproductibilité, échec propre quand tentativesMax est atteint.
+// reproductibilité, échec propre quand tentativesMax est atteint ou que doitArreter répond vrai.
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { estUnique } from '../../src/moteur/backtracking.ts';
@@ -75,5 +75,31 @@ describe('genererParNiveau', () => {
       }
     }
     assert.ok(echecs > 0, 'au moins un échec attendu avec un seul essai');
+  });
+
+  test('doitArreter : au moins un essai, puis arrêt dès qu\'il répond vrai', () => {
+    // Sur 20 graines, plusieurs ratent leur premier essai Expert (voir le test précédent)
+    let appels = 0;
+    for (let graine = 1; graine <= 20; graine++) {
+      const r = genererParNiveau(def9, 'expert', creerAlea(graine), {
+        tentativesMax: 1000,
+        doitArreter: () => {
+          appels++;
+          return true;
+        },
+      });
+      if (!r.ok) {
+        assert.equal(r.essais, 1);
+        assert.match(r.raison, /Budget de temps/);
+      }
+    }
+    assert.ok(appels > 0, 'doitArreter doit être consulté après un premier essai raté');
+  });
+
+  test('doitArreter vrai à partir du 4e appel : 4 essais au plus', () => {
+    let appels = 0;
+    const r = genererParNiveau(def9, 'expert', creerAlea(7), { tentativesMax: 1000, doitArreter: () => ++appels > 3 });
+    assert.ok(r.essais <= 4);
+    if (!r.ok) assert.equal(r.essais, 4);
   });
 });

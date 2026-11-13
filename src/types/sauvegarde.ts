@@ -52,6 +52,36 @@ export type StatsNiveau = {
 
 export type StatsJeu = Readonly<Record<Niveau, StatsNiveau>>;
 
+/**
+ * Grille d'avance de la réserve (générée en arrière-plan, servie une seule fois).
+ * Clé de stockage : « <jeu>/<niveau>/<horodatage>-<compteur> » (les plus anciennes sont servies d'abord).
+ */
+export type EntreeReserve = {
+  readonly jeu: string;
+  readonly niveau: Niveau;
+  /** Date d'ajout au format ISO 8601. */
+  readonly ajouteLe: string;
+  readonly puzzle: Puzzle<Json>;
+};
+
+/**
+ * Avancement dans le pack d'un jeu pour un niveau (clé « <jeu>/<niveau> »).
+ * Les grilles sont servies dans l'ordre « ordre » (indices mélangés) ; une fois toutes servies,
+ * on recommence dans un nouvel ordre (cycle + 1).
+ */
+export type EtatPack = {
+  /** Nombre de grilles du pack quand l'ordre a été tiré (s'il change, l'ordre est retiré). */
+  readonly taille: number;
+  /** Permutation des indices 0 … taille − 1. */
+  readonly ordre: readonly number[];
+  /** Nombre de grilles déjà servies dans ce cycle (prochaine = ordre[position]). */
+  readonly position: number;
+  /** Indice de la dernière grille servie (évite de la resservir en tête du cycle suivant). */
+  readonly derniere: number | null;
+  /** Numéro du cycle, à partir de 1. */
+  readonly cycle: number;
+};
+
 /** Contenu du fichier d'export (sac2riz-sauvegarde-AAAA-MM-JJ.json). */
 export type FichierExport = {
   readonly format: 'sac2riz-export';

@@ -3,13 +3,13 @@
 //
 // Le worker ne connaît pas le registre (qui dépend du DOM) : il charge la logique
 // d'un jeu par convention, depuis ../games/<id>/logique.js.
+// Il traite une demande à la fois : un calcul en cours ne peut pas être interrompu par un
+// message (le client arrête le worker et en recrée un pour annuler, voir socle/client-worker.ts).
 
 import type { LogiqueJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
-import { estNiveau } from '../types/niveaux.ts';
 import type { DemandeWorker, ReponseWorker } from '../types/worker.ts';
-import { creerAlea } from '../utils/alea.ts';
-import { estEntierEntre, estObjet } from '../utils/gardes-json.ts';
+import { estDemande, traiterGeneration } from './traitement.ts';
 
 /** Identifiant de jeu valide (kebab-case) : empêche de charger un chemin arbitraire. */
 const ID_VALIDE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -46,48 +46,14 @@ async function chargerLogique(id: string): Promise<LogiqueJeu<Json, Json, Json>>
   return module.logique;
 }
 
-/** Vérifie la forme d'un message reçu avant de l'utiliser. */
-function estDemande(valeur: unknown): valeur is DemandeWorker {
-  if (!estObjet(valeur)) return false;
-  if (valeur['type'] === 'ping') return true;
-  return (
-    valeur['type'] === 'generer' &&
-    estEntierEntre(valeur['requete'], 0, Number.MAX_SAFE_INTEGER) &&
-    typeof valeur['jeu'] === 'string' &&
-    estNiveau(valeur['niveau']) &&
-    estEntierEntre(valeur['graine'], 0, 4294967295) &&
-    estEntierEntre(valeur['tentativesMax'], 1, 1_000_000)
-  );
-}
-
 async function traiter(demande: DemandeWorker): Promise<void> {
   switch (demande.type) {
     case 'ping':
       repondre({ type: 'pret' });
       return;
-    case 'generer': {
-      try {
-        const logique = await chargerLogique(demande.jeu);
-        const resultat = logique.generer(demande.niveau, creerAlea(demande.graine), {
-          tentativesMax: demande.tentativesMax,
-        });
-        if (resultat.ok) {
-          const puzzle = {
-            jeu: demande.jeu,
-            graine: demande.graine,
-            notation: resultat.notation,
-            donnees: resultat.donnees,
-          };
-          repondre({ type: 'genere', requete: demande.requete, puzzle });
-        } else {
-          repondre({ type: 'echec', requete: demande.requete, raison: resultat.raison });
-        }
-      } catch (erreur) {
-        const message = erreur instanceof Error ? erreur.message : String(erreur);
-        repondre({ type: 'erreur', requete: demande.requete, message });
-      }
+    case 'generer':
+      repondre(await traiterGeneration(demande, chargerLogique, () => performance.now()));
       return;
-    }
   }
 }
 

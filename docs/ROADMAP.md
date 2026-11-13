@@ -46,14 +46,41 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Tests : notation (seuils, cohérence, rejet), génération par niveau, packs (garde, unicité, notation, graines).
 - Piste : graduation interne du niveau Diabolique si le ressenti en jeu le justifie (voir DIFFICULTE.md).
 
-## Étape 3 — Socle de l'interface + sudoku classique jouable
+## Étape 3 — Socle de l'interface + sudoku classique jouable (découpée en trois sous-étapes, un commit chacune)
+
+### ✅ Étape 3a — Services sans interface
+- Génération avec **budget de temps** : `doitArreter` dans `genererParNiveau` et dans le contrat
+  (`OptionsGeneration`), message `generer` du worker avec `budgetMs`.
+- Client du worker typé : file à priorités (urgent / fond), une demande à la fois, annulation (retrait de
+  la file, ou arrêt et recréation du worker si la demande est en cours), garde-fou si le worker ne répond plus.
+- Stockage derrière une interface (`Stockage`) : implémentation IndexedDB (stockage persistant demandé au
+  navigateur) et implémentation en mémoire pour les tests ; magasins `parties` (une par jeu), `reserve`,
+  `packsJoues`, `stats`, `reglages` ; version du schéma et migrations ; gardes de type à la relecture.
+- Réserve de 3 grilles par jeu et par niveau, prise atomique (jamais servie deux fois), réalimentation en
+  arrière-plan (jeu et niveau en cours d'abord, puis les autres niveaux du plus facile au plus difficile),
+  nouvelle tentative après 30 s / 2 min / 10 min en cas d'échec.
+- Grille demandée par le joueur : réserve, sinon pack, sinon génération urgente relancée immédiatement
+  jusqu'à réussir ou être annulée.
+- Packs : grilles déjà jouées mémorisées, nouvel ordre quand le pack est épuisé.
+- Historique annuler/rétablir et chronomètre (pauses manuelle et automatique) en code pur ;
+  mécanisme de surveillance de la visibilité de l'appli (branché en 3b).
+- Tests pour chaque service (266 tests au total) ; implémentation IndexedDB et vrai worker vérifiés aussi
+  dans Edge (page de test jetable, non conservée).
+
+### Étape 3b — Sudoku classique jouable
+- Module `sudoku-classique` (9x9) dans le registre (avec la conversion de ses packs en `Puzzle`).
 - Accueil complet (Continuer, choix du niveau), écran de partie.
-- Pavé, mode notes, effacer, annuler/rétablir illimité, chrono avec pause, indices avec compteur.
-- Vérification des erreurs (réglage), réglages, thème.
-- Sauvegarde automatique IndexedDB, réserve de grilles d'avance, statistiques.
-- Client du worker (génération à la demande, repli sur les packs).
-- Module `sudoku-classique` (9x9) dans le registre.
+- Grille, pavé, mode notes, effacer, annuler/rétablir illimité, chrono avec pause (branché sur la visibilité).
+- Sauvegarde automatique IndexedDB après chaque action, reprise de la partie.
+- **Nouvelle partie alors qu'une partie est en cours sur ce jeu : demander une confirmation.**
+  **À décider avec l'utilisateur : cela compte-t-il comme un abandon dans les statistiques ?**
 - Optimisation tablette paysage/portrait.
+
+### Étape 3c — Indices, erreurs, réglages, statistiques, fin de partie
+- Indices expliqués (étapes du solveur logique, cases mises en évidence) avec compteur.
+- Vérification des erreurs (réglage), écran des réglages, thème.
+- Statistiques par jeu et par niveau.
+- Écran de fin de partie (temps, force, indices, record).
 
 ## Étape 4 — Chiffres casés
 - Grille type mots croisés, liste de nombres à placer (barrés une fois placés).

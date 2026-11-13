@@ -19,7 +19,7 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
 3. **`logique.ts`** : implémenter `LogiqueJeu<D, E, A>` (voir [ARCHITECTURE.md](ARCHITECTURE.md#contrat-des-modules-de-jeu)).
    - Code **pur** : pas de DOM, pas de mutation.
    - Variante de sudoku : utiliser le moteur (`src/moteur/`) ; idéalement, seule la liste de régions change.
-   - `generer` doit garantir une solution unique et respecter `tentativesMax`.
+   - `generer` doit garantir une solution unique et consulter `doitArreter()` entre deux essais (budget de temps du worker).
    - `noter` : critères du jeu, documentés dans [DIFFICULTE.md](DIFFICULTE.md).
    - Gardes `estDonnees` / `estEtat` / `estAction` strictes : elles protègent l'import de fichiers.
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
