@@ -1,5 +1,5 @@
-/* Styles de base du socle. Tablette d'abord : grandes zones tactiles,
-   mise en page qui s'adapte au paysage comme au portrait. */
+/* Styles de base du socle (direction « Ardoise »). Tablette d'abord : grandes zones tactiles,
+   mise en page qui s'adapte au paysage comme au portrait. Couleurs : variables de theme.css. */
 
 *,
 *::before,
@@ -18,9 +18,12 @@ body {
   min-height: 100dvh;
   background: var(--couleur-fond);
   color: var(--couleur-texte);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--police);
   font-size: 1.125rem;
   line-height: 1.5;
+  /* Pas de sélection de texte ni de menu contextuel au toucher prolongé dans le jeu */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button {
@@ -29,24 +32,68 @@ button {
   cursor: pointer;
   min-height: var(--cible-tactile);
   min-width: var(--cible-tactile);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.app {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: max(var(--espace-3), env(safe-area-inset-top)) var(--espace-3) var(--espace-3);
+button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+:focus-visible {
+  outline: 3px solid var(--couleur-accent);
+  outline-offset: 2px;
+}
+
+.icone {
+  line-height: 1;
+}
+
+/* ---------- Boutons communs ---------- */
+
+.bouton {
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--rayon);
+  border: 1px solid var(--couleur-bordure);
+  background: var(--couleur-surface);
+  font-weight: 500;
+}
+
+.bouton-principal {
+  background: var(--couleur-accent);
+  border-color: var(--couleur-accent);
+  color: var(--couleur-sur-accent);
+}
+
+.bouton-icone {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+  background: var(--couleur-surface);
+  font-size: 1.25rem;
 }
 
 /* ---------- Écran d'accueil ---------- */
 
+.accueil {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: max(var(--espace-3), env(safe-area-inset-top)) max(var(--espace-3), env(safe-area-inset-right))
+    max(var(--espace-3), env(safe-area-inset-bottom)) max(var(--espace-3), env(safe-area-inset-left));
+  display: grid;
+  gap: var(--espace-3);
+}
+
 .accueil-entete {
   text-align: center;
-  margin-bottom: var(--espace-3);
 }
 
 .accueil-titre {
   margin: 0;
   font-size: 2.5rem;
+  letter-spacing: -0.01em;
   color: var(--couleur-accent);
 }
 
@@ -57,32 +104,362 @@ button {
 
 .accueil-jeux {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: var(--espace-2);
+  gap: var(--espace-3);
 }
 
 .accueil-vide {
-  grid-column: 1 / -1;
   text-align: center;
   color: var(--couleur-texte-doux);
 }
 
 .carte-jeu {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-1);
-  padding: var(--espace-2);
-  text-align: left;
+  display: grid;
+  gap: var(--espace-2);
+  padding: var(--espace-3);
   background: var(--couleur-surface);
   border: 1px solid var(--couleur-bordure);
-  border-radius: var(--rayon);
+  border-radius: calc(var(--rayon) * 1.5);
 }
 
 .carte-jeu-nom {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.carte-jeu-description {
+  margin: 0;
+  color: var(--couleur-texte-doux);
+}
+
+.carte-jeu-sous-titre {
+  margin: var(--espace-1) 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--couleur-texte-doux);
+}
+
+.bouton-continuer {
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+  padding: 0.8rem 1.2rem;
+  text-align: left;
+}
+
+.bouton-continuer-titre {
   font-size: 1.3rem;
   font-weight: 700;
 }
 
-.carte-jeu-description {
+.bouton-continuer-detail {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+
+.choix-niveaux {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--espace-1);
+}
+
+.bouton-niveau {
+  display: grid;
+  justify-items: start;
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: var(--couleur-fond);
+}
+
+.bouton-niveau-nom {
+  font-weight: 600;
+}
+
+.bouton-niveau-etoiles {
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--couleur-accent);
+}
+
+.niveau-diabolique .bouton-niveau-etoiles {
+  color: var(--couleur-erreur);
+}
+
+/* ---------- Écran de partie ----------
+   Portrait : barre, grille (toute la largeur), outils, pavé sur une ligne.
+   Paysage : grille à gauche (toute la hauteur), barre + pavé 3 × 3 + outils à droite. */
+
+.partie {
+  height: 100dvh;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "barre"
+    "grille"
+    "outils"
+    "pave";
+}
+
+.partie-barre {
+  grid-area: barre;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.partie-titre {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.partie-niveau {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.partie-etoiles {
+  color: var(--couleur-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.partie-chrono {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+/* Conteneur de la grille : la vue du jeu y prend le plus grand carré possible (unités cqw/cqh) */
+.partie-grille {
+  grid-area: grille;
+  position: relative;
+  display: grid;
+  min-height: 0;
+  container-type: size;
+}
+
+/* Pause manuelle : la grille est cachée (pas de réflexion chrono arrêté) */
+.partie-pause {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-content: center;
+  justify-items: center;
+  gap: var(--espace-2);
+  background: var(--couleur-fond);
+}
+
+.partie.est-en-pause .partie-pause {
+  display: grid;
+}
+
+.partie-pause-texte {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--couleur-texte-doux);
+}
+
+.partie-outils {
+  grid-area: outils;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.outil {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+  min-height: clamp(var(--cible-tactile), 5.5dvh, 4.25rem);
+  padding: 0.4rem;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.outil .icone {
+  font-size: 1.2rem;
+}
+
+.outil.est-actif {
+  background: var(--couleur-accent);
+  border-color: var(--couleur-accent);
+  color: var(--couleur-sur-accent);
+}
+
+.partie-pave {
+  grid-area: pave;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.touche {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  /* Grandes touches : jusqu'à 6 rem quand l'écran est haut (tablette en portrait) */
+  min-height: clamp(4rem, 8dvh, 6rem);
+  padding: 0;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+  background: var(--couleur-surface);
+  font-size: 1.7rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.touche-reste {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.15rem;
+  font-size: 0.7rem;
+  color: var(--couleur-note);
+}
+
+.touche.est-epuisee .touche-valeur {
+  opacity: 0.3;
+}
+
+/* Mode notes : chiffres du pavé plus petits, dans la couleur d'accent */
+.partie.mode-notes .touche-valeur {
+  font-size: 1.15rem;
+  color: var(--couleur-accent);
+}
+
+@media (orientation: landscape) {
+  .partie {
+    max-width: none;
+    column-gap: var(--espace-3);
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "grille barre"
+      "grille pave"
+      "grille outils";
+  }
+
+  .partie-pave {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: center;
+  }
+
+  .touche {
+    min-height: 0;
+    aspect-ratio: 1;
+    font-size: 2.2rem;
+  }
+
+  .outil {
+    flex-direction: column;
+    gap: 0.15rem;
+    min-height: 4.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* ---------- Fenêtres de dialogue ---------- */
+
+.dialogue {
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: calc(var(--rayon) * 1.5);
+  background: var(--couleur-surface);
+  color: var(--couleur-texte);
+}
+
+.dialogue::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+
+.dialogue-contenu {
+  display: grid;
+  gap: var(--espace-2);
+  padding: var(--espace-3);
+}
+
+.dialogue-titre {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.dialogue-message {
+  margin: 0;
+  color: var(--couleur-texte-doux);
+}
+
+.dialogue-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espace-1);
+}
+
+/* ---------- Indicateur de chargement ---------- */
+
+.chargement {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: var(--couleur-voile);
+  /* Apparaît après 0,25 s : une grille servie instantanément ne fait pas clignoter l'écran */
+  animation: apparaitre 0.2s ease-out 0.25s both;
+}
+
+.chargement-boite {
+  display: grid;
+  justify-items: center;
+  gap: var(--espace-2);
+  padding: var(--espace-3);
+  min-width: 16rem;
+  background: var(--couleur-surface);
+  border-radius: calc(var(--rayon) * 1.5);
+}
+
+.chargement-texte {
+  margin: 0;
+}
+
+.chargement-roue {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 4px solid var(--couleur-zone);
+  border-top-color: var(--couleur-accent);
+  border-radius: 50%;
+  animation: tourner 0.9s linear infinite;
+}
+
+@keyframes apparaitre {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tourner {
+  to { transform: rotate(1turn); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chargement-roue {
+    animation-duration: 2.5s;
+  }
 }

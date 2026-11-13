@@ -7,7 +7,7 @@ import type { Json } from '../../src/types/json.ts';
 import { INFOS_NIVEAUX, NIVEAUX, estNiveau, niveauPourForce, type Force } from '../../src/types/niveaux.ts';
 import { REGLAGES_PAR_DEFAUT, type FichierExport } from '../../src/types/sauvegarde.ts';
 
-const statsVides = { terminees: 0, meilleurTempsMs: null, totalTempsMs: 0, totalForce: 0 };
+const statsVides = { terminees: 0, abandonnees: 0, meilleurTempsMs: null, totalTempsMs: 0, totalForce: 0 };
 
 const exemple: FichierExport = {
   format: 'sac2riz-export',

@@ -68,9 +68,10 @@ export function estPartieSauvegardee(valeur: unknown): valeur is PartieSauvegard
 
 export function estStatsNiveau(valeur: unknown): valeur is StatsNiveau {
   if (!estObjet(valeur)) return false;
-  const { terminees, meilleurTempsMs, totalTempsMs, totalForce } = valeur;
+  const { terminees, abandonnees, meilleurTempsMs, totalTempsMs, totalForce } = valeur;
   return (
     estEntierEntre(terminees, 0, MAX) &&
+    estEntierEntre(abandonnees, 0, MAX) &&
     (meilleurTempsMs === null || estNombreEntre(meilleurTempsMs, 0, MAX)) &&
     estNombreEntre(totalTempsMs, 0, MAX) &&
     estEntierEntre(totalForce, 0, MAX)

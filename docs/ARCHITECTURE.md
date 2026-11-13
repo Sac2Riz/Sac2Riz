@@ -54,7 +54,12 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   `appliquer` de chaque action jusqu'au curseur.
   Annuler = curseur − 1 ; rétablir = curseur + 1 ; une nouvelle action efface les actions après le curseur.
 - **Sauvegarde automatique** (IndexedDB) après chaque action : `PartieSauvegardee` (`src/types/sauvegarde.ts`).
-- **Statistiques** par jeu et par niveau : parties terminées, meilleur temps, temps moyen, force moyenne (`StatsNiveau`).
+- **Statistiques** par jeu et par niveau : parties terminées, meilleur temps, temps moyen, force moyenne,
+  et un compteur séparé de parties **abandonnées** (`StatsNiveau`). Meilleur temps et moyennes ne portent que
+  sur les parties terminées.
+- **Nouvelle partie alors qu'une partie est en cours sur ce jeu** : confirmation ; si le joueur confirme et
+  qu'une grille est obtenue, l'ancienne partie compte comme abandonnée puis est remplacée (s'il annule le
+  chargement, elle reste intacte).
 - **Export/import** de toutes les données (`FichierExport`, fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`) ;
   à l'import, chaque champ est validé (gardes de type des jeux pour D/E/A).
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
@@ -82,8 +87,43 @@ src/socle/
 ├─ reserve.ts         réserve de grilles d'avance, obtenirGrille, réalimentation
 ├─ historique.ts      annuler / rétablir (pur, générique)
 ├─ chrono.ts          chronomètre avec pauses manuelle et automatique (pur)
-└─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono en 3b)
+└─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono)
 ```
+
+### Interface du sudoku jouable (étape 3b)
+
+```
+src/socle/
+├─ partie.ts          PARTIE EN COURS (pur) : historique + chrono + état ; jouer, annuler, rétablir,
+│                     pause, visibilité, fin de partie ; versSauvegarde / depuisSauvegarde
+├─ stats.ts           statistiques (pur) : enregistrerTerminee, enregistrerAbandon, tempsMoyenMs
+├─ service-parties.ts partie en cours et statistiques dans le stockage (écritures mises en série)
+├─ format.ts          formaterTemps (« 12:34 »), etoiles (pur)
+├─ app.ts             navigation accueil ↔ partie, confirmation, chargement, bouton retour d'Android
+├─ accueil.ts         écran d'accueil : « Continuer », choix du niveau
+├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils, pavé, chrono, sauvegarde, clavier
+├─ dialogue.ts        confirmer / informer (élément <dialog>)
+├─ chargement.ts      indicateur de chargement (visible après 0,25 s) avec Annuler
+└─ dom.ts             petits utilitaires DOM (creer, bouton, boutonIcone)
+```
+
+- **Partie** (`Partie`, pur) : une action **sans effet** (état identique) n'est pas enregistrée, pour
+  qu'« Annuler » annule toujours quelque chose de visible. Une partie terminée est figée (chrono arrêté,
+  plus d'action ni d'annulation). `depuisSauvegarde` refuse une sauvegarde incohérente (autre jeu, autre
+  `versionFormat`, données ou actions refusées par les gardes du jeu, curseur invalide) : l'appli la supprime
+  et prévient le joueur.
+- **Écran de partie** : redessine puis **sauvegarde après chaque action**, et aussi quand l'appli passe en
+  arrière-plan (Android peut alors la fermer). Le chrono est en pause automatique en arrière-plan ; la pause
+  manuelle **masque la grille**. Fin de partie : statistiques enregistrées, partie en cours supprimée, message
+  « Bravo » (l'écran de fin complet viendra en 3c). Clavier physique : chiffres, Retour arrière/Suppr, N
+  (notes), Ctrl+Z / Ctrl+Y ; les flèches sont gérées par la vue du jeu.
+- **Mise en page** (`src/styles/base.css`) : portrait = barre, grille, outils, pavé sur une ligne ; paysage
+  = grille à gauche sur toute la hauteur, barre + pavé 3 × 3 + outils à droite. La grille est placée dans un
+  conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
+- **Thème** : direction visuelle « Ardoise » (gris bleutés, accent bleu encre, police du système), toutes
+  les couleurs dans `src/styles/theme.css` (clair et sombre).
+- **Bouton retour d'Android** : entrer dans une partie ajoute une entrée à l'historique du navigateur ;
+  « retour » ramène à l'accueil (après sauvegarde) au lieu de quitter l'appli.
 
 - **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond')` renvoie
   `{ resultat, annuler }` ; le résultat (`ok` + puzzle, `echec`, `erreur`, `annule`) ne rejette jamais.
@@ -141,13 +181,18 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 - `pave` : `{ type: 'commun', valeurs: ['1', …] }` pour le pavé du socle, ou `{ type: 'personnalise' }`
   (ex. chiffres casés, qui affiche sa propre liste de nombres).
 - `monter(conteneur, contexte)` → `InstanceVue` : `afficher(etat, donnees, erreurs)`, `saisir(valeur)`, `effacer()`, `detruire()`.
+  Le conteneur est dimensionné par le socle (`container-type: size`).
+- `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée
+  (petit nombre sur la touche, touche estompée à 0), ou `null`.
 - La vue ne modifie jamais l'état : elle appelle `contexte.jouer(action)` ; le socle rappelle `afficher`.
 - Elle charge son CSS avec `chargerFeuilleDeStyle(new URL('./style.css', import.meta.url))`.
 
 ### `ModuleJeu` — fichier `index.ts`, `export const jeu`
 
-`{ meta, chargerLogique, chargerVue }` : l'accueil ne charge que les métadonnées ; logique et vue sont
-importées à la demande (`import()` dynamique).
+`{ meta, chargerLogique, chargerVue, chargerPack }` : l'accueil ne charge que les métadonnées ; logique et
+vue sont importées à la demande (`import()` dynamique). `chargerPack(niveau)` renvoie les grilles du pack du
+niveau sous forme de `Puzzle` (ou `null` sans pack) ; le service des packs du socle l'appelle quand la
+réserve est vide.
 
 ### Registre — `src/games/registre.ts`
 

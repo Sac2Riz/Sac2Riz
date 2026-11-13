@@ -1,19 +1,34 @@
-/* Variables de thème (couleurs, espacements, tailles).
+/* Variables de thème (couleurs, espacements, tailles) — direction visuelle « Ardoise » :
+   gris bleutés, accent bleu encre, police du système (Roboto sur Android).
    Par défaut : suit le système (prefers-color-scheme).
-   Réglage manuel : <html data-theme="clair"> ou <html data-theme="sombre"> (src/socle/theme.ts). */
+   Réglage manuel : <html data-theme="clair"> ou <html data-theme="sombre"> (src/socle/theme.ts).
+   Les jeux n'utilisent que ces variables : un changement ici s'applique partout. */
 
 :root {
   /* Thème clair */
-  --couleur-fond: #f6f4ef;
+  --couleur-fond: #eef1f4;
   --couleur-surface: #ffffff;
   --couleur-case: #ffffff;
-  --couleur-texte: #1c1d21;
-  --couleur-texte-doux: #5b5f6a;
-  --couleur-saisie: #2f5d8a;
-  --couleur-accent: #2f5d8a;
-  --couleur-bordure: #c9c6bd;
-  --couleur-selection: #dbe8f5;
+  --couleur-texte: #1d2530;
+  --couleur-texte-doux: #5b6576;
+  --couleur-saisie: #2459a6;
+  --couleur-accent: #2459a6;
+  /* Texte posé sur la couleur d'accent (bouton actif) */
+  --couleur-sur-accent: #ffffff;
+  --couleur-bordure: #cdd4de;
+  --couleur-trait-fin: #c9d0da;
+  --couleur-trait-epais: #3b4656;
+  /* Mises en évidence de la grille : zone (ligne, colonne, bloc), chiffres identiques, case choisie */
+  --couleur-zone: #e6ecf4;
+  --couleur-meme: #cddcf1;
+  --couleur-selection: #b6cff0;
+  --couleur-note: #6b7686;
   --couleur-erreur: #b3261e;
+  --couleur-erreur-fond: #f8e1df;
+  /* Voile derrière les fenêtres (confirmation, chargement, pause) */
+  --couleur-voile: rgb(29 37 48 / 45%);
+
+  --police: system-ui, Roboto, "Segoe UI", -apple-system, sans-serif;
 
   /* Dimensions communes */
   --espace-1: 0.5rem;
@@ -26,34 +41,50 @@
   color-scheme: light;
 }
 
-/* Thème sombre automatique, sauf si l'utilisateur a forcé le thème clair */
+/* Thème sombre : mêmes variables, valeurs de nuit. Écrites deux fois (automatique et forcé)
+   car le CSS ne permet pas de partager un bloc entre une @media et un sélecteur. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="clair"]) {
-    --couleur-fond: #1c1d21;
-    --couleur-surface: #26282e;
-    --couleur-case: #2b2d34;
-    --couleur-texte: #ecebe7;
-    --couleur-texte-doux: #a5a8b1;
-    --couleur-saisie: #8fbbe6;
-    --couleur-accent: #8fbbe6;
-    --couleur-bordure: #454852;
-    --couleur-selection: #34465c;
+    --couleur-fond: #151a21;
+    --couleur-surface: #1d242d;
+    --couleur-case: #1d242d;
+    --couleur-texte: #e4e9f0;
+    --couleur-texte-doux: #9aa5b5;
+    --couleur-saisie: #82b2f6;
+    --couleur-accent: #82b2f6;
+    --couleur-sur-accent: #0e1520;
+    --couleur-bordure: #313b49;
+    --couleur-trait-fin: #2c3542;
+    --couleur-trait-epais: #8896aa;
+    --couleur-zone: #222c39;
+    --couleur-meme: #283a54;
+    --couleur-selection: #2f4b73;
+    --couleur-note: #8c98a9;
     --couleur-erreur: #f2867d;
+    --couleur-erreur-fond: #3d2326;
+    --couleur-voile: rgb(5 8 12 / 65%);
     color-scheme: dark;
   }
 }
 
-/* Thème sombre forcé */
 :root[data-theme="sombre"] {
-  --couleur-fond: #1c1d21;
-  --couleur-surface: #26282e;
-  --couleur-case: #2b2d34;
-  --couleur-texte: #ecebe7;
-  --couleur-texte-doux: #a5a8b1;
-  --couleur-saisie: #8fbbe6;
-  --couleur-accent: #8fbbe6;
-  --couleur-bordure: #454852;
-  --couleur-selection: #34465c;
+  --couleur-fond: #151a21;
+  --couleur-surface: #1d242d;
+  --couleur-case: #1d242d;
+  --couleur-texte: #e4e9f0;
+  --couleur-texte-doux: #9aa5b5;
+  --couleur-saisie: #82b2f6;
+  --couleur-accent: #82b2f6;
+  --couleur-sur-accent: #0e1520;
+  --couleur-bordure: #313b49;
+  --couleur-trait-fin: #2c3542;
+  --couleur-trait-epais: #8896aa;
+  --couleur-zone: #222c39;
+  --couleur-meme: #283a54;
+  --couleur-selection: #2f4b73;
+  --couleur-note: #8c98a9;
   --couleur-erreur: #f2867d;
+  --couleur-erreur-fond: #3d2326;
+  --couleur-voile: rgb(5 8 12 / 65%);
   color-scheme: dark;
 }

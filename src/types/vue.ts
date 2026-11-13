@@ -1,8 +1,9 @@
 // LE CONTRAT des modules de jeu — partie AFFICHAGE (utilise le DOM).
 // Ce fichier ne doit jamais être importé par du code pur (moteur, logique, worker).
 
-import type { LogiqueJeu, MetaJeu } from './jeu.ts';
+import type { LogiqueJeu, MetaJeu, Puzzle } from './jeu.ts';
 import type { Json } from './json.ts';
+import type { Niveau } from './niveaux.ts';
 import type { Reglages } from './sauvegarde.ts';
 
 /** Ce que le socle fournit à la vue d'un jeu. */
@@ -34,6 +35,11 @@ export type ConfigPave =
 
 export interface VueJeu<D extends Json, E extends Json, A extends Json> {
   readonly pave: ConfigPave;
+  /**
+   * Pavé commun : nombre de fois où chaque valeur peut encore être placée (affiché sur la touche,
+   * touche grisée à 0), ou null pour ne rien afficher.
+   */
+  restants(etat: E, donnees: D): Readonly<Record<string, number>> | null;
   /** Crée l'affichage du jeu dans le conteneur fourni par le socle. */
   monter(conteneur: HTMLElement, contexte: ContexteVue<A>): InstanceVue<D, E>;
 }
@@ -47,6 +53,11 @@ export interface ModuleJeu<D extends Json, E extends Json, A extends Json> {
   readonly meta: MetaJeu;
   chargerLogique(): Promise<LogiqueJeu<D, E, A>>;
   chargerVue(): Promise<VueJeu<D, E, A>>;
+  /**
+   * Grilles pré-générées du jeu pour ce niveau (packs embarqués, voir socle/packs.ts),
+   * ou null si le jeu n'a pas de pack pour ce niveau.
+   */
+  chargerPack(niveau: Niveau): Promise<readonly Puzzle<D>[] | null>;
 }
 
 /** Un jeu quelconque, tel que le socle le manipule. */

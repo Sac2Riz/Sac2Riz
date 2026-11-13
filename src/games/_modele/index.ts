@@ -9,4 +9,6 @@ export const jeu: ModuleJeu<DonneesModele, EtatModele, ActionModele> = {
   meta: META,
   chargerLogique: async () => (await import('./logique.ts')).logique,
   chargerVue: async () => (await import('./vue.ts')).vue,
+  // Pas de pack pour le modèle (un jeu qui en a : voir sudoku-classique/packs.ts)
+  chargerPack: async () => null,
 };

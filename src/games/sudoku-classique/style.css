@@ -1,0 +1,100 @@
+/* Styles du sudoku classique (classes préfixées « sudoku-classique- »).
+   Couleurs : variables de thème (src/styles/theme.css), direction « Ardoise ».
+   Le socle place la grille dans un conteneur dimensionné (container-type: size) : la grille
+   prend le plus grand carré possible (min(100cqw, 100cqh)), en portrait comme en paysage. */
+
+.sudoku-classique-grille {
+  /* La grille sert elle-même de conteneur : tailles de police en cqi (% de sa largeur) */
+  container-type: inline-size;
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 2px;
+  padding: 2px;
+  background: var(--couleur-trait-epais);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sudoku-classique-bloc {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--couleur-trait-fin);
+}
+
+.sudoku-classique-case {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--couleur-case);
+  color: var(--couleur-texte);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Chiffre et notes occupent la même zone (l'un ou l'autre est vide) */
+.sudoku-classique-chiffre,
+.sudoku-classique-notes {
+  grid-area: 1 / 1;
+}
+
+.sudoku-classique-chiffre {
+  display: grid;
+  place-items: center;
+  font-size: 7cqi;
+}
+
+.sudoku-classique-notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 0.35cqi;
+}
+
+.sudoku-classique-note {
+  display: grid;
+  place-items: center;
+  font-size: 2.6cqi;
+  font-weight: 500;
+  color: var(--couleur-note);
+}
+
+.sudoku-classique-note.est-meme {
+  color: var(--couleur-accent);
+  font-weight: 800;
+}
+
+.sudoku-classique-case.est-donnee { font-weight: 500; color: var(--couleur-texte); }
+.sudoku-classique-case.est-saisie { font-weight: 400; color: var(--couleur-saisie); }
+
+/* Mises en évidence, de la plus faible à la plus forte (l'ordre compte) */
+.sudoku-classique-case.est-zone { background: var(--couleur-zone); }
+.sudoku-classique-case.est-meme { background: var(--couleur-meme); }
+.sudoku-classique-case.est-selection { background: var(--couleur-selection); }
+.sudoku-classique-case.est-selection::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 2px solid var(--couleur-accent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.sudoku-classique-case.est-erreur { color: var(--couleur-erreur); }
+.sudoku-classique-case.est-erreur:not(.est-selection) { background: var(--couleur-erreur-fond); }
+
+.sudoku-classique-case:focus-visible {
+  outline: 3px solid var(--couleur-accent);
+  outline-offset: -3px;
+  z-index: 1;
+}

@@ -24,9 +24,12 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
    - Gardes `estDonnees` / `estEtat` / `estAction` strictes : elles protègent l'import de fichiers.
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
 4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Choisir le pavé commun ou `{ type: 'personnalise' }`.
-   Ne jamais modifier l'état : appeler `contexte.jouer(action)`.
+   Ne jamais modifier l'état : appeler `contexte.jouer(action)`. `restants` donne le nombre de chiffres
+   restant à poser pour chaque touche du pavé (ou `null`). La vue doit remplir le conteneur reçu
+   (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour une grille carrée).
 5. **`style.css`** : classes préfixées par l'id, couleurs via les variables de thème.
-6. **`index.ts`** : normalement inchangé (`export const jeu = { meta, chargerLogique, chargerVue }`).
+6. **`index.ts`** : normalement inchangé (`export const jeu = { meta, chargerLogique, chargerVue, chargerPack }`) ;
+   `chargerPack` renvoie `null` si le jeu n'a pas de pack (voir `sudoku-classique/packs.ts` sinon).
 7. **(facultatif) `packs/<niveau>.json`** : grilles pré-générées (Expert, Diabolique).
 
 ## 4. Enregistrer le jeu

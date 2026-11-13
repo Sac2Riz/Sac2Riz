@@ -71,13 +71,16 @@ describe('gardes des données conservées', () => {
   });
 
   test('estStatsJeu : exactement les 6 niveaux', () => {
-    const niveau: Json = { terminees: 2, meilleurTempsMs: 60000, totalTempsMs: 150000, totalForce: 9 };
+    const niveau: Json = { terminees: 2, abandonnees: 1, meilleurTempsMs: 60000, totalTempsMs: 150000, totalForce: 9 };
     const stats = Object.fromEntries(NIVEAUX.map((n) => [n, niveau]));
     assert.ok(estStatsJeu(stats));
     assert.equal(estStatsJeu(avec(stats, 'bonus', niveau)), false);
     const { expert: _, ...sansExpert } = stats;
     assert.equal(estStatsJeu(sansExpert), false);
     assert.equal(estStatsJeu(avec(stats, 'moyen', { ...niveau, terminees: 1.5 })), false);
+    assert.equal(estStatsJeu(avec(stats, 'moyen', { ...niveau, abandonnees: -1 })), false);
+    const { abandonnees: _a, ...sansAbandons } = niveau;
+    assert.equal(estStatsJeu(avec(stats, 'moyen', sansAbandons)), false);
     assert.ok(estStatsJeu(avec(stats, 'moyen', { ...niveau, meilleurTempsMs: null })));
   });
 

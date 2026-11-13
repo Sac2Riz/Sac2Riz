@@ -67,14 +67,24 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Tests pour chaque service (266 tests au total) ; implémentation IndexedDB et vrai worker vérifiés aussi
   dans Edge (page de test jetable, non conservée).
 
-### Étape 3b — Sudoku classique jouable
-- Module `sudoku-classique` (9x9) dans le registre (avec la conversion de ses packs en `Puzzle`).
-- Accueil complet (Continuer, choix du niveau), écran de partie.
-- Grille, pavé, mode notes, effacer, annuler/rétablir illimité, chrono avec pause (branché sur la visibilité).
-- Sauvegarde automatique IndexedDB après chaque action, reprise de la partie.
-- **Nouvelle partie alors qu'une partie est en cours sur ce jeu : demander une confirmation.**
-  **À décider avec l'utilisateur : cela compte-t-il comme un abandon dans les statistiques ?**
-- Optimisation tablette paysage/portrait.
+### ✅ Étape 3b — Sudoku classique jouable
+- Direction visuelle choisie : **« Ardoise »** (gris bleutés, accent bleu encre, police du système), clair et sombre.
+- Module `sudoku-classique` (9x9) dans le registre, avec la conversion de ses packs en `Puzzle`
+  (`chargerPack` ajouté au contrat `ModuleJeu`).
+- Accueil (Continuer avec niveau et temps, choix du niveau), écran de partie.
+- Toucher une case puis un chiffre ; mise en évidence de la ligne, de la colonne, du bloc et des chiffres
+  identiques (y compris dans les notes) ; notes retirées automatiquement de la ligne, de la colonne et du bloc
+  quand un chiffre est posé ; mode notes, effacer, annuler/rétablir illimité ; chiffres restants sur le pavé.
+- Chrono avec pause manuelle (grille masquée) et pause automatique quand l'appli passe en arrière-plan.
+- Indicateur de chargement (avec Annuler) pendant une génération urgente.
+- Sauvegarde automatique après chaque action (et au passage en arrière-plan), reprise par « Continuer ».
+- Nouvelle partie alors qu'une partie est en cours : confirmation ; **décision de l'utilisateur** : la partie
+  remplacée compte comme **abandonnée** (compteur séparé `abandonnees`) ; meilleurs temps et temps moyens ne
+  portent que sur les parties terminées.
+- Mise en page portrait/paysage, grandes touches ; bouton retour d'Android → accueil ; clavier physique.
+- Fin de partie minimale (statistiques enregistrées, message « Bravo ») ; l'écran complet reste en 3c.
+- Tests : sudoku (règles, retrait des notes, gardes, indices, pavé, packs), partie, statistiques, service des
+  parties, format (300 tests) ; parcours complet vérifié dans Edge (portrait, paysage, clair, sombre).
 
 ### Étape 3c — Indices, erreurs, réglages, statistiques, fin de partie
 - Indices expliqués (étapes du solveur logique, cases mises en évidence) avec compteur.

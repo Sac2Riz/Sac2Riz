@@ -2,6 +2,32 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 3b] — Sudoku classique jouable — 2026-11-13
+
+### Ajouté
+- Module `src/games/sudoku-classique/` dans le registre : logique (génération et notation par le moteur,
+  retrait automatique des notes de la ligne, de la colonne et du bloc quand un chiffre est posé, gardes,
+  indice simple tiré du solveur logique), géométrie de la grille, vue tactile (mise en évidence de la ligne,
+  de la colonne, du bloc et des chiffres identiques, y compris dans les notes ; flèches du clavier),
+  conversion des packs Expert/Diabolique en `Puzzle`.
+- Socle : `partie.ts` (partie en cours, pur), `stats.ts` (pur), `service-parties.ts`, `app.ts` (navigation,
+  confirmation, chargement, bouton retour d'Android), `ecran-partie.ts` (barre, grille, outils, pavé avec
+  chiffres restants, chrono branché sur la visibilité, pause qui masque la grille, sauvegarde après chaque
+  action, fin de partie), `accueil.ts` (Continuer, choix du niveau), `dialogue.ts`, `chargement.ts`,
+  `format.ts`, `dom.ts`.
+- `main.ts` branche stockage IndexedDB (repli en mémoire), réglages, thème, worker, packs, réserve.
+- Tests : `tests/games/sudoku-classique.test.ts`, `tests/socle/partie.test.ts`, `stats.test.ts`,
+  `format.test.ts` (300 tests au total).
+
+### Modifié
+- Thème : direction visuelle « Ardoise » choisie par l'utilisateur (nouvelles variables : traits, zone,
+  chiffres identiques, notes, voile…), couleurs de la barre d'état et du manifest.
+- `StatsNiveau` : nouveau compteur `abandonnees` (partie remplacée par une nouvelle après confirmation) ;
+  les temps ne portent que sur les parties terminées.
+- Contrat des jeux : `ModuleJeu.chargerPack(niveau)` et `VueJeu.restants(etat, donnees)` ; module modèle adapté.
+- Styles de base : accueil, écran de partie portrait/paysage, boutons, dialogues, chargement.
+- docs : ARCHITECTURE.md, AJOUTER_UN_JEU.md, ROADMAP.md, CLAUDE.md.
+
 ## [Documentation] — Dépôt Sac2Riz — 2026-11-13
 
 ### Modifié

@@ -43,6 +43,11 @@ export type PartieSauvegardee = {
 /** Statistiques d'un jeu pour un niveau. */
 export type StatsNiveau = {
   readonly terminees: number;
+  /**
+   * Parties remplacées par une nouvelle partie avant d'être finies (avec confirmation du joueur).
+   * Compteur séparé : meilleur temps et moyennes ne portent que sur les parties terminées.
+   */
+  readonly abandonnees: number;
   /** null tant qu'aucune partie n'est terminée. */
   readonly meilleurTempsMs: number | null;
   /** Totaux : moyennes = total / terminees. */

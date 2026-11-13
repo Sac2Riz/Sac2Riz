@@ -7,5 +7,5 @@
 import type { EntreeRegistre } from '../types/vue.ts';
 
 export const REGISTRE: readonly EntreeRegistre[] = [
-  // (aucun jeu pour l'instant : le sudoku classique arrive à l'étape 3)
+  { id: 'sudoku-classique', charger: () => import('./sudoku-classique/index.ts') },
 ];

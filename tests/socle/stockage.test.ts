@@ -16,7 +16,7 @@ function entree(jeu: string, niveau: 'moyen' | 'expert'): EntreeReserve {
 
 function creerStatsVides(): StatsJeu {
   const stats = Object.fromEntries(
-    NIVEAUX.map((n) => [n, { terminees: 0, meilleurTempsMs: null, totalTempsMs: 0, totalForce: 0 }]),
+    NIVEAUX.map((n) => [n, { terminees: 0, abandonnees: 0, meilleurTempsMs: null, totalTempsMs: 0, totalForce: 0 }]),
   );
   // fromEntries perd le type exact des clés : la garde le retrouve
   if (!estStatsJeu(stats)) throw new Error('statistiques de test invalides');

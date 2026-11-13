@@ -86,6 +86,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 2b — Notation (niveau + force, seuils mesurés), génération par niveau, packs Expert/Diabolique (200 grilles), bench étendu.
 - ✅ Étape 3a — Services sans interface : client du worker (budget de temps, annulation), stockage
   (IndexedDB + mémoire, schéma versionné), réserve de grilles, packs, historique, chrono.
-- ⏭️ Prochaine : **Étape 3b** — sudoku classique jouable (module, accueil, grille, pavé, notes,
-  annuler/rétablir, sauvegarde et reprise). Point à trancher avec l'utilisateur : nouvelle partie sur
-  une partie en cours = abandon dans les statistiques ?
+- ✅ Étape 3b — Sudoku classique jouable (direction visuelle « Ardoise ») : accueil, grille, pavé, notes,
+  annuler/rétablir, chrono, sauvegarde et reprise ; nouvelle partie sur une partie en cours = confirmation,
+  puis la partie remplacée compte comme abandonnée (compteur séparé).
+- ⏭️ Prochaine : **Étape 3c** — indices expliqués, vérification des erreurs, réglages, statistiques,
+  écran de fin de partie.
