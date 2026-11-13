@@ -2,6 +2,20 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 3b — corrections] — Thème clair, génération sans limite d'essais — 2026-11-13
+
+### Ajouté
+- Bouton « Thème » sur l'accueil : Automatique (suit la tablette) → Clair → Sombre, enregistré dans les
+  réglages ; la couleur de la barre d'état d'Android suit le thème choisi. Sur une tablette réglée en mode
+  sombre, le thème clair Ardoise n'était jusqu'ici pas accessible.
+- Tests : `tests/socle/theme.test.ts` ; génération limitée par le seul budget de temps (moteur et worker).
+
+### Corrigé
+- Génération dans le worker : `genererParNiveau` appliquait encore sa limite par défaut de 50 essais en plus
+  du budget de temps (échec « Aucune grille … en 50 essais »). Désormais, quand `doitArreter` est fourni, le
+  budget de temps est la seule limite ; sans budget (bench, script des packs), la limite de 50 essais
+  (`TENTATIVES_MAX_SANS_BUDGET`) reste. `tentativesMax` accepte `null` (illimité, budget obligatoire).
+
 ## [Étape 3b] — Sudoku classique jouable — 2026-11-13
 
 ### Ajouté

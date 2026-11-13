@@ -63,6 +63,8 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
 - **Export/import** de toutes les données (`FichierExport`, fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`) ;
   à l'import, chaque champ est validé (gardes de type des jeux pour D/E/A).
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
+  Bouton « Thème » de l'accueil : Automatique → Clair → Sombre, enregistré dans les réglages ; la couleur
+  de la barre d'état d'Android suit le thème choisi (`src/socle/theme.ts`).
 - **Réserve de grilles** : 3 grilles d'avance par jeu et par niveau, en IndexedDB, réalimentées par le worker
   pour un démarrage instantané. Repli sur les **packs JSON embarqués** du jeu (Expert, Diabolique).
 
@@ -301,13 +303,16 @@ src/moteur/
 - `noterGrille(ctx, enonce)` → `Notation` (niveau, force, techniqueMax, details) ou `null` si le solveur
   logique est bloqué. `noterEtapes` fait de même à partir d'étapes déjà calculées. Règles et seuils :
   docs/DIFFICULTE.md. **`VERSION_NOTATION`** est à incrémenter dès qu'un seuil ou une technique change.
-- `genererParNiveau(def, niveau, alea, { tentativesMax = 50, symetrie = 'centrale', cibleIndices, seuils, doitArreter = null })`
+- `genererParNiveau(def, niveau, alea, { tentativesMax, symetrie = 'centrale', cibleIndices, seuils, doitArreter = null })`
   → `{ ok: true, enonce, solution, notation, essais }` ou `{ ok: false, raison, essais }`. Chaque essai :
   grille complète, puis `retirerChiffres` dont la fonction d'acceptation **refuse** un retrait si la grille
   n'est plus résoluble avec les techniques du niveau, et **arrête** tôt (Débutant, Facile) quand le nombre
   de chiffres atteint une cible tirée dans `CIBLES_ARRET_TOT`. Contrôle final : niveau exact, sinon essai
   suivant. Le contexte du solveur est calculé une fois par appel.
-- Dans le worker : génération limitée par un budget de temps (`doitArreter`) ; si la réserve est vide,
+- **Limite** : avec `doitArreter` (worker), le budget de temps est la **seule** limite (aucune limite
+  d'essais, sauf `tentativesMax` explicite) ; sans budget (bench, script des packs), au plus
+  `TENTATIVES_MAX_SANS_BUDGET` (50) essais. `tentativesMax: null` sans `doitArreter` est refusé (boucle infinie).
+- Dans le worker : génération limitée par son seul budget de temps ; si la réserve est vide,
   grille tirée du pack (Expert/Diabolique).
 
 ### Mesure des performances

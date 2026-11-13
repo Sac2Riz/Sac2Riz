@@ -87,7 +87,32 @@ button:disabled {
 }
 
 .accueil-entete {
+  position: relative;
   text-align: center;
+}
+
+/* Choix du thème : en haut à droite de l'en-tête sur un écran large, sous le titre sinon */
+.bouton-theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: var(--espace-1);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.95rem;
+  background: transparent;
+}
+
+.bouton-theme-valeur {
+  font-weight: 700;
+}
+
+@media (min-width: 40rem) {
+  .bouton-theme {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0;
+  }
 }
 
 .accueil-titre {

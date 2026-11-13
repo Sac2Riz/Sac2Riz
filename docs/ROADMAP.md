@@ -85,10 +85,12 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Fin de partie minimale (statistiques enregistrées, message « Bravo ») ; l'écran complet reste en 3c.
 - Tests : sudoku (règles, retrait des notes, gardes, indices, pavé, packs), partie, statistiques, service des
   parties, format (300 tests) ; parcours complet vérifié dans Edge (portrait, paysage, clair, sombre).
+- Corrections après test sur tablette : choix du thème (Automatique / Clair / Sombre) depuis l'accueil,
+  enregistré ; le worker n'est plus limité que par son budget de temps (plus de limite de 50 essais).
 
 ### Étape 3c — Indices, erreurs, réglages, statistiques, fin de partie
 - Indices expliqués (étapes du solveur logique, cases mises en évidence) avec compteur.
-- Vérification des erreurs (réglage), écran des réglages, thème.
+- Vérification des erreurs (réglage), écran des réglages (le choix du thème y sera repris ; il est déjà sur l'accueil).
 - Statistiques par jeu et par niveau.
 - Écran de fin de partie (temps, force, indices, record).
 

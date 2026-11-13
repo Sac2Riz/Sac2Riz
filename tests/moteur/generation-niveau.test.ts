@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { estUnique } from '../../src/moteur/backtracking.ts';
-import { CIBLES_ARRET_TOT, genererParNiveau } from '../../src/moteur/generation-niveau.ts';
+import { CIBLES_ARRET_TOT, genererParNiveau, TENTATIVES_MAX_SANS_BUDGET } from '../../src/moteur/generation-niveau.ts';
 import { creerContexte } from '../../src/moteur/logique/contexte.ts';
 import { noterGrille } from '../../src/moteur/notation.ts';
 import { definitionClassique } from '../../src/moteur/regions.ts';
@@ -101,5 +101,29 @@ describe('genererParNiveau', () => {
     const r = genererParNiveau(def9, 'expert', creerAlea(7), { tentativesMax: 1000, doitArreter: () => ++appels > 3 });
     assert.ok(r.essais <= 4);
     if (!r.ok) assert.equal(r.essais, 4);
+  });
+
+  // Garantie pour le worker : avec un budget de temps (doitArreter), seule l'échéance arrête la
+  // génération, jamais une limite d'essais par défaut. Une grille 4 × 4 n'atteint jamais le niveau
+  // Diabolique (les singletons suffisent) : chaque essai échoue vite, et seul doitArreter peut arrêter.
+  test("avec doitArreter seul, pas de limite d'essais : seul le budget arrête", () => {
+    const def4 = definitionClassique(4, 2, 2);
+    const limite = TENTATIVES_MAX_SANS_BUDGET * 3;
+    let appels = 0;
+    const r = genererParNiveau(def4, 'diabolique', creerAlea(1), { doitArreter: () => ++appels >= limite });
+    assert.equal(r.ok, false);
+    assert.equal(r.essais, limite, `${limite} essais, au-delà des ${TENTATIVES_MAX_SANS_BUDGET} sans budget`);
+    if (!r.ok) assert.match(r.raison, /Budget de temps/);
+  });
+
+  test("sans budget : limite d'essais par défaut (bench, script des packs)", () => {
+    const def4 = definitionClassique(4, 2, 2);
+    const r = genererParNiveau(def4, 'diabolique', creerAlea(1));
+    assert.equal(r.ok, false);
+    assert.equal(r.essais, TENTATIVES_MAX_SANS_BUDGET);
+  });
+
+  test('aucune limite du tout (ni essais ni budget) : refusé', () => {
+    assert.throws(() => genererParNiveau(def9, 'moyen', creerAlea(1), { tentativesMax: null }));
   });
 });

@@ -7,8 +7,10 @@
 //   - pour Débutant et Facile, le retrait s'arrête tôt dès qu'il reste assez peu de chiffres
 //     donnés (on garde des grilles aérées, avec beaucoup de chiffres).
 // Contrôle final : la grille obtenue doit être exactement du niveau demandé (pas plus facile),
-// sinon on recommence, au plus tentativesMax fois, ou jusqu'à ce que doitArreter() réponde vrai
-// (budget de temps fixé par le worker : le moteur, pur, ne lit jamais l'horloge lui-même).
+// sinon on recommence, jusqu'à ce que doitArreter() réponde vrai (budget de temps fixé par le
+// worker : le moteur, pur, ne lit jamais l'horloge lui-même) ou, sans budget, au plus tentativesMax fois.
+// Règle : quand doitArreter est fourni, le budget de temps est la SEULE limite (pas de limite
+// d'essais), sauf si l'appelant fixe tentativesMax explicitement (tests, bench).
 
 import type { Alea } from '../types/alea.ts';
 import type { DefinitionGrille } from '../types/grille.ts';
@@ -38,15 +40,19 @@ export const CIBLES_ARRET_TOT: Readonly<Record<Niveau, PlageIndices | null>> = {
 };
 
 export type OptionsGenerationNiveau = {
-  /** Nombre maximal d'essais (grille complète + retrait) avant d'abandonner. */
-  readonly tentativesMax: number;
+  /**
+   * Nombre maximal d'essais (grille complète + retrait) avant d'abandonner ; null = illimité
+   * (doitArreter est alors obligatoire). Par défaut : illimité si doitArreter est fourni,
+   * sinon TENTATIVES_MAX_SANS_BUDGET.
+   */
+  readonly tentativesMax: number | null;
   readonly symetrie: Symetrie;
   /** Arrêt tôt (null = jamais). */
   readonly cibleIndices: PlageIndices | null;
   readonly seuils: SeuilsForce;
   /**
    * Consultée avant chaque essai sauf le premier : vrai = abandonner (budget de temps épuisé).
-   * null = seul tentativesMax limite la génération.
+   * null = seul tentativesMax limite la génération (bench, script des packs).
    */
   readonly doitArreter: (() => boolean) | null;
 };
@@ -62,10 +68,13 @@ export type ResultatGenerationNiveau =
     }
   | { readonly ok: false; readonly raison: string; readonly essais: number };
 
-/** Options par défaut pour un niveau (l'arrêt tôt dépend du niveau). */
+/** Limite d'essais par défaut quand aucun budget de temps n'est fourni (bench, script des packs). */
+export const TENTATIVES_MAX_SANS_BUDGET = 50;
+
+/** Options par défaut pour un niveau, sans budget de temps (l'arrêt tôt dépend du niveau). */
 export function optionsParDefaut(niveau: Niveau): OptionsGenerationNiveau {
   return {
-    tentativesMax: 50,
+    tentativesMax: TENTATIVES_MAX_SANS_BUDGET,
     symetrie: 'centrale',
     cibleIndices: CIBLES_ARRET_TOT[niveau],
     seuils: SEUILS_FORCE,
@@ -73,17 +82,23 @@ export function optionsParDefaut(niveau: Niveau): OptionsGenerationNiveau {
   };
 }
 
-/** Génère une grille exactement du niveau demandé, ou échoue (tentativesMax atteint ou doitArreter). */
+/** Génère une grille exactement du niveau demandé, ou échoue (doitArreter, ou tentativesMax atteint). */
 export function genererParNiveau(
   definition: DefinitionGrille,
   niveau: Niveau,
   alea: Alea,
   options: Partial<OptionsGenerationNiveau> = {},
 ): ResultatGenerationNiveau {
-  const { tentativesMax, symetrie, cibleIndices, seuils, doitArreter } = { ...optionsParDefaut(niveau), ...options };
+  const { symetrie, cibleIndices, seuils, doitArreter } = { ...optionsParDefaut(niveau), ...options };
+  // Avec un budget de temps, pas de limite d'essais (sauf limite explicite de l'appelant)
+  const avecBudget = doitArreter !== null;
+  const tentativesMax = options.tentativesMax !== undefined ? options.tentativesMax : avecBudget ? null : TENTATIVES_MAX_SANS_BUDGET;
+  if (tentativesMax === null && !avecBudget) {
+    throw new Error("genererParNiveau : sans limite d'essais, un budget de temps (doitArreter) est obligatoire");
+  }
   const ctx = creerContexteAvec(compiler(definition));
 
-  for (let essai = 1; essai <= tentativesMax; essai++) {
+  for (let essai = 1; tentativesMax === null || essai <= tentativesMax; essai++) {
     // Au moins un essai, même si le budget est déjà épuisé
     if (essai > 1 && doitArreter !== null && doitArreter()) {
       return { ok: false, raison: `Budget de temps épuisé après ${essai - 1} essais (niveau ${niveau})`, essais: essai - 1 };
@@ -103,5 +118,7 @@ export function genererParNiveau(
     const notation = noterEtapes(enonce, resultat.etapes, seuils);
     if (notation.niveau === niveau) return { ok: true, enonce, solution, notation, essais: essai };
   }
-  return { ok: false, raison: `Aucune grille de niveau ${niveau} en ${tentativesMax} essais`, essais: tentativesMax };
+  // Atteint seulement avec une limite d'essais (sans limite, la boucle ne sort que par doitArreter ou une réussite)
+  const essais = tentativesMax ?? 0;
+  return { ok: false, raison: `Aucune grille de niveau ${niveau} en ${essais} essais`, essais };
 }

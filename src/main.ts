@@ -49,7 +49,14 @@ async function demarrer(): Promise<void> {
     jeux: jeux.map((j) => ({ id: j.meta.id, niveaux: j.meta.niveaux })),
   });
 
-  demarrerApp({ racine, jeux, parties: creerServiceParties(stockage), reserve, reglages });
+  demarrerApp({
+    racine,
+    jeux,
+    parties: creerServiceParties(stockage),
+    reserve,
+    reglages,
+    enregistrerReglages: (r) => stockage.ecrire('reglages', CLE_REGLAGES, r),
+  });
 
   // Remplit la réserve en arrière-plan (dans le worker) pour des démarrages instantanés
   const premier = jeux[0];

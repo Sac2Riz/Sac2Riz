@@ -115,8 +115,9 @@ un retrait de chiffres piloté par la fonction d'acceptation de `retirerChiffres
   cible tirée au hasard dans la plage du niveau (`CIBLES_ARRET_TOT`) :
   **Débutant 36-44, Facile 30-35** (sans arrêt tôt, ces grilles n'auraient que ~28-29 chiffres) ;
 - **contrôle final** : la grille doit être exactement du niveau demandé (pas plus facile), sinon essai suivant,
-  au plus `tentativesMax` essais (50 par défaut), ou jusqu'à ce que `doitArreter()` réponde vrai
-  (budget de temps, consulté avant chaque essai sauf le premier) ;
+  jusqu'à ce que `doitArreter()` réponde vrai (budget de temps du worker, consulté avant chaque essai sauf
+  le premier ; c'est alors la **seule** limite) ou, sans budget (bench, script des packs), au plus
+  `tentativesMax` essais (50 par défaut) ;
 - **symétrie centrale** conservée pour tous les niveaux, Expert et Diabolique compris (sans symétrie : moins
   d'essais mais plus longs, temps moyen un peu plus élevé et pire cas nettement plus long).
 
@@ -131,8 +132,9 @@ Mesures (PC, sudoku 9x9, 100 grilles par niveau, graines 1 à 100, au plus 200 e
 | Expert | 17,6 / 75 | 159 / 641 ms | 27,9 (24-32) |
 | Diabolique | 9,4 / 40 | 95 / 365 ms | 27,5 (24-32) |
 
-Avec la limite par défaut de 50 essais, environ 6 % des générations Expert échouent (13 graines sur 213
-lors de la génération du pack) ; c'est ce que couvre le pack. Sur tablette, compter des temps 3 à 5 fois
+Avec la limite par défaut de 50 essais (script des packs), environ 6 % des générations Expert échouent
+(13 graines sur 213 lors de la génération du pack). Dans l'appli, le worker n'a pas de limite d'essais :
+seul son budget de temps peut faire échouer une génération, et le pack prend alors le relais. Sur tablette, compter des temps 3 à 5 fois
 plus longs.
 
 Répartition des niveaux de grilles **minimales** générées au hasard (500 grilles, symétrie centrale) :

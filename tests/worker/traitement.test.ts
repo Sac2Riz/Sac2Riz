@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { logique as logiqueModele } from '../../src/games/_modele/logique.ts';
+import { genererParNiveau, TENTATIVES_MAX_SANS_BUDGET } from '../../src/moteur/generation-niveau.ts';
+import { definitionClassique } from '../../src/moteur/regions.ts';
 import type { Alea } from '../../src/types/alea.ts';
 import type { OptionsGeneration, ResultatGeneration } from '../../src/types/jeu.ts';
 import type { Niveau } from '../../src/types/niveaux.ts';
@@ -50,6 +52,28 @@ describe('traitement des demandes du worker', () => {
     };
     const r = await traiterGeneration(demande, async () => jamais, () => heure);
     assert.deepEqual(r, { type: 'echec', requete: 7, raison: 'abandon après 10 essais' });
+  });
+
+  test("jeu bâti sur le moteur : seul le budget de temps l'arrête, jamais une limite d'essais", async () => {
+    // Même appel que le sudoku classique (doitArreter seul), sur une grille 4 × 4 qui n'atteint
+    // jamais le niveau Diabolique : chaque essai échoue, l'horloge avance de 1 ms par consultation.
+    const def4 = definitionClassique(4, 2, 2);
+    const impossible = {
+      ...logiqueModele,
+      generer: (n: Niveau, alea: Alea, options: OptionsGeneration): ResultatGeneration<never> => {
+        const r = genererParNiveau(def4, n, alea, { doitArreter: options.doitArreter });
+        return r.ok ? { ok: false, raison: 'réussite inattendue' } : { ok: false, raison: r.raison };
+      },
+    };
+    let heure = 0;
+    const budgetMs = TENTATIVES_MAX_SANS_BUDGET * 3;
+    const r = await traiterGeneration({ ...demande, niveau: 'diabolique', budgetMs }, async () => impossible, () => heure++);
+    assert.equal(r.type, 'echec');
+    if (r.type === 'echec') {
+      assert.match(r.raison, /Budget de temps/);
+      const essais = Number(/après (\d+) essais/.exec(r.raison)?.[1]);
+      assert.ok(essais > TENTATIVES_MAX_SANS_BUDGET, `${essais} essais : plus que la limite sans budget`);
+    }
   });
 
   test('jeu introuvable ou qui plante → « erreur »', async () => {

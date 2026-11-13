@@ -20,6 +20,7 @@ import { formaterTemps } from './format.ts';
 import { depuisSauvegarde, nouvellePartie, versSauvegarde, type Logique, type Partie } from './partie.ts';
 import type { ServiceParties } from './service-parties.ts';
 import type { ServiceReserve } from './reserve.ts';
+import { appliquerTheme, themeSuivant } from './theme.ts';
 import { estVisible } from './visibilite.ts';
 
 export type OptionsApp = {
@@ -28,6 +29,8 @@ export type OptionsApp = {
   readonly parties: ServiceParties;
   readonly reserve: ServiceReserve;
   readonly reglages: Reglages;
+  /** Enregistre les réglages modifiés (thème choisi à l'accueil). */
+  readonly enregistrerReglages: (reglages: Reglages) => Promise<void>;
 };
 
 export function demarrerApp(o: OptionsApp): void {
@@ -35,6 +38,14 @@ export function demarrerApp(o: OptionsApp): void {
   let ecranPartie: EcranPartie | null = null;
   /** Vrai pendant une opération (chargement, confirmation) : ignore les doubles touchers. */
   let occupe = false;
+  let reglages = o.reglages;
+
+  function changerTheme(): Reglages['theme'] {
+    reglages = { ...reglages, theme: themeSuivant(reglages.theme) };
+    appliquerTheme(reglages.theme);
+    o.enregistrerReglages(reglages).catch((erreur: unknown) => console.error('Réglages non enregistrés :', erreur));
+    return reglages.theme;
+  }
 
   function moduleDe(id: string): ModuleJeuQuelconque {
     const module = o.jeux.find((j) => j.meta.id === id);
@@ -56,6 +67,8 @@ export function demarrerApp(o: OptionsApp): void {
     afficherAccueil(o.racine, jeux, {
       continuer: (jeu) => void enSecurite(() => continuer(jeu)),
       nouvelle: (jeu, niveau) => void enSecurite(() => nouvelle(jeu, niveau)),
+      theme: reglages.theme,
+      changerTheme,
     });
   }
 
@@ -81,7 +94,7 @@ export function demarrerApp(o: OptionsApp): void {
       logique,
       vue,
       partie,
-      reglages: o.reglages,
+      reglages,
       parties: o.parties,
       maintenant,
       quitter: () => {
