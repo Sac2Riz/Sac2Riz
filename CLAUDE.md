@@ -69,6 +69,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - **Une étape à la fois** ([docs/ROADMAP.md](docs/ROADMAP.md)) ; attendre le feu vert de l'utilisateur avant la suivante.
 - Fin d'étape : `npm run check` vert → mettre à jour **CLAUDE.md** (état), **docs/ROADMAP.md**, **CHANGELOG.md** → commit clair.
 - Commit uniquement si `npm run check` passe.
+- **Historique Git** : ne jamais le réécrire (`commit --amend`, `rebase`, `reset`, `push --force`…) sans avoir
+  d'abord demandé l'autorisation à l'utilisateur en expliquant pourquoi. Et **jamais** sur un commit déjà
+  poussé sur GitHub. Pour corriger un commit, en faire un nouveau.
 
 ## État d'avancement
 - ✅ Étape 0 — Fondations (squelette, outillage, contrat, docs).
