@@ -94,7 +94,8 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
   Android (l'icône SVG provisoire suffit d'ici là).
 - Export/import JSON de toutes les données, avec validation du fichier importé.
 - GitHub Action : `npm ci`, `npm run check`, `npm run build`, publication de `dist/` sur GitHub Pages
-  à chaque push sur `main`.
+  à chaque push sur `main`, à l'adresse https://sac2riz.github.io/Sac2Riz/.
+- README : retirer la mention « bientôt disponible » du lien vers l'appli.
 - Test d'installation sur la tablette.
 
 ## Étapes suivantes — Variantes et nouveaux jeux

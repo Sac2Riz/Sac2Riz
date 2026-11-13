@@ -2,6 +2,13 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Documentation] — Dépôt Sac2Riz — 2026-11-13
+
+### Modifié
+- Dépôt GitHub `Sac2Riz/Sac2Riz`, appli publiée à l'adresse https://sac2riz.github.io/Sac2Riz/ (étape 5) :
+  CLAUDE.md, docs/ARCHITECTURE.md, docs/ROADMAP.md ; nom du paquet npm `sac2riz`.
+- README.md réécrit en présentation de l'appli (affiché sur la page de profil GitHub).
+
 ## [Étape 3a] — Services sans interface — 2026-11-13
 
 ### Ajouté

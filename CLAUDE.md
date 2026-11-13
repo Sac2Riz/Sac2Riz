@@ -5,7 +5,9 @@ Instructions permanentes pour Claude. À relire au début de chaque session. Le 
 ## Objectif
 PWA de jeux de logique à chiffres (sudoku et variantes, chiffres casés, Kakuro…), utilisée surtout
 sur **tablette Android**, 100 % hors ligne, installable, sans pub ni tracking. Interface en **français**.
-Nom affiché : **Sac2Riz**. Dépôt : `sudogame` (public, GitHub Pages). Projet au long cours : des jeux
+Nom affiché : **Sac2Riz**. Dépôt GitHub : `Sac2Riz/Sac2Riz` (public ; son README s'affiche sur la page de profil
+GitHub, il doit rester une présentation soignée de l'appli). Appli publiée (GitHub Pages, étape 5) :
+https://sac2riz.github.io/Sac2Riz/. Le dossier local s'appelle `sudogame`. Projet au long cours : des jeux
 et variantes seront ajoutés régulièrement.
 
 ## L'utilisateur

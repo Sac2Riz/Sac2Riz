@@ -40,7 +40,7 @@ si du code « pur » utilisait le DOM, elle échouerait.
 - `scripts/copier-statiques.ts` copie `public/**` à la racine de `dist/`, et les fichiers non TypeScript de
   `src/` (`.css`, `.json`, images) au même chemin relatif. Les dossiers `_xxx` ne sont jamais copiés.
 - Tous les chemins sont **relatifs** (`./main.js`, `new URL('./x', import.meta.url)`) : l'appli marche
-  dans un sous-dossier (`https://<compte>.github.io/sudogame/`).
+  dans un sous-dossier (`https://sac2riz.github.io/Sac2Riz/`, dépôt `Sac2Riz/Sac2Riz`).
 
 ## Socle commun (`src/socle/`, étape 3)
 
