@@ -2,6 +2,25 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 2a] — Solveur logique — 2026-11-13
+
+### Ajouté
+- `src/types/logique.ts` : `IDS_TECHNIQUES`, `EtatLogique`, `Etape` (technique, niveau, cases et candidats
+  du motif, régions, placements, éliminations, explication en français), `ResultatLogique`.
+- `src/moteur/logique/` : contexte précalculé (cases qui se voient, régions complètes), état (création,
+  application d'une étape, détection des contradictions), noms des cases et régions, `construireEtape`
+  (ne garde que les effets réels), outils et familles de techniques partagées.
+- 21 techniques, une par fichier (`src/moteur/logique/techniques/`), de Débutant à Diabolique :
+  dernier chiffre, singletons cachés et nus, paires/triplets/quadruplets nus et cachés, pointing, claiming,
+  Skyscraper, 2-String Kite, X-Wing, Y-Wing, XYZ-Wing, Swordfish, X-Chain, XY-Chain, forcing simple.
+  Toutes génériques (régions du moteur) : classique, diagonal, irrégulier, 6x6.
+- `src/moteur/logique/solveur.ts` : `resoudreLogique` (statuts `resolu` / `bloque` / `contradiction`,
+  `niveauMax`, garde-fou contre une étape sans effet) et `prochaineEtape` (pour les futurs indices).
+- Tests : un fichier par technique sur des états préparés à la main (dont motifs sans effet pour paire nue
+  et X-Wing), tests du solveur et du socle, test de sûreté comparé au backtracking (270 grilles dans
+  `npm test`).
+- Commande `npm run test:long` : test de sûreté sur 4100 grilles (~30 s) + couverture de chaque technique.
+
 ## [Étape 1] — Moteur de contraintes — 2026-11-13
 
 ### Ajouté

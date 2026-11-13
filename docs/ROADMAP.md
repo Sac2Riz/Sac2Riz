@@ -20,13 +20,27 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Tests : unicité, validité des grilles générées, reproductibilité par graine, performances raisonnables.
 - Script de mesure `npm run bench` : ~1,3 ms en moyenne par grille 9x9 sur PC (max ~4,5 ms).
 
-## ⏭️ Étape 2 — Solveur logique et notation
-- Utiliser la fonction d'acceptation de `retirerChiffres` pour viser un niveau (arrêt tôt pour Débutant…).
-- Une technique par fichier, avec son niveau et ses tests (voir docs/DIFFICULTE.md).
-- Solveur logique (techniques de la plus simple à la plus complexe), rejet de l'essai-erreur.
-- Calcul du niveau et de la force (seuils fixés et documentés).
-- Script de génération de packs ; packs JSON Expert et Diabolique.
-- Tests de cohérence de la notation.
+## Étape 2 — Solveur logique et notation (découpée en deux sous-étapes, un commit chacune)
+
+### ✅ Étape 2a — Solveur logique
+- Types `EtatLogique`, `Etape`, `ResultatLogique` (`src/types/logique.ts`) ; contexte, état, noms (`src/moteur/logique/`).
+- 21 techniques, une par fichier, avec leur niveau (voir docs/DIFFICULTE.md) ; chaque technique renvoie une
+  « étape » expliquée en français, uniquement si elle a un effet réel.
+- Solveur : techniques de la plus simple à la plus dure, arrêt propre « bloque » (essai-erreur nécessaire),
+  détection des contradictions, `niveauMax`, garde-fou contre les étapes sans effet.
+- Tests : une technique = un fichier de tests sur états préparés à la main ; test de sûreté sur grilles
+  générées (classique, diagonal, irrégulier, 6x6) comparé au backtracking ; version longue `npm run test:long`
+  (4100 grilles + couverture de chaque technique).
+- Note pour la variante irrégulière : la génération d'une grille complète par backtracking y est parfois très
+  lente (plusieurs secondes) ; à traiter quand cette variante sera ajoutée.
+
+### ⏭️ Étape 2b — Notation et génération par niveau
+- `noter` : niveau (technique la plus dure) + force 1-10 (seuils mesurés, documentés et testés).
+- Génération par niveau via la fonction d'acceptation de `retirerChiffres` (refus si le niveau est dépassé,
+  arrêt tôt pour Débutant/Facile, contrôle final du niveau, `tentativesMax`).
+- Script de génération des packs ; packs JSON Expert et Diabolique dans `src/games/sudoku-classique/packs/`,
+  avec garde de validation.
+- Tests de cohérence de la notation ; mesures (temps par niveau, taux de réussite, répartition des forces).
 
 ## Étape 3 — Socle de l'interface + sudoku classique jouable
 - Accueil complet (Continuer, choix du niveau), écran de partie.

@@ -133,8 +133,39 @@ src/moteur/
 ├─ validation.ts       conflits, estComplete, estSolution (pour erreurs() / estTerminee() des jeux)
 ├─ backtracking.ts     compterSolutions, compterSolutionsAvec, estUnique
 ├─ generateur.ts       genererGrilleComplete, retirerChiffres, genererGrille
-└─ logique/            (étape 2) solveur.ts, notation.ts, techniques/ (une technique par fichier)
+└─ logique/            solveur logique (étape 2a) — voir ci-dessous
+   ├─ contexte.ts      creerContexte(def) : cases qui se voient, régions complètes, formes, rangs
+   ├─ etat.ts          etatInitial, appliquerEtape, aDesEffets, contradiction, estRemplie
+   ├─ noms.ts          « L3C5 », « la ligne 3 », « le bloc 2 », « la diagonale ↘ »… pour les explications
+   ├─ technique.ts     types Technique / InfosTechnique / Motif, construireEtape (filtre les effets réels)
+   ├─ outils.ts        combinaisons, positions d'un chiffre, liens forts, cases bivaleurs…
+   ├─ familles/        logique partagée : singleton-cache, sous-ensembles, intersections, poissons,
+   │                   liens-forts, propagation (forcing)
+   ├─ techniques/      UNE TECHNIQUE PAR FICHIER (21) + index.ts (liste ordonnée TECHNIQUES)
+   └─ solveur.ts       resoudreLogique, prochaineEtape
 ```
+
+### Solveur logique — `logique/`
+
+- **État** (`EtatLogique`, `src/types/logique.ts`) : `{ valeurs, candidats }` (candidats en masques de bits,
+  0 pour une case remplie). Jamais modifié : `appliquerEtape` renvoie un nouvel état. Poser une valeur la
+  retire des candidats de toutes les cases qui voient sa case.
+- **Technique** : `{ id, niveau, nom, chercher(ctx, etat) }` ; `chercher` renvoie la **première occurrence
+  utile** de son motif sous forme d'**`Etape`**, ou `null`. Une étape (JSON) décrit : technique, niveau,
+  cases et candidats du motif, régions, placements, éliminations, explication en français. Elle servira
+  aux indices expliqués (étape 3).
+- **Effet réel obligatoire** : `construireEtape` ne garde que les placements dans des cases vides et les
+  éliminations de candidats encore présents ; s'il ne reste rien, elle renvoie `null` et la technique passe
+  au motif suivant. Le solveur a un garde-fou : une étape sans effet lève une erreur (au lieu de boucler).
+- **Solveur** : `resoudreLogique(ctx, enonce, { niveauMax, techniques })` essaie les techniques dans l'ordre
+  et revient à la première après chaque progrès. Résultat `{ statut, etapes, etat, raison }`, statut
+  `'resolu'`, `'bloque'` (plus rien ne progresse : essai-erreur nécessaire ou solutions multiples) ou
+  `'contradiction'` (énoncé incohérent).
+- **Généricité** : les techniques ne connaissent que les régions. Une **région complète** (chiffres distincts
+  et autant de cases que de valeurs) contient chaque valeur exactement une fois : singletons cachés,
+  sous-ensembles cachés et liens forts n'utilisent que celles-là ; les sous-ensembles nus marchent dans
+  toute région distincte (y compris une cage « distinctes »). Les **sommes** des cages ne sont pas encore
+  exploitées (techniques Killer à venir avec la variante). Détail par technique : docs/DIFFICULTE.md.
 
 ### Solveur par backtracking — `backtracking.ts`
 
@@ -160,7 +191,7 @@ src/moteur/
     - `'refuser'` : remettre les chiffres retirés et passer aux cases suivantes
       (ex. l'énoncé exigerait une technique trop forte pour le niveau visé) ;
     - `'arreter'` : garder le retrait et terminer (ex. Débutant : s'arrêter vers 40-45 chiffres).
-    À l'étape 2, le solveur logique s'en servira pour viser un niveau de difficulté.
+    À l'étape 2b, le solveur logique s'en servira pour viser un niveau de difficulté.
 - `genererGrille(def, alea, options)` = les deux à la suite → `{ enonce, solution }`.
 - Le retrait seul ne fabrique pas de cages : la génération des cages du Killer viendra avec cette variante.
 - Génération Expert/Diabolique : nombre de tentatives limité dans le worker ; si échec, grille tirée du pack.

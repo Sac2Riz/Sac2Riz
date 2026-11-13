@@ -33,12 +33,14 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run build` | compilation complète dans `dist/` |
 | `npm run check` | vérification des types (4 configs) + tests. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
+| `npm run test:long` | test de sûreté long du solveur logique (fichiers `tests/**/*.long.ts`, ~30 s, 4100 grilles + couverture des techniques). Hors de `check` ; **à lancer quand on touche au solveur logique** |
 | `npm run bench` | mesure des temps de génération / vérification d'unicité (100 grilles 9x9) |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
 - `src/socle/` : interface commune (accueil, pavé, chrono, historique, réglages, stats, thème…).
-- `src/moteur/` : moteur de contraintes (régions unicité/somme), backtracking, générateur, solveur logique (`logique/techniques/`).
+- `src/moteur/` : moteur de contraintes (régions unicité/somme), backtracking, générateur, solveur logique (`logique/`) :
+  une technique par fichier dans `logique/techniques/`, une étape renvoyée **seulement si elle a un effet réel**.
 - `src/games/<id>/` : un jeu = un dossier (`meta.ts`, `types.ts`, `logique.ts`, `vue.ts`, `index.ts`, `style.css`, `packs/`).
   **Ajouter un jeu = un dossier + une ligne dans `src/games/registre.ts`**, sans toucher au socle → [docs/AJOUTER_UN_JEU.md](docs/AJOUTER_UN_JEU.md).
 - `src/games/_modele/` : module modèle à copier. Dossiers `_xxx` : testés, **jamais publiés**.
@@ -71,4 +73,5 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 ## État d'avancement
 - ✅ Étape 0 — Fondations (squelette, outillage, contrat, docs).
 - ✅ Étape 1 — Moteur de contraintes (`src/moteur/`), backtracking, générateur, tests, `npm run bench`.
-- ⏭️ Prochaine : **Étape 2** — solveur logique (une technique par fichier) et notation de la difficulté.
+- ✅ Étape 2a — Solveur logique : 21 techniques (Débutant → Diabolique), étapes expliquées, tests de sûreté.
+- ⏭️ Prochaine : **Étape 2b** — notation (niveau + force), génération par niveau, packs Expert/Diabolique, mesures.
