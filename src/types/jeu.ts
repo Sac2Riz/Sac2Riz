@@ -119,13 +119,6 @@ export interface LogiqueJeu<D extends Json, E extends Json, A extends Json> {
   /** Prochain coup conseillé, ou null s'il n'y en a pas. */
   indice(etat: E, donnees: D, options: OptionsJeu): Indice<A> | null;
 
-  /**
-   * Facultatif (jeux avec des notes) : UNE action qui remplace les notes de toutes les cases vides
-   * par tous leurs candidats possibles, ou null si cela ne changerait rien. Le socle n'affiche le
-   * bouton « Remplir les notes » que si le jeu fournit cette fonction.
-   */
-  remplirNotes?(etat: E, donnees: D): A | null;
-
   /** Nom affiché d'une technique (Notation.techniqueMax), pour l'écran de fin de partie. */
   nomTechnique(id: string): string;
 

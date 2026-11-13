@@ -306,9 +306,6 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.partie-outils.avec-remplir {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
 
 .outil {
   display: flex;
@@ -374,14 +371,6 @@ button:disabled {
   font-size: 1.7rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-}
-
-.touche-reste {
-  position: absolute;
-  right: 0.35rem;
-  bottom: 0.15rem;
-  font-size: 0.7rem;
-  color: var(--couleur-note);
 }
 
 .touche.est-epuisee .touche-valeur {
@@ -462,8 +451,7 @@ button:disabled {
   }
 
   /* Colonne étroite : outils sur deux lignes */
-  .partie-outils,
-  .partie-outils.avec-remplir {
+  .partie-outils {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

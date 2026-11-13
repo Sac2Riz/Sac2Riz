@@ -35,8 +35,9 @@ export type NotesCase = {
  *   donne toujours le même résultat, même si le réglage change ensuite ;
  * - noter : ajoute ou retire une note ;
  * - effacer : vide la case (chiffre et notes) ;
- * - definir-notes : remplace les notes de plusieurs cases vides d'un coup (« Remplir les notes »,
- *   éliminations d'un indice) : une seule action, donc un seul « Annuler ».
+ * - definir-notes : remplace les notes de plusieurs cases vides d'un coup (éliminations d'un indice) :
+ *   une seule action, donc un seul « Annuler ». L'ancien bouton « Remplir les notes » (retiré) la
+ *   produisait aussi : les parties sauvegardées qui en contiennent restent lisibles et rejouables.
  */
 export type ActionSudoku =
   | { readonly type: 'placer'; readonly cellule: number; readonly valeur: number }

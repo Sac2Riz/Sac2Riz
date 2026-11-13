@@ -14,7 +14,6 @@ import { CONTEXTE, DEFINITION } from './definition.ts';
 import { VOISINES } from './geometrie.ts';
 import { cellulesFausses, indice, nomTechnique } from './indice.ts';
 import { META } from './meta.ts';
-import { remplirNotes } from './notes.ts';
 import {
   NOMBRE_CASES,
   TAILLE,
@@ -178,7 +177,6 @@ export const logique: LogiqueJeu<DonneesSudoku, EtatSudoku, ActionSudoku> = {
   erreurs,
   estTerminee,
   indice,
-  remplirNotes: (etat) => remplirNotes(etat),
   nomTechnique,
   estDonnees,
   estEtat,

@@ -114,9 +114,10 @@ src/socle/
 
 Actions du sudoku : `placer` (retire la note des voisines), `placer-seul` (sans retrait : le choix est inscrit
 dans l'action pour que rejouer l'historique donne toujours le même état), `noter`, `effacer`,
-`definir-notes` (notes de plusieurs cases d'un coup : « Remplir les notes », éliminations d'un indice ; une
-seule action, donc un seul « Annuler »). « Remplir les notes » calcule les candidats à partir des seuls
-chiffres posés (jamais de la solution) et **remplace** les notes existantes.
+`definir-notes` (notes de plusieurs cases d'un coup : éliminations d'un indice ; une seule action, donc un
+seul « Annuler »). Le bouton « Remplir les notes » de l'étape 3c a été retiré, mais `definir-notes` reste : les
+indices d'élimination s'en servent, et les parties sauvegardées qui contiennent un ancien remplissage restent
+lisibles et rejouables (même `versionFormat`, test dans `tests/games/sudoku-classique.test.ts`).
 
 ### Interface du sudoku jouable (étape 3b)
 
@@ -131,7 +132,7 @@ src/socle/
 ├─ app.ts             navigation (accueil, partie, statistiques, fin), confirmation, chargement,
 │                     bouton retour d'Android, réglages appliqués et enregistrés
 ├─ accueil.ts         écran d'accueil : « Continuer », choix du niveau, menu Statistiques / Réglages
-├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Remplir les notes et Indice),
+├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Indice),
 │                     pavé, bandeau de l'indice, chrono, sauvegarde, clavier
 ├─ ecran-reglages.ts  fenêtre des réglages (étape 3c)
 ├─ ecran-stats.ts     écran des statistiques par jeu et par niveau (étape 3c)
@@ -153,7 +154,7 @@ src/socle/
   manuelle **masque la grille**. Fin de partie : statistiques enregistrées (`terminer` renvoie le record battu
   ou non et l'ancien record), partie en cours supprimée, puis écran de fin. Clavier physique : chiffres,
   Retour arrière/Suppr, N (notes), Ctrl+Z / Ctrl+Y ; les flèches sont gérées par la vue du jeu.
-- **Outils** : Notes, Effacer, Annuler, Rétablir, Remplir les notes (si le jeu fournit `remplirNotes`), Indice
+- **Outils** : Notes, Effacer, Annuler, Rétablir, Indice
   (avec le nombre d'indices utilisés). Toute action ferme le bandeau d'un indice affiché.
 - **Navigation** : en quittant l'accueil (partie, statistiques), **une** entrée est ajoutée à l'historique du
   navigateur ; l'écran de fin et la partie suivante la réutilisent. Le bouton retour d'Android ramène
@@ -211,7 +212,6 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 | `erreurs(etat, donnees)` | cases fausses (comparaison avec la solution) |
 | `estTerminee(etat, donnees)` | grille complète et juste |
 | `indice(etat, donnees, options)` | `Indice` ou `null` (voir ci-dessous) ; `options.retraitAutoNotes` = réglage du joueur |
-| `remplirNotes?(etat, donnees)` | facultatif : UNE action qui remplace les notes des cases vides par tous leurs candidats, ou `null` |
 | `nomTechnique(id)` | nom affiché de `Notation.techniqueMax` (écran de fin) |
 | `estDonnees` / `estEtat` / `estAction` | gardes de type pour relire sauvegardes et imports |
 | `migrer?(ancien, version)` | facultatif : conversion d'un ancien format |
@@ -234,8 +234,8 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 - `contexte` : `jouer(action)`, `modeNotes()`, `reglages()` — une **fonction** : les réglages peuvent changer
   pendant la partie (mise en évidence, retrait automatique des notes), la vue les relit à chaque affichage.
   Le conteneur est dimensionné par le socle (`container-type: size`).
-- `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée
-  (petit nombre sur la touche, touche estompée à 0), ou `null`.
+- `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée,
+  ou `null`. Le socle n'affiche pas ce nombre : il s'en sert seulement pour **estomper** une touche à 0.
 - La vue ne modifie jamais l'état : elle appelle `contexte.jouer(action)` ; le socle rappelle `afficher`.
 - Elle charge son CSS avec `chargerFeuilleDeStyle(new URL('./style.css', import.meta.url))`.
 

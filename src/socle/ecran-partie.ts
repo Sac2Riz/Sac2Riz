@@ -1,6 +1,6 @@
 // ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau, chrono, réglages,
-// pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, remplir les notes,
-// indice) et pavé commun.
+// pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, indice) et pavé commun
+// (une touche est estompée quand sa valeur ne peut plus être posée).
 //
 // L'état de la partie est une valeur « Partie » (partie.ts, code pur) remplacée à chaque
 // changement ; après chaque action, elle est redessinée et SAUVEGARDÉE.
@@ -95,32 +95,18 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const outilEffacer = outil('⌫', 'Effacer', () => instance.effacer());
   const outilAnnuler = outil('↶', 'Annuler', () => changer(annuler(logique, partie)));
   const outilRetablir = outil('↷', 'Rétablir', () => changer(retablir(logique, partie)));
-  // « Remplir les notes » seulement pour les jeux qui le proposent
-  const remplir = logique.remplirNotes;
-  const outilRemplir =
-    remplir === undefined
-      ? null
-      : outil('▦', 'Remplir', () => {
-          const action = remplir.call(logique, partie.etat, partie.puzzle.donnees);
-          if (action !== null) changer(jouer(logique, partie, action, o.maintenant()));
-        });
-  if (outilRemplir !== null) outilRemplir.setAttribute('aria-label', 'Remplir les notes');
   const outilIndice = outil('💡', 'Indice', () => montrerIndice());
   const compteurIndices = creer('small', 'outil-compteur');
   outilIndice.append(compteurIndices);
-  outils.append(outilNotes, outilEffacer, outilAnnuler, outilRetablir);
-  if (outilRemplir !== null) outils.append(outilRemplir);
-  outils.append(outilIndice);
-  outils.classList.toggle('avec-remplir', outilRemplir !== null);
+  outils.append(outilNotes, outilEffacer, outilAnnuler, outilRetablir, outilIndice);
 
   const pave = creer('div', 'partie-pave');
-  const touches = new Map<string, { bouton: HTMLButtonElement; reste: HTMLElement }>();
+  const touches = new Map<string, HTMLButtonElement>();
   if (vue.pave.type === 'commun') {
     for (const valeur of vue.pave.valeurs) {
       const touche = bouton('touche', '', () => saisir(valeur));
-      const reste = creer('small', 'touche-reste');
-      touche.append(creer('span', 'touche-valeur', valeur), reste);
-      touches.set(valeur, { bouton: touche, reste });
+      touche.append(creer('span', 'touche-valeur', valeur));
+      touches.set(valeur, touche);
       pave.append(touche);
     }
   }
@@ -182,12 +168,12 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     const erreurs = o.reglages().verifierErreurs ? logique.erreurs(etat, donnees) : [];
     instance.afficher({ etat, donnees, erreurs, indice: indice === null ? null : indice.marques });
 
+    // Touche estompée quand sa valeur ne peut plus être posée (aucun nombre affiché)
     const restants = vue.restants(etat, donnees);
-    for (const [valeur, { bouton: touche, reste }] of touches) {
-      const n = restants === null ? null : (restants[valeur] ?? 0);
-      reste.textContent = n === null ? '' : String(n);
-      touche.classList.toggle('est-epuisee', n === 0);
-      touche.setAttribute('aria-label', n === null ? valeur : `${valeur}, encore ${n}`);
+    for (const [valeur, touche] of touches) {
+      const epuisee = restants !== null && (restants[valeur] ?? 0) === 0;
+      touche.classList.toggle('est-epuisee', epuisee);
+      touche.setAttribute('aria-label', epuisee ? `${valeur}, déjà posé partout` : valeur);
     }
 
     const bloque = enPause() || partie.terminee;
@@ -197,13 +183,12 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     outilEffacer.disabled = bloque;
     outilAnnuler.disabled = bloque || !peutAnnulerPartie(partie);
     outilRetablir.disabled = bloque || !peutRetablirPartie(partie);
-    if (outilRemplir !== null) outilRemplir.disabled = bloque;
     outilIndice.disabled = bloque;
     outilIndice.classList.toggle('est-actif', indice !== null);
     const n = partie.indicesUtilises;
     compteurIndices.textContent = n > 0 ? String(n) : '';
     outilIndice.setAttribute('aria-label', n > 0 ? `Indice (${n} utilisé${n > 1 ? 's' : ''})` : 'Indice');
-    for (const { bouton: touche } of touches.values()) touche.disabled = bloque;
+    for (const touche of touches.values()) touche.disabled = bloque;
     pause.disabled = partie.terminee;
     pause.setAttribute('aria-label', enPause() ? 'Reprendre' : 'Mettre en pause');
     pause.title = pause.getAttribute('aria-label') ?? '';

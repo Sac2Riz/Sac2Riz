@@ -107,6 +107,9 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
   `definir-notes` (anciennes parties toujours lisibles, `versionFormat` inchangé).
 - Vérifié : le worker n'est limité que par son budget de temps (aucune limite d'essais par défaut ; tests
   dans `generation-niveau.test.ts` et `traitement.test.ts`).
+- Retraits après test sur tablette : nombre de chiffres restants sur les touches du pavé (la touche reste
+  estompée quand le chiffre est posé partout) ; bouton « Remplir les notes » et `remplirNotes` du contrat
+  (`definir-notes` gardée pour les indices ; anciennes parties toujours rejouables, testé).
 - Tests : indices (dont éliminations et notes du joueur), remplir les notes, nouvelles actions, réglages,
   statistiques et record, compteur d'indices, bilan de fin (326 tests) ; parcours vérifié dans Edge.
 

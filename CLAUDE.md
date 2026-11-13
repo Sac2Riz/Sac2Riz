@@ -90,6 +90,6 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   annuler/rétablir, chrono, sauvegarde et reprise ; nouvelle partie sur une partie en cours = confirmation,
   puis la partie remplacée compte comme abandonnée (compteur séparé).
 - ✅ Étape 3c — Indices en deux temps (mise en évidence puis application) avec compteur, vérification des
-  erreurs, « Remplir les notes », réglages, statistiques par jeu et niveau, écran de fin de partie
-  (une partie avec indices ne bat pas le record).
+  erreurs, réglages, statistiques par jeu et niveau, écran de fin de partie (une partie avec indices ne
+  bat pas le record). Retirés ensuite : nombre restant sur les touches du pavé, bouton « Remplir les notes ».
 - ⏭️ Prochaine : **Étape 4** — Chiffres casés.

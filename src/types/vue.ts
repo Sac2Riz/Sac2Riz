@@ -46,8 +46,8 @@ export type ConfigPave =
 export interface VueJeu<D extends Json, E extends Json, A extends Json> {
   readonly pave: ConfigPave;
   /**
-   * Pavé commun : nombre de fois où chaque valeur peut encore être placée (affiché sur la touche,
-   * touche grisée à 0), ou null pour ne rien afficher.
+   * Pavé commun : nombre de fois où chaque valeur peut encore être placée, ou null. Seul le zéro
+   * compte pour le socle : la touche est alors estompée (aucun nombre n'est affiché).
    */
   restants(etat: E, donnees: D): Readonly<Record<string, number>> | null;
   /** Crée l'affichage du jeu dans le conteneur fourni par le socle. */

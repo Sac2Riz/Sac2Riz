@@ -2,6 +2,21 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 3c — retraits] — Pavé sans nombre restant, plus de « Remplir les notes » — 2026-11-13
+
+### Retiré
+- Pavé : le petit nombre en bas à droite de chaque touche (combien de fois le chiffre peut encore être
+  posé). La touche reste estompée quand le chiffre est posé partout : `VueJeu.restants` est donc gardé
+  dans le contrat (le socle ne s'en sert plus que pour ce cas) ; style `.touche-reste` supprimé.
+- Bouton « Remplir les notes » et méthode facultative `remplirNotes` du contrat (`LogiqueJeu`) ; module
+  `sudoku-classique/notes.ts` supprimé ; contrôle correspondant retiré de `verifier-module.ts`.
+
+### Conservé
+- Action `definir-notes` du sudoku : elle applique les indices d'élimination, et les parties sauvegardées
+  dont l'historique contient un ancien remplissage restent lisibles et rejouables, sans changer
+  `versionFormat`. Nouveau test : sauvegarde avec remplissage relue après passage par JSON, rejouée,
+  annulable et rétablissable.
+
 ## [Étape 3c] — Indices, erreurs, réglages, statistiques, fin de partie — 2026-11-13
 
 ### Ajouté

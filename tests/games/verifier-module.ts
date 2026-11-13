@@ -73,16 +73,6 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
 
     // Nom affiché de la technique la plus difficile (écran de fin)
     assert.ok(logique.nomTechnique(r1.notation.techniqueMax).length > 0);
-
-    // « Remplir les notes » (facultatif) : une action valide, sans mutation
-    if (logique.remplirNotes !== undefined) {
-      const initial = geler(logique.etatInitial(donnees));
-      const action = logique.remplirNotes(initial, donnees);
-      if (action !== null) {
-        assert.ok(logique.estAction(action));
-        assert.ok(logique.estEtat(logique.appliquer(initial, action, donnees)));
-      }
-    }
   }
 
   // Les gardes rejettent des valeurs absurdes

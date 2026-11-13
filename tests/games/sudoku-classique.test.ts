@@ -1,5 +1,5 @@
-// Tests propres au sudoku classique : règles des actions (retrait automatique des notes,
-// remplir les notes), gardes de type, chiffres restants du pavé et conversion des packs.
+// Tests propres au sudoku classique : règles des actions (retrait automatique des notes), parties
+// sauvegardées avec un ancien « Remplir les notes », gardes de type, pavé et conversion des packs.
 // Les indices ont leur propre fichier (sudoku-indices.test.ts).
 // (Le contrat commun est vérifié par registre.test.ts.)
 import assert from 'node:assert/strict';
@@ -11,7 +11,10 @@ import { convertirPack, NIVEAUX_AVEC_PACK } from '../../src/games/sudoku-classiq
 import type { ActionSudoku, DonneesSudoku, EtatSudoku } from '../../src/games/sudoku-classique/types.ts';
 import { vue } from '../../src/games/sudoku-classique/vue.ts';
 import { estPackSudoku } from '../../src/moteur/pack.ts';
+import { annuler, depuisSauvegarde, retablir, versSauvegarde } from '../../src/socle/partie.ts';
 import type { Json } from '../../src/types/json.ts';
+import type { PartieSauvegardee } from '../../src/types/sauvegarde.ts';
+import { estPartieSauvegardee } from '../../src/utils/gardes-sauvegarde.ts';
 import { ENONCE_UNIQUE, SOLUTION_UNIQUE } from '../moteur/grilles-connues.ts';
 
 const donnees: DonneesSudoku = { enonce: ENONCE_UNIQUE, solution: SOLUTION_UNIQUE };
@@ -142,23 +145,65 @@ describe('sudoku : actions', () => {
   });
 });
 
-describe('sudoku : remplir les notes', () => {
-  const remplir = logique.remplirNotes;
-  if (remplir === undefined) throw new Error('le sudoku doit proposer « Remplir les notes »');
+describe('sudoku : parties sauvegardées avec un ancien « Remplir les notes »', () => {
+  // Le bouton « Remplir les notes » a été retiré, mais des parties sauvegardées contiennent l'action
+  // qu'il produisait : un « definir-notes » qui donne à chaque case vide tous ses candidats.
+  // Elles doivent rester lisibles et rejouables, sans changer versionFormat.
+  const cible = vides[0] ?? 0;
+  const posee = vides[1] ?? 1;
+  const premierCoup: ActionSudoku = { type: 'placer', cellule: posee, valeur: SOLUTION_UNIQUE[posee] ?? 1 };
+  const apresPremierCoup = logique.appliquer(logique.etatInitial(donnees), premierCoup, donnees);
+  /** Ce que produisait l'ancien bouton : candidats calculés à partir des seuls chiffres posés. */
+  const changements = vides
+    .filter((c) => apresPremierCoup.valeurs[c] === 0)
+    .map((cellule) => ({
+      cellule,
+      notes: [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !VOISINES[cellule]?.some((v) => apresPremierCoup.valeurs[v] === n)),
+    }));
+  const remplissage: ActionSudoku = { type: 'definir-notes', changements };
+  // Une note de la case cible autre que sa solution, retirée à la main après le remplissage
+  const noteRetiree = changements[0]?.notes.find((n) => n !== SOLUTION_UNIQUE[cible]) ?? 1;
+  const sauvegarde: PartieSauvegardee = {
+    jeu: 'sudoku-classique',
+    versionFormat: logique.meta.versionFormat,
+    puzzle: {
+      jeu: 'sudoku-classique',
+      graine: 1,
+      notation: { niveau: 'facile', force: 3, techniqueMax: 'singleton-nu', details: {} },
+      donnees,
+    },
+    actions: [premierCoup, remplissage, { type: 'noter', cellule: cible, valeur: noteRetiree }],
+    curseur: 3,
+    chronoMs: 60_000,
+    indicesUtilises: 0,
+    debut: '2026-11-13T10:00:00.000Z',
+    maj: '2026-11-13T10:01:00.000Z',
+  };
 
-  test('une seule action : tous les candidats possibles de chaque case vide, notes existantes remplacées', () => {
-    const cible = vides[0] ?? 0;
-    const etat = jouerTout(logique.etatInitial(donnees), [{ type: 'noter', cellule: cible, valeur: 9 }]);
-    const action = remplir(etat, donnees);
-    assert.ok(action !== null && action.type === 'definir-notes');
-    const apres = logique.appliquer(etat, action, donnees);
-    for (const c of vides) {
-      const attendues = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => !VOISINES[c]?.some((v) => ENONCE_UNIQUE[v] === n));
-      assert.deepEqual(apres.notes[c], attendues, `case ${c}`);
-      assert.ok(attendues.includes(SOLUTION_UNIQUE[c] ?? 0), 'la solution est toujours parmi les candidats');
+  test('relue après un passage par JSON (stockage), rejouée, annulable et rétablissable', () => {
+    const relue: unknown = JSON.parse(JSON.stringify(sauvegarde));
+    assert.ok(estPartieSauvegardee(relue), 'acceptée par la garde du stockage');
+    assert.equal(relue.versionFormat, 1, 'versionFormat inchangé');
+
+    const partie = depuisSauvegarde(logique, relue, 0, true);
+    assert.ok(partie !== null, 'partie lisible');
+    const etat: Json = partie.etat;
+    assert.ok(logique.estEtat(etat));
+    // Toutes les cases vides ont leurs notes, sauf la note retirée ensuite à la main
+    assert.equal(etat.valeurs[posee], SOLUTION_UNIQUE[posee]);
+    assert.ok(!(etat.notes[cible] ?? []).includes(noteRetiree));
+    for (const c of vides.filter((c) => c !== cible && c !== posee)) {
+      assert.ok((etat.notes[c] ?? []).includes(SOLUTION_UNIQUE[c] ?? 0), `case ${c} : notes remplies`);
     }
-    assert.equal(remplir(apres, donnees), null, 'déjà rempli : rien à faire');
-    assert.ok(logique.estAction(action));
+
+    // Annuler deux fois revient avant le remplissage ; rétablir le rejoue à l'identique
+    const avantRemplissage = annuler(logique, annuler(logique, partie));
+    assert.deepEqual(avantRemplissage.etat, apresPremierCoup);
+    assert.deepEqual(retablir(logique, retablir(logique, avantRemplissage)).etat, partie.etat);
+
+    // Sauvegardée à nouveau : même historique
+    const resauvee = versSauvegarde(logique, partie, 0, '2026-11-13T10:02:00.000Z');
+    assert.deepEqual(resauvee.actions, sauvegarde.actions);
   });
 });
 
