@@ -11,14 +11,17 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Page d'accueil minimale, thème clair/sombre, worker squelette (ping).
 - Tests d'exemple ; documentation (CLAUDE.md, docs/, CHANGELOG.md).
 
-## ⏭️ Étape 1 — Moteur de contraintes
-- Fabriques de régions (lignes, colonnes, blocs, diagonales, irrégulières, cages).
+## ✅ Étape 1 — Moteur de contraintes
+- Fabriques de régions (lignes, colonnes, blocs, diagonales, irrégulières, cages à chiffres distincts).
 - Candidats en masque de bits.
 - Solveur par backtracking (comptage de solutions, arrêt à 2) → vérification d'unicité.
-- Générateur : grille complète aléatoire puis retrait de chiffres en gardant une solution unique.
+- Générateur : grille complète aléatoire puis retrait de chiffres en gardant une solution unique
+  (symétrie centrale par défaut, fonction d'acceptation pour piloter le retrait selon le niveau).
 - Tests : unicité, validité des grilles générées, reproductibilité par graine, performances raisonnables.
+- Script de mesure `npm run bench` : ~1,3 ms en moyenne par grille 9x9 sur PC (max ~4,5 ms).
 
-## Étape 2 — Solveur logique et notation
+## ⏭️ Étape 2 — Solveur logique et notation
+- Utiliser la fonction d'acceptation de `retirerChiffres` pour viser un niveau (arrêt tôt pour Débutant…).
 - Une technique par fichier, avec son niveau et ses tests (voir docs/DIFFICULTE.md).
 - Solveur logique (techniques de la plus simple à la plus complexe), rejet de l'essai-erreur.
 - Calcul du niveau et de la force (seuils fixés et documentés).

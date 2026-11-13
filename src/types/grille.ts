@@ -24,6 +24,11 @@ export type RegionSomme = {
   readonly forme: 'cage';
   readonly cellules: readonly Cellule[];
   readonly total: number;
+  /**
+   * Vrai si les valeurs de la cage doivent être toutes différentes (règle du Killer sudoku :
+   * une cage de 8 sur deux cases accepte 1+7, 2+6, 3+5 mais pas 4+4). La fabrique cage() le met à vrai par défaut.
+   */
+  readonly distinctes: boolean;
 };
 
 export type Region = RegionUnicite | RegionSomme;

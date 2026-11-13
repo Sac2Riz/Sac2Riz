@@ -33,6 +33,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run build` | compilation complète dans `dist/` |
 | `npm run check` | vérification des types (4 configs) + tests. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
+| `npm run bench` | mesure des temps de génération / vérification d'unicité (100 grilles 9x9) |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
@@ -51,6 +52,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - Types de données JSON (D/E/A, sauvegardes) déclarés avec `type`, pas `interface` ; pas de propriété optionnelle (utiliser `| null`).
 - Code pur (types, utils, moteur, `logique.ts`, `meta.ts`) : jamais de DOM ni de Node.
 - Fonctions de logique **pures** : jamais de mutation, renvoyer de nouvelles valeurs.
+  (Exception admise dans le moteur : tableaux de travail **locaux** modifiés pour la vitesse, jamais les arguments.)
 - Classes CSS d'un jeu préfixées par son id ; couleurs via les variables de `src/styles/theme.css`.
 - Tests unitaires obligatoires pour le moteur (unicité de solution, validité, cohérence de la notation) et pour chaque technique du solveur.
 
@@ -68,4 +70,5 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 
 ## État d'avancement
 - ✅ Étape 0 — Fondations (squelette, outillage, contrat, docs).
-- ⏭️ Prochaine : **Étape 1** — moteur de contraintes, solveur par backtracking, générateur, tests.
+- ✅ Étape 1 — Moteur de contraintes (`src/moteur/`), backtracking, générateur, tests, `npm run bench`.
+- ⏭️ Prochaine : **Étape 2** — solveur logique (une technique par fichier) et notation de la difficulté.

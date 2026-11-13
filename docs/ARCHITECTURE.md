@@ -114,33 +114,62 @@ Types dans `src/types/grille.ts`.
 
 - **Grille** = `DefinitionGrille` : dimensions, valeurs autorisées, liste de **régions typées** :
   - `unicite` (formes `ligne`, `colonne`, `bloc`, `diagonale`, `irreguliere`) : chaque valeur au plus une fois ;
-  - `somme` (forme `cage`) : somme imposée (+ unicité dans la cage pour le Killer).
+  - `somme` (forme `cage`) : somme imposée `total` ; si `distinctes` est vrai (règle du Killer,
+    valeur par défaut de la fabrique `cage()`), les valeurs de la cage sont aussi toutes différentes :
+    une cage de 8 sur deux cases accepte 1+7, 2+6, 3+5, jamais 4+4.
 - **Une variante = une déclaration de régions** : sudoku 9x9 = 9 lignes + 9 colonnes + 9 blocs ;
   diagonal = + 2 diagonales ; Windoku = + 4 blocs ; irrégulier = blocs remplacés par des régions
-  irrégulières ; Killer = + cages. Des fabriques (`regionsClassiques(9, 3, 3)`…) éviteront les répétitions.
-- **Candidats** : masque de bits par case (bit v−1 = valeur v possible).
-- Le moteur fournit :
-  1. **solveur par backtracking** : compte les solutions (arrêt à 2) → vérification d'unicité ;
-  2. **générateur** : grille complète aléatoire puis retrait de chiffres (ordre aléatoire, éventuellement
-     symétrique) tant que la solution reste unique ;
-  3. **solveur logique** (étape 2) : résout comme un humain, techniques de la plus simple à la plus
-     complexe, pour noter la difficulté (voir [DIFFICULTE.md](DIFFICULTE.md)). Une technique = un fichier
-     dans `src/moteur/logique/techniques/` avec son niveau et ses tests.
-- Génération Expert/Diabolique : nombre de tentatives limité dans le worker ; si échec, grille tirée du pack.
-
-Arborescence prévue :
+  irrégulières ; Killer = + cages.
+- **Candidats** : masque de bits par case (bit v−1 = valeur v possible ; valeurs de 1 à 31).
+- **Pureté dans le moteur** : pour la vitesse, le solveur modifie des tableaux de travail **locaux**
+  (`Int32Array`), mais ne modifie jamais ses arguments et renvoie toujours de nouvelles valeurs.
 
 ```
 src/moteur/
-├─ regions.ts          fabriques de régions (lignes, colonnes, blocs, diagonales…)
-├─ candidats.ts        opérations sur les masques de bits
-├─ backtracking.ts     comptage de solutions
-├─ generateur.ts       grille complète + retrait de chiffres
-└─ logique/
-   ├─ solveur.ts       boucle : applique les techniques dans l'ordre
-   ├─ notation.ts      calcul niveau + force
-   └─ techniques/      une technique par fichier (singleton-nu.ts, paire-nue.ts, x-wing.ts…)
+├─ candidats.ts        masqueDe, masqueComplet, contient, compterBits, valeursDuMasque, plusPetiteValeur
+├─ regions.ts          fabriques : regionsLignes/Colonnes/Blocs/Diagonales/Irregulieres, cage,
+│                      regionsClassiques, definitionClassique(taille, hBloc, lBloc)
+├─ structure.ts        compiler(def) : vérifie la définition, précalcule les tables du solveur
+├─ validation.ts       conflits, estComplete, estSolution (pour erreurs() / estTerminee() des jeux)
+├─ backtracking.ts     compterSolutions, compterSolutionsAvec, estUnique
+├─ generateur.ts       genererGrilleComplete, retirerChiffres, genererGrille
+└─ logique/            (étape 2) solveur.ts, notation.ts, techniques/ (une technique par fichier)
 ```
+
+### Solveur par backtracking — `backtracking.ts`
+
+`compterSolutions(def, valeurs, { limite = 2, noeudsMax = ∞, alea = null })` →
+`{ nombre, solution, interrompu, noeuds }`. Il remplit d'abord la case qui a le moins de candidats
+(heuristique MRV). Pour les cages, une valeur est écartée si la somme restante devient impossible
+(bornes min/max des valeurs encore disponibles). `interrompu` signale un arrêt par `noeudsMax`
+(`nombre` n'est alors qu'un minimum). Avec `alea`, les valeurs sont essayées au hasard (remplissage).
+`compterSolutionsAvec(structure, …)` évite de recompiler la définition dans une boucle.
+
+### Générateur — `generateur.ts`
+
+- `genererGrilleComplete(def, alea)` : grille pleine au hasard.
+- `retirerChiffres(def, solution, alea, options)` : vide les cases dans un ordre aléatoire et remet
+  celles dont le retrait rendrait la solution non unique. Options (toutes facultatives) :
+  - `symetrie` : `'centrale'` (par défaut : la case et sa symétrique par rapport au centre sont vidées
+    ensemble) ou `'aucune'` ;
+  - `indicesMin` : ne jamais descendre sous ce nombre de chiffres donnés (0 par défaut) ;
+  - `accepter` : **fonction d'acceptation** (`null` par défaut), appelée après **chaque retrait réussi**
+    (énoncé toujours à solution unique) avec un `EtatRetrait` :
+    `{ enonce, solution, nombreIndices, cellulesRetirees }` (`enonce` est une copie). Elle renvoie :
+    - `'continuer'` : garder le retrait et poursuivre ;
+    - `'refuser'` : remettre les chiffres retirés et passer aux cases suivantes
+      (ex. l'énoncé exigerait une technique trop forte pour le niveau visé) ;
+    - `'arreter'` : garder le retrait et terminer (ex. Débutant : s'arrêter vers 40-45 chiffres).
+    À l'étape 2, le solveur logique s'en servira pour viser un niveau de difficulté.
+- `genererGrille(def, alea, options)` = les deux à la suite → `{ enonce, solution }`.
+- Le retrait seul ne fabrique pas de cages : la génération des cages du Killer viendra avec cette variante.
+- Génération Expert/Diabolique : nombre de tentatives limité dans le worker ; si échec, grille tirée du pack.
+
+### Mesure des performances
+
+`npm run bench` (`scripts/bench.ts`) génère 100 grilles 9x9 (graines 1 à 100, reproductibles) et affiche
+moyenne, médiane et maximum du temps de génération et de la vérification d'unicité. Référence PC
+(étape 1) : génération ~1,3 ms en moyenne, ~4,5 ms au pire ; unicité ~0,1 ms en moyenne, ~1,5 ms au pire.
 
 ## Packs de grilles
 
