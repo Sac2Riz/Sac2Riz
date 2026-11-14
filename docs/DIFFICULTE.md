@@ -284,3 +284,30 @@ Techniques utilisées en Diabolique (part des grilles) : conséquences directes 
 - Packs (`src/games/chiffres-cases/packs/`) : `expert.json` et `diabolique.json`, **200 grilles chacun**
   (graines 1, 2, 3…, aucune sautée), générés par `npm run packs -- --jeu=chiffres-cases` en ~4 min et
   ~38 min sur PC. Taille : ~72 Ko chacun (~370 octets par grille), **~18 Ko** une fois compressés (gzip).
+
+#### Nombre au départ (réglage, après l'étape 4b)
+
+Réglage « Toujours placer un nombre au départ » (désactivé par défaut) : une **nouvelle** grille sans
+aucun pré-placé en reçoit un (`depart.ts`, appelé dans le worker par `LogiqueJeu.preparer`). La notation
+de la partie (niveau et force affichés, statistiques) reste celle de la grille d'origine.
+
+Choix du nombre :
+1. **Ouverture** de chaque emplacement essayé comme pré-placé : emplacements remplis par les seules
+   techniques Débutant et Facile (ce que le joueur pose d'emblée). Classement par ouverture, puis longueur,
+   puis numéro d'emplacement.
+2. Premier candidat qui **garde le niveau** avec une ouverture d'au moins 3 (`OUVERTURE_MIN`) ; sinon le
+   premier qui ouvre et ne baisse le niveau que d'un cran ; sinon le premier qui garde le niveau ; sinon
+   celui qui le baisse le moins.
+
+Mesures (packs, grilles sans pré-placé, PC) — ouverture moyenne sur 46 emplacements :
+
+| Pack | Grilles | Sans aide | Nombre le plus long | Nombre choisi | Niveau gardé | Temps moyen / max |
+|---|---|---|---|---|---|---|
+| Expert | 196 | 0,2 | 12,7 | 9,4 | 120 (Difficile 54, Moyen 22) | 30 / 138 ms |
+| Diabolique | 170 | 0,8 | 18,7 | 30,0 | 169 (Expert 1) | 13 / 161 ms |
+
+Écartés : le nombre qui « facilite le plus » la grille (notation la plus basse) ramène presque tous les
+Expert et Diabolique au niveau Moyen ou Débutant, en jusqu'à 3 s ; les règles simples (nombre le plus long,
+longueur rare, plus de croisements) n'aident pas en Diabolique (niveau et force inchangés, ouverture
+moindre). En Expert, garder le niveau oblige souvent à un nombre qui ouvre peu : pour 76 grilles, aucun
+nombre ne garde le niveau Expert en ouvrant la grille.

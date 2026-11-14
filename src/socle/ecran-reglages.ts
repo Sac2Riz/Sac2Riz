@@ -8,7 +8,7 @@ import { NOMS_THEMES, ORDRE_THEMES } from './theme.ts';
 
 /** Réglages à interrupteur (vrai / faux), dans l'ordre d'affichage. */
 const INTERRUPTEURS: readonly {
-  readonly cle: 'verifierErreurs' | 'miseEnEvidence' | 'retraitAutoNotes';
+  readonly cle: 'verifierErreurs' | 'miseEnEvidence' | 'retraitAutoNotes' | 'nombreAuDepart';
   readonly titre: string;
   readonly detail: string;
 }[] = [
@@ -26,6 +26,11 @@ const INTERRUPTEURS: readonly {
     cle: 'retraitAutoNotes',
     titre: 'Retrait automatique des notes',
     detail: 'Poser un chiffre le retire des notes de sa ligne, de sa colonne et de son bloc.',
+  },
+  {
+    cle: 'nombreAuDepart',
+    titre: 'Toujours placer un nombre au départ',
+    detail: 'Chiffres casés : une nouvelle grille sans nombre donné en reçoit un, choisi pour aider à démarrer.',
   },
 ];
 

@@ -172,6 +172,8 @@ export const logique: LogiqueJeu<DonneesSudoku, EtatSudoku, ActionSudoku> = {
   meta: META,
   generer,
   noter,
+  // Aucune aide au départ pour ce jeu : données inchangées
+  preparer: (donnees) => donnees,
   etatInitial,
   appliquer,
   erreurs,

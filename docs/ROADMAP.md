@@ -168,6 +168,10 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
     n'est plus retiré : les cases en conflit clignotent (3 pulsations, ~1 s) ; un déplacement en conflit
     laisse le nombre à son ancien emplacement. Indice inchangé : il ne propose jamais de pose en conflit.
   - Tests : interaction (24 tests), règles ; 445 tests. Vérifié dans Edge (portrait, paysage, clair, sombre).
+  - réglage « Toujours placer un nombre au départ » (désactivé par défaut) : une nouvelle grille sans
+    pré-placé en reçoit un, choisi pour la meilleure ouverture en gardant le niveau (`depart.ts`, mesures dans
+    DIFFICULTE.md) ; contrat logique `preparer`, demande `preparer` au worker (second worker dédié).
+    Tests : 460. Vérifié dans Edge (réglage conservé, partie en cours inchangée, sudoku inchangé).
 
 ## Étape 5 — PWA, sauvegarde externe, déploiement
 - Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.

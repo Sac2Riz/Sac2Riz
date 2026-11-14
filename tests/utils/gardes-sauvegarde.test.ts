@@ -90,6 +90,7 @@ describe('gardes des données conservées', () => {
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'theme', 'violet')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'verifierErreurs', 'oui')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 1)), false);
+    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'nombreAuDepart', 'non')), false);
     assert.equal(estReglages({ theme: 'clair', verifierErreurs: true }), false, "forme de l'étape 3b : incomplète");
   });
 

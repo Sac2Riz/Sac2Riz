@@ -101,8 +101,13 @@ export function estReglagesV1(valeur: unknown): valeur is ReglagesV1 {
 /** Réglages complets (forme actuelle). */
 export function estReglages(valeur: unknown): valeur is Reglages {
   if (!estObjet(valeur)) return false;
-  const { miseEnEvidence, retraitAutoNotes } = valeur;
-  return estReglagesV1(valeur) && typeof miseEnEvidence === 'boolean' && typeof retraitAutoNotes === 'boolean';
+  const { miseEnEvidence, retraitAutoNotes, nombreAuDepart } = valeur;
+  return (
+    estReglagesV1(valeur) &&
+    typeof miseEnEvidence === 'boolean' &&
+    typeof retraitAutoNotes === 'boolean' &&
+    typeof nombreAuDepart === 'boolean'
+  );
 }
 
 /** Contenu acceptable du magasin « reglages » : forme actuelle ou ancienne (complétée à la lecture). */

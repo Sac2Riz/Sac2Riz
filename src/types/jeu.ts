@@ -103,6 +103,12 @@ export type OptionsJeu = {
   readonly retraitAutoNotes: boolean;
 };
 
+/** Réglages du joueur qui changent les données d'une NOUVELLE partie (voir LogiqueJeu.preparer). */
+export type OptionsDepart = {
+  /** Une grille sans aucun élément donné au départ en reçoit un (chiffres casés : un nombre pré-placé). */
+  readonly nombreAuDepart: boolean;
+};
+
 /**
  * Partie logique d'un jeu. Toutes les fonctions sont PURES : elles ne modifient
  * jamais leurs arguments et renvoient de nouvelles valeurs.
@@ -117,6 +123,14 @@ export interface LogiqueJeu<D extends Json, E extends Json, A extends Json> {
 
   /** Note la difficulté d'une grille ; null si elle exige de l'essai-erreur (grille rejetée). */
   noter(donnees: D): Notation | null;
+
+  /**
+   * Données d'une NOUVELLE partie, ajustées selon les réglages du joueur (aide au départ…).
+   * Renvoie l'objet reçu tel quel s'il n'y a rien à changer (jeu sans objet : (d) => d).
+   * Appelé dans le worker (peut noter la grille plusieurs fois) ; jamais sur une partie en cours.
+   * Les données renvoyées doivent garder une solution unique.
+   */
+  preparer(donnees: D, options: OptionsDepart): D;
 
   /** État de saisie au début d'une partie. */
   etatInitial(donnees: D): E;

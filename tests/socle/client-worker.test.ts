@@ -42,6 +42,25 @@ describe('client du worker', () => {
     assert.deepEqual(await d.resultat, { statut: 'ok', puzzle });
   });
 
+  test('préparation : demande envoyée en priorité urgente, puzzle préparé renvoyé', async () => {
+    const { canaux, client } = preparer();
+    const fond = client.generer('jeu-a', 'facile', 'fond', null);
+    const autre = client.generer('jeu-a', 'moyen', 'fond', null);
+    const puzzle = puzzleFactice('jeu-a', 'expert');
+    const p = client.preparer(puzzle, { nombreAuDepart: true });
+    const canal = canaux[0];
+    // La génération de fond déjà en cours finit d'abord, puis la préparation passe devant l'autre
+    canal?.recepteurs.message({ type: 'echec', requete: derniereGeneration(canal).requete, raison: 'budget' });
+    assert.deepEqual(await fond.resultat, { statut: 'echec', raison: 'budget' });
+    const envoi = canal?.envoyes.at(-1);
+    assert.ok(envoi !== undefined && envoi.type === 'preparer');
+    assert.deepEqual({ jeu: envoi.jeu, puzzle: envoi.puzzle, options: envoi.options }, { jeu: 'jeu-a', puzzle, options: { nombreAuDepart: true } });
+    const prepare = { ...puzzle, graine: 1 };
+    canal?.recepteurs.message({ type: 'genere', requete: envoi.requete, puzzle: prepare });
+    assert.deepEqual(await p.resultat, { statut: 'ok', puzzle: prepare });
+    autre.annuler();
+  });
+
   test('une demande à la fois ; « urgent » passe avant « fond »', async () => {
     const { canaux, client } = preparer();
     const a = client.generer('jeu-a', 'facile', 'fond', null);

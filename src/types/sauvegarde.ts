@@ -16,6 +16,11 @@ export type Reglages = {
   readonly miseEnEvidence: boolean;
   /** Poser un chiffre retire cette note des cases de sa ligne, de sa colonne et de son bloc. */
   readonly retraitAutoNotes: boolean;
+  /**
+   * Chiffres casés : une NOUVELLE grille sans aucun nombre pré-placé en reçoit un (LogiqueJeu.preparer).
+   * Sans effet sur une partie en cours.
+   */
+  readonly nombreAuDepart: boolean;
 };
 
 export const REGLAGES_PAR_DEFAUT: Reglages = {
@@ -23,6 +28,15 @@ export const REGLAGES_PAR_DEFAUT: Reglages = {
   verifierErreurs: false,
   miseEnEvidence: true,
   retraitAutoNotes: true,
+  nombreAuDepart: false,
+};
+
+/** Réglages enregistrés par les étapes 3c à 4b (avant « nombre au départ »). */
+export type ReglagesV2 = {
+  readonly theme: Theme;
+  readonly verifierErreurs: boolean;
+  readonly miseEnEvidence: boolean;
+  readonly retraitAutoNotes: boolean;
 };
 
 /** Réglages enregistrés avant l'étape 3c (seulement le thème et la vérification des erreurs). */
@@ -32,7 +46,7 @@ export type ReglagesV1 = {
 };
 
 /** Ce que le magasin « reglages » peut contenir : forme actuelle ou ancienne (complétée à la lecture). */
-export type ReglagesEnregistres = Reglages | ReglagesV1;
+export type ReglagesEnregistres = Reglages | ReglagesV2 | ReglagesV1;
 
 /**
  * Partie en cours, sauvegardée automatiquement.

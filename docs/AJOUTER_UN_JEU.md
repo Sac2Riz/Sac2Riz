@@ -36,6 +36,10 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
    - `indice(etat, donnees, options)` : renvoie un indice en deux temps (titre, explication, marques à
      mettre en évidence, libellé du bouton, action). Respecter `options.retraitAutoNotes` si le jeu a des notes.
    - `nomTechnique(id)` : nom affiché de `notation.techniqueMax` (écran de fin de partie).
+   - `preparer(donnees, options)` : données d'une **nouvelle** partie ajustées selon les réglages
+     (`options.nombreAuDepart` : aide au départ). Jeu sans objet : `preparer: (donnees) => donnees`. Exécuté
+     dans le worker (peut noter la grille plusieurs fois), jamais sur une partie en cours ; la grille doit
+     rester à solution unique. Exemple : `chiffres-cases/depart.ts`.
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
 4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Ne jamais modifier l'état : appeler `contexte.jouer(action)`.
    - **Pavé** (`pave`) : `{ type: 'commun', valeurs: ['1', …] }` (le socle dessine les touches et appelle

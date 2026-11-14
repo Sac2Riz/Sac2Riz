@@ -5,10 +5,13 @@ import { logique as logiqueModele } from '../../src/games/_modele/logique.ts';
 import { genererParNiveau, TENTATIVES_MAX_SANS_BUDGET } from '../../src/moteur/generation-niveau.ts';
 import { definitionClassique } from '../../src/moteur/regions.ts';
 import type { Alea } from '../../src/types/alea.ts';
-import type { OptionsGeneration, ResultatGeneration } from '../../src/types/jeu.ts';
+import type { OptionsGeneration, Puzzle, ResultatGeneration } from '../../src/types/jeu.ts';
+import type { DonneesCases } from '../../src/games/chiffres-cases/types.ts';
 import type { Niveau } from '../../src/types/niveaux.ts';
-import type { DemandeGeneration } from '../../src/types/worker.ts';
-import { estDemande, traiterGeneration } from '../../src/worker/traitement.ts';
+import type { DemandeGeneration, DemandePreparation } from '../../src/types/worker.ts';
+import { logique as logiqueCases } from '../../src/games/chiffres-cases/logique.ts';
+import { estDemande, traiterGeneration, traiterPreparation } from '../../src/worker/traitement.ts';
+import { donneesDe } from '../games/chiffres-cases/aide.ts';
 
 const demande: DemandeGeneration = { type: 'generer', requete: 7, jeu: '_modele', niveau: 'moyen', graine: 5, budgetMs: 1000 };
 
@@ -85,5 +88,43 @@ describe('traitement des demandes du worker', () => {
       () => 0,
     );
     assert.deepEqual(r, { type: 'erreur', requete: 7, message: 'Module logique invalide' });
+  });
+});
+
+describe('traitement des demandes de préparation (aide au départ)', () => {
+  // Grille 3 × 3 de chiffres casés, sans pré-placé (une solution unique : 12 / 13 / 246 / 345 / 57 / 67)
+  const donnees = donneesDe(['12#', '345', '#67']);
+  const puzzle: Puzzle<DonneesCases> = { jeu: 'chiffres-cases', graine: 3, notation: { niveau: 'moyen', force: 4, techniqueMax: 'x', details: {} }, donnees };
+  const demandePrep = (nombreAuDepart: boolean): DemandePreparation => ({
+    type: 'preparer',
+    requete: 9,
+    jeu: 'chiffres-cases',
+    puzzle,
+    options: { nombreAuDepart },
+  });
+
+  test('estDemande : préparation valide ; options ou puzzle invalides refusés', () => {
+    assert.ok(estDemande(demandePrep(true)));
+    assert.equal(estDemande({ ...demandePrep(true), options: {} }), false);
+    assert.equal(estDemande({ ...demandePrep(true), options: { nombreAuDepart: 'oui' } }), false);
+    assert.equal(estDemande({ ...demandePrep(true), puzzle: { jeu: 'chiffres-cases' } }), false);
+  });
+
+  test('option active : un pré-placé ajouté, le reste du puzzle inchangé', async () => {
+    const r = await traiterPreparation(demandePrep(true), async () => logiqueCases);
+    assert.equal(r.type, 'genere');
+    if (r.type !== 'genere') return;
+    assert.equal(r.requete, 9);
+    assert.deepEqual({ ...r.puzzle, donnees: null }, { ...puzzle, donnees: null });
+    assert.deepEqual(r.puzzle.donnees, { ...donnees, preplaces: [logiqueCases.preparer(donnees, { nombreAuDepart: true }).preplaces[0]] });
+  });
+
+  test('option inactive : puzzle renvoyé tel quel', async () => {
+    assert.deepEqual(await traiterPreparation(demandePrep(false), async () => logiqueCases), { type: 'genere', requete: 9, puzzle });
+  });
+
+  test("grille d'un autre jeu ou données invalides : erreur", async () => {
+    const r = await traiterPreparation({ ...demandePrep(true), jeu: '_modele' }, async () => logiqueModele);
+    assert.equal(r.type, 'erreur');
   });
 });

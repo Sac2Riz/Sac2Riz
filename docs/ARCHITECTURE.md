@@ -68,9 +68,15 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
   suit le thème choisi (`src/socle/theme.ts`).
 - **Réglages** (`Reglages`) : thème, vérification des erreurs, mise en évidence, retrait automatique des
-  notes. Écran en fenêtre (`<dialog>`) ouvert depuis l'accueil et pendant une partie ; chaque changement
-  s'applique tout de suite. Des réglages enregistrés par une version plus ancienne (forme `ReglagesV1`)
-  sont complétés par les valeurs par défaut à la lecture (`socle/reglages.ts`, `completerReglages`).
+  notes, nombre au départ (chiffres casés, désactivé par défaut). Écran en fenêtre (`<dialog>`) ouvert depuis
+  l'accueil et pendant une partie ; chaque changement s'applique tout de suite. Des réglages enregistrés par
+  une version plus ancienne (formes `ReglagesV1`, `ReglagesV2`) sont complétés par les valeurs par défaut à
+  la lecture (`socle/reglages.ts`, `completerReglages`).
+- **Préparation d'une nouvelle partie** : si « nombre au départ » est activé, la grille obtenue (réserve,
+  pack, génération) passe par `LogiqueJeu.preparer` dans le worker, sous le même indicateur de chargement,
+  avant de créer la partie (`socle/app.ts`). Un **second worker**, créé au premier besoin (`main.ts`), s'en
+  charge : la préparation n'attend jamais derrière une génération de fond. Échec → grille jouée telle
+  quelle. Une partie reprise n'est jamais préparée.
 - **Indices en deux temps** avec compteur : 1) mise en évidence (régions, cases et candidats du motif,
   éliminations barrées, chiffre à placer) et explication dans un bandeau qui remplace le pavé — le compteur
   augmente dès ce moment ; 2) « Appliquer » joue l'action de l'indice (annulable comme tout coup).
@@ -180,7 +186,9 @@ src/socle/
   messages) et un nouveau est créé pour la suivante. `budgetMs` : budget de cette demande, ou `null` pour
   le budget par défaut (4 s). Garde-fou : pas de réponse après budget de la demande + marge
   (par défaut 4 s + 10 s) → worker arrêté, résultat `erreur`. Les réponses d'un ancien worker sont ignorées ; la grille
-  reçue est vérifiée (`estPuzzle`).
+  reçue est vérifiée (`estPuzzle`). `preparer(puzzle, options)` : demande `preparer` au worker (priorité
+  urgente, budget par défaut comme garde-fou), réponse `genere` avec le puzzle préparé (mêmes jeu, graine et
+  notation ; seules les données changent).
 - **Stockage** : interface `Stockage` (`lire`, `ecrire`, `supprimer`, `lister(prefixe)`, `compter(prefixe)`,
   `prendrePremier(prefixe)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
   `reserve` (clé `<jeu>/<niveau>/<horodatage>-<compteur>`), `packsJoues` (clé `<jeu>/<niveau>`), `stats`
@@ -218,6 +226,7 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 | `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat`, `generation` (réglages de génération par niveau : `{ mode: 'pack' }` ou `{ mode: 'worker', budgetFondMs }` ; `{}` = fonctionnement par défaut) |
 | `generer(niveau, alea, { doitArreter })` | `{ ok: true, donnees, notation }` ou `{ ok: false, raison }` (exécuté dans le worker) |
 | `noter(donnees)` | `Notation` (niveau, force, technique max, détails) ou `null` si l'essai-erreur est nécessaire |
+| `preparer(donnees, options)` | données d'une **nouvelle** partie selon les réglages (`OptionsDepart` : `nombreAuDepart`), dans le worker ; sinon le même objet |
 | `etatInitial(donnees)` | état E en début de partie |
 | `appliquer(etat, action, donnees)` | **nouvel** état (jamais de mutation) |
 | `erreurs(etat, donnees)` | cases fausses (comparaison avec la solution) |
@@ -293,6 +302,7 @@ src/games/chiffres-cases/
 ├─ backtracking.ts       compte les solutions (unicité)
 ├─ motif.ts, remplissage.ts, generateur.ts   motif symétrique connexe, chiffres, marche aléatoire par niveau
 ├─ notation.ts           niveau + force (VERSION_NOTATION_CASES)
+├─ depart.ts           nombre au départ (réglage) : meilleure ouverture qui garde le niveau
 ├─ indice.ts             indices en deux temps (nombre faux d'abord, puis chemin du solveur)
 ├─ gardes.ts, logique.ts, packs.ts, packs/
 ├─ interaction.ts        touchers (pur) : emplacement d'abord (horizontal puis vertical au second toucher) ou

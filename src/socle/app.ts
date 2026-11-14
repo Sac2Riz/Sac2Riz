@@ -2,14 +2,18 @@
 //
 // Nouvelle partie sur un jeu qui a déjà une partie en cours :
 //   1. confirmation demandée au joueur (sinon on ne fait rien) ;
-//   2. grille obtenue (réserve, pack ou génération urgente avec indicateur de chargement) ;
+//   2. grille obtenue (réserve, pack ou génération urgente avec indicateur de chargement), puis,
+//      si le réglage « nombre au départ » est activé, préparée dans le worker (LogiqueJeu.preparer,
+//      sous le même indicateur) ; si la préparation échoue, la grille est jouée telle quelle ;
 //   3. SEULEMENT ALORS l'ancienne partie compte comme abandonnée et est remplacée
 //      (si le joueur annule le chargement, son ancienne partie reste intacte).
+// Une partie reprise (« Continuer ») n'est jamais préparée : un réglage changé ne la modifie pas.
 // Écrans : accueil, partie, statistiques, fin de partie ; les réglages sont une fenêtre par-dessus.
 // Bouton « retour » d'Android hors de l'accueil : retour à l'accueil (UNE entrée est ajoutée à
 // l'historique du navigateur en quittant l'accueil ; la fin de partie et la partie suivante
 // réutilisent cette entrée), sans quitter l'appli.
 
+import type { OptionsDepart, Puzzle } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX, type Niveau } from '../types/niveaux.ts';
 import type { Reglages } from '../types/sauvegarde.ts';
@@ -17,6 +21,7 @@ import type { ModuleJeuQuelconque, VueJeu } from '../types/vue.ts';
 import { afficherAccueil, type JeuAccueil } from './accueil.ts';
 import type { BilanFin } from './bilan-fin.ts';
 import { afficherChargement } from './chargement.ts';
+import type { DemandeEnCours } from './client-worker.ts';
 import { confirmer, informer } from './dialogue.ts';
 import { afficherFin } from './ecran-fin.ts';
 import { afficherPartie } from './ecran-partie.ts';
@@ -35,6 +40,8 @@ export type OptionsApp = {
   readonly parties: ServiceParties;
   readonly reserve: ServiceReserve;
   readonly reglages: Reglages;
+  /** Prépare dans le worker la grille d'une nouvelle partie (LogiqueJeu.preparer : aide au départ). */
+  readonly preparer: (puzzle: Puzzle<Json>, options: OptionsDepart) => DemandeEnCours;
   /** Enregistre les réglages modifiés (écran des réglages). */
   readonly enregistrerReglages: (reglages: Reglages) => Promise<void>;
 };
@@ -168,18 +175,46 @@ export function demarrerApp(o: OptionsApp): void {
     }
 
     const demande = o.reserve.obtenirGrille(id, niveau);
-    const chargement = afficherChargement('Préparation de la grille…', () => demande.annuler());
-    const [resultat, jeu] = await Promise.all([demande.resultat, chargerJeu(id)]).finally(() => chargement.fermer());
+    let preparation: DemandeEnCours | null = null;
+    let annule = false;
+    const chargement = afficherChargement('Préparation de la grille…', () => {
+      annule = true;
+      demande.annuler();
+      preparation?.annuler();
+    });
+    const [resultat, jeu] = await Promise.all([demande.resultat, chargerJeu(id)]).catch((erreur: unknown) => {
+      chargement.fermer();
+      throw erreur;
+    });
+    if (resultat.statut !== 'ok') chargement.fermer();
     if (resultat.statut === 'annule') return;
     if (resultat.statut === 'erreur') {
       await informer('Grille indisponible', `Impossible de préparer une grille : ${resultat.message}`);
       return;
     }
-    const { puzzle } = resultat;
+    let { puzzle } = resultat;
     if (puzzle.jeu !== id || !jeu.logique.estDonnees(puzzle.donnees)) {
+      chargement.fermer();
       await informer('Grille indisponible', 'La grille obtenue est invalide. Réessayez.');
       return;
     }
+
+    // Aide au départ (réglage) : calculée dans le worker, sous le même indicateur de chargement
+    const options: OptionsDepart = { nombreAuDepart: reglages.nombreAuDepart };
+    if (options.nombreAuDepart) {
+      preparation = o.preparer(puzzle, options);
+      const prepare = await preparation.resultat;
+      if (annule || prepare.statut === 'annule') {
+        chargement.fermer();
+        return;
+      }
+      if (prepare.statut === 'ok' && prepare.puzzle.jeu === id && jeu.logique.estDonnees(prepare.puzzle.donnees)) {
+        puzzle = { ...puzzle, donnees: prepare.puzzle.donnees };
+      } else {
+        console.error('Aide au départ impossible, grille jouée telle quelle :', prepare);
+      }
+    }
+    chargement.fermer();
 
     if (enCours !== null) await o.parties.abandonner(id);
     const instant = maintenant();

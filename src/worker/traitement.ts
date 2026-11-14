@@ -4,9 +4,16 @@
 import type { LogiqueJeu, Puzzle } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { estNiveau } from '../types/niveaux.ts';
-import { BUDGET_MAX_MS, type DemandeGeneration, type DemandeWorker, type ReponseWorker } from '../types/worker.ts';
+import {
+  BUDGET_MAX_MS,
+  type DemandeGeneration,
+  type DemandePreparation,
+  type DemandeWorker,
+  type ReponseWorker,
+} from '../types/worker.ts';
 import { creerAlea } from '../utils/alea.ts';
 import { estEntierEntre, estObjet } from '../utils/gardes-json.ts';
+import { estPuzzle } from '../utils/gardes-sauvegarde.ts';
 
 /** Renvoie la logique d'un jeu à partir de son identifiant (import dynamique dans le worker). */
 export type ChargeurLogique = (id: string) => Promise<LogiqueJeu<Json, Json, Json>>;
@@ -15,6 +22,16 @@ export type ChargeurLogique = (id: string) => Promise<LogiqueJeu<Json, Json, Jso
 export function estDemande(valeur: unknown): valeur is DemandeWorker {
   if (!estObjet(valeur)) return false;
   if (valeur['type'] === 'ping') return true;
+  if (valeur['type'] === 'preparer') {
+    const options = valeur['options'];
+    return (
+      estEntierEntre(valeur['requete'], 0, Number.MAX_SAFE_INTEGER) &&
+      typeof valeur['jeu'] === 'string' &&
+      estPuzzle(valeur['puzzle']) &&
+      estObjet(options) &&
+      typeof options['nombreAuDepart'] === 'boolean'
+    );
+  }
   return (
     valeur['type'] === 'generer' &&
     estEntierEntre(valeur['requete'], 0, Number.MAX_SAFE_INTEGER) &&
@@ -48,6 +65,25 @@ export async function traiterGeneration(
       donnees: resultat.donnees,
     };
     return { type: 'genere', requete: demande.requete, puzzle };
+  } catch (erreur) {
+    const message = erreur instanceof Error ? erreur.message : String(erreur);
+    return { type: 'erreur', requete: demande.requete, message };
+  }
+}
+
+/**
+ * Prépare une grille pour une nouvelle partie (LogiqueJeu.preparer). Le puzzle reste le même (jeu,
+ * graine, notation) ; seules ses données peuvent changer (ex. un nombre pré-placé ajouté).
+ */
+export async function traiterPreparation(demande: DemandePreparation, charger: ChargeurLogique): Promise<ReponseWorker> {
+  try {
+    const logique = await charger(demande.jeu);
+    const { puzzle } = demande;
+    if (puzzle.jeu !== demande.jeu || !logique.estDonnees(puzzle.donnees)) {
+      return { type: 'erreur', requete: demande.requete, message: 'Grille à préparer invalide' };
+    }
+    const donnees = logique.preparer(puzzle.donnees, demande.options);
+    return { type: 'genere', requete: demande.requete, puzzle: donnees === puzzle.donnees ? puzzle : { ...puzzle, donnees } };
   } catch (erreur) {
     const message = erreur instanceof Error ? erreur.message : String(erreur);
     return { type: 'erreur', requete: demande.requete, message };

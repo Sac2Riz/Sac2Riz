@@ -6,10 +6,11 @@
 // - Une grille que la logique ne résout pas n'est pas notée (null) : elle est rejetée.
 
 import { INFOS_NIVEAUX, NIVEAUX, type Force, type Niveau, type Notation } from '../../types/niveaux.ts';
-import type { Probleme } from './probleme.ts';
+import { structureDe, type Probleme } from './probleme.ts';
 import { etatDepart, type PlacementSolveur } from './solveur/etat.ts';
 import { resoudre } from './solveur/solveur.ts';
 import { IDS_TECHNIQUES_CASES, type EtapeCases } from './solveur/technique.ts';
+import type { DonneesCases } from './types.ts';
 
 /**
  * Version de la notation des chiffres casés. À INCRÉMENTER dès qu'un seuil, une technique ou
@@ -102,4 +103,13 @@ export function noterEtapes(p: Probleme, etapes: readonly EtapeCases[], preplace
 export function noterProbleme(p: Probleme, donnes: readonly PlacementSolveur[]): Notation | null {
   const r = resoudre(p, etatDepart(p, donnes));
   return r.statut === 'resolu' ? noterEtapes(p, r.etapes, donnes.length) : null;
+}
+
+/** Note une grille (ses pré-placés compris) ; null si la logique seule ne la résout pas. */
+export function noterCases(donnees: DonneesCases): Notation | null {
+  const { probleme, solution } = structureDe(donnees);
+  return noterProbleme(
+    probleme,
+    donnees.preplaces.map((emplacement) => ({ emplacement, nombre: solution[emplacement] ?? -1 })),
+  );
 }

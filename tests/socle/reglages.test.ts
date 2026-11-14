@@ -1,10 +1,10 @@
-// Tests des réglages : complétion des réglages enregistrés par l'étape 3b, relecture par le stockage.
+// Tests des réglages : complétion des réglages enregistrés par une ancienne version, relecture par le stockage.
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { completerReglages } from '../../src/socle/reglages.ts';
 import { creerStockageMemoire } from '../../src/socle/stockage/memoire.ts';
 import { CLE_REGLAGES } from '../../src/socle/stockage/stockage.ts';
-import { REGLAGES_PAR_DEFAUT, type Reglages } from '../../src/types/sauvegarde.ts';
+import { REGLAGES_PAR_DEFAUT, type Reglages, type ReglagesV2 } from '../../src/types/sauvegarde.ts';
 import { estReglages } from '../../src/utils/gardes-sauvegarde.ts';
 
 describe('réglages', () => {
@@ -15,6 +15,7 @@ describe('réglages', () => {
       verifierErreurs: false,
       miseEnEvidence: true,
       retraitAutoNotes: true,
+      nombreAuDepart: false,
     });
   });
 
@@ -22,13 +23,34 @@ describe('réglages', () => {
     const stockage = creerStockageMemoire();
     await stockage.ecrire('reglages', CLE_REGLAGES, { theme: 'sombre', verifierErreurs: true });
     const reglages = completerReglages(await stockage.lire('reglages', CLE_REGLAGES));
-    assert.deepEqual(reglages, { theme: 'sombre', verifierErreurs: true, miseEnEvidence: true, retraitAutoNotes: true });
+    assert.deepEqual(reglages, {
+      theme: 'sombre',
+      verifierErreurs: true,
+      miseEnEvidence: true,
+      retraitAutoNotes: true,
+      nombreAuDepart: false,
+    });
+    assert.ok(estReglages(reglages));
+  });
+
+  test("réglages des étapes 3c à 4b : choix conservés, « nombre au départ » désactivé", async () => {
+    const stockage = creerStockageMemoire();
+    const anciens: ReglagesV2 = { theme: 'clair', verifierErreurs: false, miseEnEvidence: false, retraitAutoNotes: false };
+    await stockage.ecrire('reglages', CLE_REGLAGES, anciens);
+    const reglages = completerReglages(await stockage.lire('reglages', CLE_REGLAGES));
+    assert.deepEqual(reglages, { ...anciens, nombreAuDepart: false });
     assert.ok(estReglages(reglages));
   });
 
   test('réglages complets : relus tels quels', async () => {
     const stockage = creerStockageMemoire();
-    const choisis: Reglages = { theme: 'clair', verifierErreurs: true, miseEnEvidence: false, retraitAutoNotes: false };
+    const choisis: Reglages = {
+      theme: 'clair',
+      verifierErreurs: true,
+      miseEnEvidence: false,
+      retraitAutoNotes: false,
+      nombreAuDepart: true,
+    };
     await stockage.ecrire('reglages', CLE_REGLAGES, choisis);
     assert.deepEqual(completerReglages(await stockage.lire('reglages', CLE_REGLAGES)), choisis);
   });

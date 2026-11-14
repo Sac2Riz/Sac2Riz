@@ -152,6 +152,8 @@ export const logique: LogiqueJeu<DonneesModele, EtatModele, ActionModele> = {
   meta: META,
   generer,
   noter,
+  // Aucune aide au départ pour ce jeu : données inchangées
+  preparer: (donnees) => donnees,
   etatInitial,
   appliquer,
   erreurs,

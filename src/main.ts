@@ -50,12 +50,17 @@ async function demarrer(): Promise<void> {
     jeux: jeux.map((j) => ({ id: j.meta.id, niveaux: j.meta.niveaux, generation: j.meta.generation })),
   });
 
+  // Second worker, créé au premier besoin : la préparation d'une nouvelle partie (aide au départ)
+  // n'attend jamais derrière une longue génération de fond du premier
+  const clientPartie = creerClientNavigateur();
+
   demarrerApp({
     racine,
     jeux,
     parties: creerServiceParties(stockage),
     reserve,
     reglages,
+    preparer: (puzzle, options) => clientPartie.preparer(puzzle, options),
     enregistrerReglages: (r) => stockage.ecrire('reglages', CLE_REGLAGES, r),
   });
 

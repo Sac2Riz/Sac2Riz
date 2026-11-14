@@ -1,4 +1,5 @@
-// Web Worker de calcul : génère les grilles en arrière-plan pour ne jamais figer l'interface.
+// Web Worker de calcul : génère les grilles en arrière-plan pour ne jamais figer l'interface, et
+// prépare celle d'une nouvelle partie (aide au départ : LogiqueJeu.preparer).
 // Compilé avec les seuls types WebWorker (voir src/worker/tsconfig.json).
 //
 // Le worker ne connaît pas le registre (qui dépend du DOM) : il charge la logique
@@ -9,7 +10,7 @@
 import type { LogiqueJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import type { DemandeWorker, ReponseWorker } from '../types/worker.ts';
-import { estDemande, traiterGeneration } from './traitement.ts';
+import { estDemande, traiterGeneration, traiterPreparation } from './traitement.ts';
 
 /** Identifiant de jeu valide (kebab-case) : empêche de charger un chemin arbitraire. */
 const ID_VALIDE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -30,7 +31,9 @@ function estModuleLogique(module: unknown): module is { logique: LogiqueJeu<Json
     'generer' in logique &&
     typeof logique.generer === 'function' &&
     'noter' in logique &&
-    typeof logique.noter === 'function'
+    typeof logique.noter === 'function' &&
+    'preparer' in logique &&
+    typeof logique.preparer === 'function'
   );
 }
 
@@ -53,6 +56,9 @@ async function traiter(demande: DemandeWorker): Promise<void> {
       return;
     case 'generer':
       repondre(await traiterGeneration(demande, chargerLogique, () => performance.now()));
+      return;
+    case 'preparer':
+      repondre(await traiterPreparation(demande, chargerLogique));
       return;
   }
 }

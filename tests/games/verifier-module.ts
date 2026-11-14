@@ -132,6 +132,13 @@ export function verifierLogique(
 
     // Nom affiché de la technique la plus difficile (écran de fin)
     assert.ok(logique.nomTechnique(r1.notation.techniqueMax).length > 0);
+
+    // Préparation d'une nouvelle partie (réglage « nombre au départ ») : option inactive → mêmes
+    // données (même objet) ; active → données valides, toujours résolues par la logique, sans mutation
+    assert.equal(logique.preparer(donnees, { nombreAuDepart: false }), donnees);
+    const preparees = logique.preparer(geler(donnees), { nombreAuDepart: true });
+    assert.ok(logique.estDonnees(preparees));
+    assert.ok(logique.noter(preparees) !== null, 'grille préparée résolue par la logique');
   }
 
   // Les gardes rejettent des valeurs absurdes

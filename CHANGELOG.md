@@ -4,6 +4,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une
 
 ## [Étape 4b, corrections] — Chiffres casés : après les essais sur tablette — 2026-11-14
 
+### Ajouté
+- Réglage « Toujours placer un nombre au départ » (désactivé par défaut, enregistré avec les autres) : une
+  nouvelle grille de chiffres casés sans aucun pré-placé en reçoit un, avec le statut d'un pré-placé (gras,
+  verrouillé, non modifiable). Choix (`chiffres-cases/depart.ts`) : la meilleure ouverture (emplacements
+  posables d'emblée par des déductions simples) parmi les nombres qui gardent le niveau de la grille ; mesures
+  dans DIFFICULTE.md. Sans effet sur une grille qui a déjà un pré-placé et sur une partie en cours.
+- Contrat logique : `preparer(donnees, options)` (`OptionsDepart`) ; sudoku et modèle : données inchangées.
+- Worker : demande `preparer` (réponse `genere`) ; client : `preparer(puzzle, options)` ; un second worker,
+  créé au premier besoin, prépare la grille d'une nouvelle partie (jamais derrière une génération de fond).
+- Réglages : forme `ReglagesV2` (étapes 3c à 4b) complétée à la lecture.
+
 ### Modifié
 - Cases noires de la couleur exacte du fond de l'appli : `--couleur-case-noire` pointe sur
   `var(--couleur-fond)` (suit le thème). La forme de la grille est dessinée par le contour de 1 px des cases

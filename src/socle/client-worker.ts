@@ -1,5 +1,5 @@
-// CLIENT DU WORKER : envoie les demandes de génération au Web Worker et rend les réponses
-// sous forme de promesses typées.
+// CLIENT DU WORKER : envoie les demandes de génération (et de préparation d'une grille pour une
+// nouvelle partie) au Web Worker et rend les réponses sous forme de promesses typées.
 //
 // - File d'attente à deux priorités : « urgent » (le joueur attend) passe avant « fond »
 //   (réalimentation de la réserve). Le worker ne calcule qu'une grille à la fois : le client ne
@@ -15,7 +15,7 @@
 // Le vrai Worker est créé par une « fabrique » fournie à la création (calculs.ts dans le
 // navigateur, un faux worker dans les tests).
 
-import type { Puzzle } from '../types/jeu.ts';
+import type { OptionsDepart, Puzzle } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import type { Niveau } from '../types/niveaux.ts';
 import { BUDGET_MAX_MS, type DemandeWorker, type ReponseWorker } from '../types/worker.ts';
@@ -58,6 +58,11 @@ export type DemandeEnCours = {
 export interface ClientWorker {
   /** budgetMs : budget de cette demande (null = budget par défaut du client). */
   generer(jeu: string, niveau: Niveau, priorite: Priorite, budgetMs: number | null): DemandeEnCours;
+  /**
+   * Prépare une grille pour une nouvelle partie (LogiqueJeu.preparer), en priorité urgente, avec le
+   * budget par défaut comme garde-fou. Résultat « ok » : le puzzle préparé.
+   */
+  preparer(puzzle: Puzzle<Json>, options: OptionsDepart): DemandeEnCours;
   /** Vrai si le worker répond au « ping » dans le délai. */
   verifier(delaiMs: number): Promise<boolean>;
   /** Annule tout et arrête le worker. */
@@ -78,11 +83,16 @@ export type OptionsClient = {
 export const BUDGET_PAR_DEFAUT_MS = 4000;
 export const MARGE_PAR_DEFAUT_MS = 10_000;
 
+/** Calcul demandé par une tâche. */
+type Travail =
+  | { readonly type: 'generer'; readonly niveau: Niveau }
+  | { readonly type: 'preparer'; readonly puzzle: Puzzle<Json>; readonly options: OptionsDepart };
+
 /** Tâche interne (objet de travail local, modifié sur place). */
 type Tache = {
   readonly requete: number;
   readonly jeu: string;
-  readonly niveau: Niveau;
+  readonly travail: Travail;
   readonly priorite: Priorite;
   readonly budgetMs: number;
   readonly resoudre: (resultat: ResultatDemande) => void;
@@ -167,14 +177,19 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
       terminer(tache, { statut: 'erreur', message: 'Le worker ne répond plus (arrêté et relancé).' });
     }, tache.budgetMs + margeMs);
     try {
-      obtenirCanal().envoyer({
-        type: 'generer',
-        requete: tache.requete,
-        jeu: tache.jeu,
-        niveau: tache.niveau,
-        graine: tirerGraine() >>> 0,
-        budgetMs: tache.budgetMs,
-      });
+      const { travail } = tache;
+      obtenirCanal().envoyer(
+        travail.type === 'generer'
+          ? {
+              type: 'generer',
+              requete: tache.requete,
+              jeu: tache.jeu,
+              niveau: travail.niveau,
+              graine: tirerGraine() >>> 0,
+              budgetMs: tache.budgetMs,
+            }
+          : { type: 'preparer', requete: tache.requete, jeu: tache.jeu, puzzle: travail.puzzle, options: travail.options },
+      );
     } catch (erreur) {
       arreterCanal();
       terminer(tache, { statut: 'erreur', message: `Worker indisponible : ${String(erreur)}` });
@@ -225,31 +240,40 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
     terminer(tache, { statut: 'annule' });
   }
 
+  /** Ajoute une tâche à la file (ou la termine tout de suite si le client est fermé, budget invalide). */
+  function demander(jeu: string, travail: Travail, priorite: Priorite, budgetDemande: number | null): DemandeEnCours {
+    let resoudre: (resultat: ResultatDemande) => void = () => undefined;
+    const resultat = new Promise<ResultatDemande>((r) => {
+      resoudre = r;
+    });
+    const tache: Tache = {
+      requete: prochaineRequete++,
+      jeu,
+      travail,
+      priorite,
+      budgetMs: budgetDemande ?? budgetMs,
+      resoudre,
+      finie: false,
+      annulerGardeFou: null,
+    };
+    if (ferme) {
+      terminer(tache, { statut: 'annule' });
+    } else if (!estEntierEntre(tache.budgetMs, 1, BUDGET_MAX_MS)) {
+      terminer(tache, { statut: 'erreur', message: `Budget invalide : ${tache.budgetMs}` });
+    } else {
+      attente.push(tache);
+      lancerSuivante();
+    }
+    return { resultat, annuler: () => annuler(tache) };
+  }
+
   return {
     generer(jeu, niveau, priorite, budgetDemande) {
-      let resoudre: (resultat: ResultatDemande) => void = () => undefined;
-      const resultat = new Promise<ResultatDemande>((r) => {
-        resoudre = r;
-      });
-      const tache: Tache = {
-        requete: prochaineRequete++,
-        jeu,
-        niveau,
-        priorite,
-        budgetMs: budgetDemande ?? budgetMs,
-        resoudre,
-        finie: false,
-        annulerGardeFou: null,
-      };
-      if (ferme) {
-        terminer(tache, { statut: 'annule' });
-      } else if (!estEntierEntre(tache.budgetMs, 1, BUDGET_MAX_MS)) {
-        terminer(tache, { statut: 'erreur', message: `Budget invalide : ${tache.budgetMs}` });
-      } else {
-        attente.push(tache);
-        lancerSuivante();
-      }
-      return { resultat, annuler: () => annuler(tache) };
+      return demander(jeu, { type: 'generer', niveau }, priorite, budgetDemande);
+    },
+
+    preparer(puzzle, options) {
+      return demander(puzzle.jeu, { type: 'preparer', puzzle, options }, 'urgent', null);
     },
 
     verifier(delaiMs) {

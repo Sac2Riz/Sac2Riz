@@ -5,12 +5,13 @@
 
 import type { Alea } from '../../types/alea.ts';
 import type { LogiqueJeu, OptionsGeneration, ResultatGeneration } from '../../types/jeu.ts';
-import type { Niveau, Notation } from '../../types/niveaux.ts';
+import type { Niveau } from '../../types/niveaux.ts';
 import { estActionCases, estDonneesCases, estEtatCases } from './gardes.ts';
+import { nombreAuDepart } from './depart.ts';
 import { genererCases } from './generateur.ts';
 import { indiceCases, nomTechnique } from './indice.ts';
 import { META } from './meta.ts';
-import { noterProbleme } from './notation.ts';
+import { noterCases } from './notation.ts';
 import { structureDe } from './probleme.ts';
 import { casesFausses, effacerEmplacement, estTermineeCases, etatInitialCases, placerNombre } from './regles.ts';
 import type { ActionCases, DonneesCases, EtatCases } from './types.ts';
@@ -18,14 +19,6 @@ import type { ActionCases, DonneesCases, EtatCases } from './types.ts';
 function generer(niveau: Niveau, alea: Alea, options: OptionsGeneration): ResultatGeneration<DonneesCases> {
   const r = genererCases(niveau, alea, { doitArreter: options.doitArreter });
   return r.ok ? { ok: true, donnees: r.donnees, notation: r.notation } : { ok: false, raison: r.raison };
-}
-
-function noter(donnees: DonneesCases): Notation | null {
-  const { probleme, solution } = structureDe(donnees);
-  return noterProbleme(
-    probleme,
-    donnees.preplaces.map((emplacement) => ({ emplacement, nombre: solution[emplacement] ?? -1 })),
-  );
 }
 
 /** Une action sans effet renvoie l'état reçu, tel quel (le socle ne l'enregistre alors pas). */
@@ -40,7 +33,8 @@ function appliquer(etat: EtatCases, action: ActionCases, donnees: DonneesCases):
 export const logique: LogiqueJeu<DonneesCases, EtatCases, ActionCases> = {
   meta: META,
   generer,
-  noter,
+  noter: noterCases,
+  preparer: (donnees, options) => (options.nombreAuDepart ? nombreAuDepart(donnees) : donnees),
   etatInitial: etatInitialCases,
   appliquer,
   erreurs: casesFausses,
