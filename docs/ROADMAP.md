@@ -227,6 +227,9 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   d'anciens réglages, accueil, fiches (exemple et partie en cours), réglages, partie, retour à chaque
   niveau, partie finie et écran de fin, statistiques, nombre au départ.
 
+- **Correction** : workflow de déploiement illisible depuis la 6a (« : » dans un libellé non cité) ;
+  vérification des workflows ajoutée à `npm run check` (`npm run workflows`, sans dépendance).
+
 ### Étape 6b — Directions de design
 - 7 directions de design proposées comme **thèmes** sur la vraie appli, pour que l'utilisateur choisisse.
 

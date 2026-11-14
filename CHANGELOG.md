@@ -2,6 +2,21 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6a, correction] — Workflow de déploiement — 2026-11-14
+
+### Corrigé
+- `.github/workflows/deployer.yml` illisible par GitHub depuis l'étape 6a (« Invalid workflow file », ligne 32) :
+  le libellé d'une étape, non cité, contenait « : » suivi d'une espace, que YAML lit comme une nouvelle clé.
+  Libellé mis entre guillemets (et reformulé) ; `fetch-depth: 0` conservé. Les déploiements de 732bfea et
+  c170164 n'avaient pas eu lieu.
+
+### Ajouté
+- `npm run workflows` (`scripts/verifier-workflows.ts`, sans dépendance), lancé par `npm run check` : lecteur
+  YAML strict limité aux constructions utilisées par nos workflows (tout le reste est refusé avec un message)
+  et contrôle de la structure attendue par GitHub. Il détecte l'erreur ci-dessus à la même ligne que GitHub.
+  Tests : `tests/scripts/workflows.test.ts` (workflows du dépôt, erreur de l'étape 6a, lecture, erreurs de
+  syntaxe et de structure).
+
 ## [Étape 6a, complément] — Accueil en grille de cartes — 2026-11-14
 
 ### Modifié

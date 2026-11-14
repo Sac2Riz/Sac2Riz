@@ -29,7 +29,9 @@ jobs:
   construire:
     runs-on: ubuntu-latest
     steps:
-      - name: Récupérer le code (avec tout l'historique : date du build, voir scripts/date-build.ts)
+      # Tout l'historique (fetch-depth: 0) : la date du build est celle du dernier commit qui touche
+      # les sources de l'appli (voir scripts/date-build.ts)
+      - name: "Récupérer le code (avec tout l'historique, pour la date du build)"
         uses: actions/checkout@v7
         with:
           fetch-depth: 0

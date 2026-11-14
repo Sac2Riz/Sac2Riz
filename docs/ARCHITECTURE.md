@@ -555,6 +555,13 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
 
 ## Déploiement (étape 5)
 
+**Vérification avant le push** : `npm run workflows` (inclus dans `npm run check`, script
+`scripts/verifier-workflows.ts`, sans dépendance) lit chaque workflow avec un lecteur YAML **strict** limité
+aux constructions utilisées (tables, listes, valeurs citées ou non, listes courtes `[a, b]`, textes `|` / `>`,
+commentaires) — toute autre construction est refusée avec un message — puis contrôle la structure attendue
+par GitHub (`name`, `on`, `jobs` ; `runs-on` + `steps` ; chaque étape `uses` ou `run`). Piège déjà rencontré :
+une valeur non citée ne doit pas contenir « : » suivi d'une espace (mettre la valeur entre guillemets).
+
 `.github/workflows/deployer.yml` : à chaque push sur `main` (ou à la main depuis l'onglet Actions), job
 `construire` (`npm ci`, `npm run check`, `npm run build`, envoi de `dist/`) puis job `publier`
 (`actions/deploy-pages`), qui ne tourne que si le premier a réussi. Prérequis : Settings → Pages → Source

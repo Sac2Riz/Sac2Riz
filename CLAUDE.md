@@ -33,7 +33,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 |---|---|
 | `npm run dev` | dist/ propre + `tsc --watch` + recopie des statiques + serveur http://localhost:8080 (`npm run dev -- --reseau` pour la tablette) |
 | `npm run build` | compilation complète dans `dist/` |
-| `npm run check` | vérification des types (4 configs) + tests. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
+| `npm run check` | vérification des types (4 configs) + tests + syntaxe des workflows GitHub. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
+| `npm run workflows` | vérifie les workflows `.github/workflows/*.yml` (lecteur YAML strict sans dépendance + structure attendue par GitHub) ; inclus dans `check` |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
 | `npm run test:long` | tests longs (fichiers `tests/**/*.long.ts`, quelques minutes) : sûreté des solveurs logiques (sudoku : 4100 grilles ; chiffres casés : grilles de chaque niveau, contrat des niveaux lents), packs des chiffres casés. Hors de `check` ; **à lancer quand on touche à un solveur, un générateur ou des packs** |
 | `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) |
