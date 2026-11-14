@@ -7,7 +7,7 @@
 // - Une grille que la logique ne résout pas (essai-erreur nécessaire) n'est pas notée : null.
 
 import type { ValeursGrille } from '../types/grille.ts';
-import { IDS_TECHNIQUES, type Etape } from '../types/logique.ts';
+import { IDS_TECHNIQUES, type Etape, type IdTechnique } from '../types/logique.ts';
 import { INFOS_NIVEAUX, NIVEAUX, type Force, type Niveau, type Notation } from '../types/niveaux.ts';
 import type { Contexte } from './logique/contexte.ts';
 import { resoudreLogique } from './logique/solveur.ts';
@@ -99,20 +99,29 @@ function compterTechniques(etapes: readonly Etape[]): Record<string, number> {
   return details;
 }
 
-/** Technique la plus avancée utilisée (dans l'ordre d'IDS_TECHNIQUES), ou 'aucune'. */
-function techniqueLaPlusDure(etapes: readonly Etape[]): string {
+/** Technique la plus avancée utilisée (la dernière dans l'ordre donné), ou 'aucune'. */
+function techniqueLaPlusDure(etapes: readonly Etape[], ordre: readonly IdTechnique[]): string {
   let rang = -1;
-  for (const { technique } of etapes) rang = Math.max(rang, IDS_TECHNIQUES.indexOf(technique));
-  return IDS_TECHNIQUES[rang] ?? 'aucune';
+  for (const { technique } of etapes) rang = Math.max(rang, ordre.indexOf(technique));
+  return ordre[rang] ?? 'aucune';
 }
 
-/** Note une grille déjà résolue par le solveur logique (étapes fournies). */
-export function noterEtapes(enonce: ValeursGrille, etapes: readonly Etape[], seuils: SeuilsForce = SEUILS_FORCE): Notation {
+/**
+ * Note une grille déjà résolue par le solveur logique (étapes fournies).
+ * `ordre` : identifiants des techniques du jeu, de la plus simple à la plus dure (celui du sudoku par
+ * défaut) ; il sert à désigner la technique la plus dure (étape 7a).
+ */
+export function noterEtapes(
+  enonce: ValeursGrille,
+  etapes: readonly Etape[],
+  seuils: SeuilsForce = SEUILS_FORCE,
+  ordre: readonly IdTechnique[] = IDS_TECHNIQUES,
+): Notation {
   const niveau = niveauDesEtapes(etapes);
   return {
     niveau,
     force: calculerForce(niveau, mesurerNotation(enonce, etapes, niveau), seuils),
-    techniqueMax: techniqueLaPlusDure(etapes),
+    techniqueMax: techniqueLaPlusDure(etapes, ordre),
     details: compterTechniques(etapes),
   };
 }

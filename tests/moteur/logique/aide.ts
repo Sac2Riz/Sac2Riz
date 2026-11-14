@@ -9,7 +9,14 @@ import { masqueComplet, masqueDe } from '../../../src/moteur/candidats.ts';
 import { creerContexte, type Contexte } from '../../../src/moteur/logique/contexte.ts';
 import { etatInitial } from '../../../src/moteur/logique/etat.ts';
 import { nomCellule } from '../../../src/moteur/logique/noms.ts';
-import { definitionClassique, regionsClassiques, regionsDiagonales } from '../../../src/moteur/regions.ts';
+import {
+  definitionClassique,
+  domainesZones,
+  regionsCarres,
+  regionsClassiques,
+  regionsDiagonales,
+  regionsZones,
+} from '../../../src/moteur/regions.ts';
 import type { DefinitionGrille } from '../../../src/types/grille.ts';
 import type { EtatLogique, Etape } from '../../../src/types/logique.ts';
 
@@ -91,3 +98,19 @@ export function motif(etape: Etape | null, ctx: Contexte = ctx9): string[] {
 export function partout(noms: readonly string[], valeurs: readonly number[]): Record<string, readonly number[]> {
   return Object.fromEntries(noms.map((nom) => [nom, valeurs]));
 }
+
+/**
+ * Petite grille de Tectonic 3 × 4 (étape 7a) pour les techniques complémentaires :
+ *   0 0 0 1      zone 0 : L1C1 L1C2 L1C3 L2C1 L2C2 (5 cases, chiffres 1 à 5)
+ *   0 0 1 1      zone 1 : L1C4 L2C3 L2C4 L3C4 (4 cases, 1 à 4)
+ *   2 2 2 1      zone 2 : L3C1 L3C2 L3C3 (3 cases, 1 à 3)
+ */
+export const CARTE_TECTONIC = [0, 0, 0, 1, 0, 0, 1, 1, 2, 2, 2, 1];
+export const defTectonic: DefinitionGrille = {
+  lignes: 3,
+  colonnes: 4,
+  valeurs: [1, 2, 3, 4, 5],
+  regions: [...regionsZones(CARTE_TECTONIC), ...regionsCarres(3, 4)],
+  domaines: domainesZones(CARTE_TECTONIC),
+};
+export const ctxTectonic = creerContexte(defTectonic);

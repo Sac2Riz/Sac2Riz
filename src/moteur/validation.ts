@@ -2,6 +2,7 @@
 // Servira à erreurs() et estTerminee() des jeux. Code pur.
 
 import type { Cellule, DefinitionGrille, ValeursGrille } from '../types/grille.ts';
+import { masqueDe } from './candidats.ts';
 
 function verifierTaille(definition: DefinitionGrille, valeurs: ValeursGrille): void {
   const attendu = definition.lignes * definition.colonnes;
@@ -12,7 +13,7 @@ function verifierTaille(definition: DefinitionGrille, valeurs: ValeursGrille): v
 
 /**
  * Cases en conflit, triées par ordre croissant :
- * - valeur non autorisée ;
+ * - valeur non autorisée (hors des valeurs de la grille, ou hors du domaine de sa case) ;
  * - valeur répétée dans une région d'unicité ou dans une cage « distinctes » ;
  * - cage dont la somme dépasse le total, ou cage pleine dont la somme diffère du total.
  * Les cases vides (0) ne sont jamais en conflit.
@@ -23,7 +24,9 @@ export function conflits(definition: DefinitionGrille, valeurs: ValeursGrille): 
   const autorisees = new Set(definition.valeurs);
 
   valeurs.forEach((v, c) => {
-    if (v !== 0 && !autorisees.has(v)) enConflit.add(c);
+    if (v === 0) return;
+    const domaine = definition.domaines?.[c] ?? null;
+    if (!autorisees.has(v) || (domaine !== null && (domaine & masqueDe(v)) === 0)) enConflit.add(c);
   });
 
   for (const region of definition.regions) {

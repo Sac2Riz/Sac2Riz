@@ -2,6 +2,38 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 7a] — Tectonic : logique pure — 2026-11-14
+
+### Ajouté
+- **Moteur — domaine par case** : `DefinitionGrille.domaines` (masques, ou `null` = toutes les valeurs) ;
+  `Structure.domaine` et `Structure.valeursRegion` (réunion des domaines d'une région), reportés dans le
+  `Contexte`. Formes de région `zone` et `carre` (noms « la zone de L2C3 », « le carré L2C3-L3C4 »).
+  Fabriques `regionsZones`, `domainesZones`, `regionsCarres`.
+- **Techniques complémentaires** (`IDS_TECHNIQUES_COMPLEMENTAIRES`, `techniques/complementaires.ts`, hors de
+  la liste du sudoku) : `singleton-cache-zone`, `voisine-commune` (famille `familles/voisine-commune.ts`),
+  `voisine-commune-etendue`, `paire-nue-etendue`.
+- **Module `src/games/tectonic/`** (non enregistré) : `types.ts`, `meta.ts` (réglage « retrait automatique des
+  notes », budgets de fond), `geometrie.ts` (cases qui se touchent, zones, bordures), `grille.ts` (structure en
+  cache, `valeursAutorisees`), `construction.ts` (zones et chiffres construits ensemble), `generateur.ts`,
+  `techniques.ts`, `notation.ts` (`VERSION_NOTATION_TECTONIC` = 1, `SEUILS_FORCE_TECTONIC`), `indice.ts`,
+  `gardes.ts`, `logique.ts`, `packs.ts` (`PackTectonic`, `estPackTectonic`, `chargerPack`).
+- Packs `difficile.json`, `expert.json`, `diabolique.json` (200 grilles chacun) ; `scripts/packs/tectonic.ts`
+  (`npm run packs -- --jeu=tectonic`).
+- Bench `scripts/bench/tectonic.ts` (`npm run bench -- --jeu=tectonic [--niveau] [--zones-max] [--cote]`).
+- Tests : `tests/moteur/domaines.test.ts`, une technique complémentaire par fichier,
+  `tests/games/tectonic/` (géométrie, construction, règles et gardes, génération, indices, packs) ; tests
+  longs `surete.long.ts` et `packs.long.ts`.
+
+### Modifié
+- Backtracking, état de départ, contradictions, conflits et techniques fondées sur les régions complètes
+  (dernier chiffre, singleton caché, sous-ensembles cachés, intersections, propagation) partent du domaine de
+  la case et des valeurs de la région ; une région est complète si elle a autant de cases que de valeurs
+  possibles. Sans domaines, comportement identique (sudoku : notation et packs inchangés).
+- `noterEtapes(enonce, etapes, seuils, ordre)` : ordre des techniques en paramètre (celui du sudoku par défaut).
+- `IdTechnique` couvre les techniques du sudoku et les complémentaires.
+- Docs : ARCHITECTURE (moteur, Tectonic), DIFFICULTE (Tectonic), AJOUTER_UN_JEU (famille sudoku à domaines),
+  ROADMAP (étape 7, décisions pour la 7b).
+
 ## [Étape 6c] — Styles au choix, icône Rétro — 2026-11-14
 
 ### Ajouté

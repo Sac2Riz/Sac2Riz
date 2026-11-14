@@ -9,7 +9,7 @@ import { ENONCE_UNIQUE, SOLUTION_UNIQUE } from './grilles-connues.ts';
 const def9 = definitionClassique(9, 3, 3);
 
 function cageDeHuit(distinctes: boolean): DefinitionGrille {
-  return { lignes: 1, colonnes: 2, valeurs: valeursUnA(9), regions: [cage([0, 1], 8, distinctes)] };
+  return { lignes: 1, colonnes: 2, valeurs: valeursUnA(9), regions: [cage([0, 1], 8, distinctes)], domaines: null };
 }
 
 describe('validation', () => {

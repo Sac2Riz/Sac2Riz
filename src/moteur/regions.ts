@@ -92,5 +92,40 @@ export function definitionClassique(taille: number, hauteurBloc: number, largeur
     colonnes: taille,
     valeurs: valeursUnA(taille),
     regions: regionsClassiques(taille, hauteurBloc, largeurBloc),
+    domaines: null,
   };
+}
+
+/**
+ * Zones (Tectonic, étape 7a) à partir d'une carte : carte[cellule] = numéro de la zone de la case.
+ * Rangées par numéro croissant. Une zone de N cases contient les valeurs 1 à N (voir domainesZones).
+ */
+export function regionsZones(carte: readonly number[]): RegionUnicite[] {
+  return regionsIrregulieres(carte).map((region) => unicite('zone', [...region.cellules]));
+}
+
+/**
+ * Domaines des cases d'après leur zone : une case d'une zone de N cases accepte les valeurs 1 à N
+ * (masques de bits, voir DefinitionGrille.domaines).
+ */
+export function domainesZones(carte: readonly number[]): number[] {
+  const tailles = new Map<number, number>();
+  for (const numero of carte) tailles.set(numero, (tailles.get(numero) ?? 0) + 1);
+  return carte.map((numero) => (1 << (tailles.get(numero) ?? 0)) - 1);
+}
+
+/**
+ * Tous les carrés 2×2 d'une grille (régions d'unicité « non complètes ») : deux cases qui se touchent,
+ * par un côté ou en diagonale, sont toujours dans un même carré 2×2. Déclarer ces carrés interdit donc
+ * le même chiffre dans deux cases voisines. Cases d'un carré : haut gauche, haut droite, bas gauche, bas droite.
+ */
+export function regionsCarres(lignes: number, colonnes: number): RegionUnicite[] {
+  const regions: RegionUnicite[] = [];
+  for (let l = 0; l + 1 < lignes; l++) {
+    for (let c = 0; c + 1 < colonnes; c++) {
+      const hautGauche = l * colonnes + c;
+      regions.push(unicite('carre', [hautGauche, hautGauche + 1, hautGauche + colonnes, hautGauche + colonnes + 1]));
+    }
+  }
+  return regions;
 }

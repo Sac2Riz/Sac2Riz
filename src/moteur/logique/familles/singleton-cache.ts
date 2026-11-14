@@ -16,7 +16,7 @@ export function chercherSingletonCache(
   formes: readonly FormeRegion[] | null,
 ): Etape | null {
   for (const r of regionsCompletes(ctx, formes)) {
-    const manquantes = ctx.masqueValeurs & ~valeursPlacees(ctx, etat, r);
+    const manquantes = (ctx.valeursRegion[r] ?? 0) & ~valeursPlacees(ctx, etat, r);
     for (const v of valeursDuMasque(manquantes)) {
       const p = positions(ctx, etat, r, v);
       const [cellule] = p;

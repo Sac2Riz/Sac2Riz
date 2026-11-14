@@ -34,6 +34,7 @@ export const defIrreguliere: DefinitionGrille = {
   colonnes: 9,
   valeurs: valeursUnA(9),
   regions: [...regionsLignes(9, 9), ...regionsColonnes(9, 9), ...regionsIrregulieres(CARTE_IRREGULIERE)],
+  domaines: null,
 };
 
 export const def6 = definitionClassique(6, 2, 3);

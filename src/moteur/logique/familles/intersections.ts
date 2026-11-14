@@ -20,7 +20,7 @@ export function chercherIntersection(
   formesDepart: readonly FormeRegion[],
 ): Etape | null {
   for (const a of regionsCompletes(ctx, formesDepart)) {
-    for (const v of valeursDuMasque(ctx.masqueValeurs & ~valeursPlacees(ctx, etat, a))) {
+    for (const v of valeursDuMasque((ctx.valeursRegion[a] ?? 0) & ~valeursPlacees(ctx, etat, a))) {
       const p = positions(ctx, etat, a, v);
       if (p.length < 2) continue;
       // Toutes les régions B (≠ A) qui contiennent toutes les places du chiffre

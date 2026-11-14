@@ -8,7 +8,7 @@ import { cellulesDe, type Contexte } from './contexte.ts';
 import { majuscule, nomCellule, nomRegion } from './noms.ts';
 
 /**
- * État de départ : chaque case vide reçoit les valeurs qui ne sont pas déjà placées
+ * État de départ : chaque case vide reçoit les valeurs de son domaine qui ne sont pas déjà placées
  * dans une case qu'elle voit. Les sommes des cages ne sont pas prises en compte.
  */
 export function etatInitial(ctx: Contexte, valeurs: ValeursGrille): EtatLogique {
@@ -17,7 +17,7 @@ export function etatInitial(ctx: Contexte, valeurs: ValeursGrille): EtatLogique 
   }
   const candidats = valeurs.map((v, c) => {
     if (v !== 0) return 0;
-    let masque = ctx.masqueValeurs;
+    let masque = ctx.domaine[c] ?? 0;
     for (const voisin of ctx.voisins[c] ?? []) {
       const w = valeurs[voisin] ?? 0;
       if (w !== 0) masque &= ~masqueDe(w);
@@ -85,7 +85,7 @@ export function contradiction(ctx: Contexte, etat: EtatLogique): string | null {
       placees |= masqueDe(v);
     }
     if (ctx.complete[r] !== 1) continue;
-    const sansPlace = ctx.masqueValeurs & ~placees & ~possibles;
+    const sansPlace = (ctx.valeursRegion[r] ?? 0) & ~placees & ~possibles;
     if (sansPlace !== 0) {
       const v = valeursDuMasque(sansPlace)[0] ?? 0;
       return `${majuscule(nomRegion(ctx, r))} n'a plus de place pour le ${v}.`;

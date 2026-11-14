@@ -282,7 +282,9 @@ Techniques utilisées en Diabolique (part des grilles) : conséquences directes 
 - **Diabolique** : servi **uniquement** par son pack de 200 grilles (`{ mode: 'pack' }`) : jamais de
   génération sur l'appareil, ni de fond ni urgente.
 - Packs (`src/games/chiffres-cases/packs/`) : `expert.json` et `diabolique.json`, **200 grilles chacun**
-  (graines 1, 2, 3…, aucune sautée), générés par `npm run packs -- --jeu=chiffres-cases` en ~4 min et
+  (graines 1, 2, 3… ; une graine qui redonne une grille déjà dans le pack est sautée :
+  en Diabolique, la graine 122 redonne la grille de la graine 43, la suite du générateur aléatoire d'une
+  graine pouvant rejoindre celle d'une graine voisine après des millions de tirages), générés par `npm run packs -- --jeu=chiffres-cases` en ~4 min et
   ~38 min sur PC. Taille : ~72 Ko chacun (~370 octets par grille), **~18 Ko** une fois compressés (gzip).
 
 #### Nombre au départ (réglage, après l'étape 4b)
@@ -311,3 +313,98 @@ Expert et Diabolique au niveau Moyen ou Débutant, en jusqu'à 3 s ; les règles
 longueur rare, plus de croisements) n'aident pas en Diabolique (niveau et force inchangés, ouverture
 moindre). En Expert, garder le niveau oblige souvent à un nombre qui ouvre peu : pour 76 grilles, aucun
 nombre ne garde le niveau Expert en ouvrant la grille.
+
+### Tectonic (étape 7a)
+
+Grille découpée en zones de 1 à 5 cases ; une zone de N cases contient les chiffres 1 à N ; deux cases qui
+se touchent (côté ou diagonale) n'ont jamais le même chiffre. Solution unique garantie (backtracking du
+moteur). Code : `src/games/tectonic/` ; le jeu **réutilise le moteur et le solveur logique** du sudoku
+(zones = régions complètes, carrés 2×2 = cases qui se touchent, domaine 1 à N par case) avec sa propre
+liste de techniques (`techniques.ts`) et sa notation (`notation.ts`, `VERSION_NOTATION_TECTONIC` = 1).
+Comme au sudoku, une grille qui exige de l'essai-erreur est **rejetée** ; `forcing-simple` n'utilise
+jamais le raisonnement par contradiction.
+
+#### Techniques
+
+Dans les explications, une case hors d'une zone « touche » ses voisines ; les techniques reprises du
+sudoku disent « voit » (= se touchent ou sont dans la même zone : définition donnée dans la fiche du jeu,
+étape 7b).
+
+| Niveau | Identifiant | Ce que fait la technique |
+|---|---|---|
+| Débutant | `dernier-chiffre` | La dernière case vide d'une zone reçoit le chiffre manquant (zones d'une case comprises) |
+| Débutant | `singleton-cache-zone` | Dans une zone, un chiffre n'a plus qu'une place (les voisines ont éliminé les autres) |
+| Facile | `singleton-nu` | Une case n'a plus qu'un chiffre possible |
+| Facile | `voisine-commune` | Dans une zone, un chiffre n'a plus que 2 places ; une case qui touche les deux ne peut pas le contenir |
+| Moyen | `paire-nue`, `paire-cachee` | Dans une zone ou un carré 2×2 (cachée : zones seulement) |
+| Moyen | `voisine-commune-etendue` | Comme la voisine commune, avec 3 places ou plus à vérifier |
+| Moyen | `paire-nue-etendue` | Deux cases qui se voient, mêmes 2 candidats : retirés de toute case qui voit les deux |
+| Difficile | `triplet-nu`, `triplet-cache`, `quadruplet-nu`, `quadruplet-cache` | Comme au sudoku (zones et carrés) |
+| Expert | `y-wing`, `xyz-wing` | Comme au sudoku (relation « se voient ») |
+| Diabolique | `x-chain`, `xy-chain`, `forcing-simple` | Comme au sudoku |
+
+Absentes : pointing et claiming (englobés par la voisine commune), Skyscraper, 2-String Kite, X-Wing,
+Swordfish (fondés sur les lignes et les colonnes). Triplet caché et quadruplets ne sont jamais
+indispensables (comme au sudoku) : testés sur des états préparés.
+
+#### Construction des grilles
+
+Découper au hasard puis remplir échoue presque toujours : deux 1 ne se touchent jamais, donc une grille
+9 × 9 a au plus 25 chiffres 1, soit au plus 25 zones ; mesuré, moins de 1 % des découpages 9 × 9 se
+remplissent. `construction.ts` construit **les zones et les chiffres ensemble** : cases remplies dans
+l'ordre de lecture avec retour en arrière (5000 nœuds par tentative), chaque case choisit sa zone (gauche,
+haut, les deux réunies, nouvelle zone avec une taille visée tirée au hasard) et son chiffre (le plus petit
+chiffre qui manque à la zone est proposé d'abord 8 fois sur 10 : coût divisé par deux environ) ; une zone
+qui ne peut plus grandir doit contenir exactement 1 à N. Au plus 1 zone d'une case (6 × 6, 7 × 7), 2
+au-delà. Coût d'une grille pleine sur PC : ~25 ms en 8 × 8, ~75 ms en 9 × 9, 200 à 500 ms en 10 × 10.
+Conséquence de la règle : environ 70 % des zones ont 5 cases, 12 à 15 % 4 cases, 4 à 9 % chacune des
+tailles 1 à 3.
+
+Puis, comme au sudoku : retrait des chiffres (`retirerChiffres`, sans symétrie) avec la fonction
+d'acceptation (refus si le niveau est dépassé), arrêt tôt en Débutant et Facile (**12 à 15 chiffres
+donnés**), contrôle final du niveau exact.
+
+#### Réglages et mesures (validés par l'utilisateur)
+
+Zones de 5 cases au plus à tous les niveaux. Mesures `npm run bench -- --jeu=tectonic` (PC, graines 1 à
+100 ; 30 grilles en Expert et Diabolique ; au plus 1000 essais ; **aucun échec**) :
+
+| Niveau | Grille | Essais moy / max | Temps moy / méd / max | Chiffres donnés moy (min-max) | Technique du niveau (part des grilles) |
+|---|---|---|---|---|---|
+| Débutant | 6 × 6 | 1,0 / 1 | 6 / 3 / 29 ms | 13,4 (12-15), 37 % | dernier chiffre, seule place dans la zone |
+| Facile | 7 × 7 | 1,3 / 3 | 16 / 13 / 80 ms | 13,4 (12-15), 27 % | singleton nu 91 %, voisine commune 87 % |
+| Moyen | 8 × 8 | 2,4 / 14 | 0,12 / 0,08 / 0,66 s | 9,8 (5-16), 15 % | paire nue 76 %, voisine commune étendue 69 % |
+| Difficile | 8 × 8 | 15 / 88 | 0,76 / 0,59 / 4,7 s | 9,4 (6-13), 15 % | triplet nu 100 % |
+| Expert | 9 × 9 | 15 / 64 | 2,1 / 1,6 / 8,1 s | 11,4 (8-16), 14 % | Y-Wing 83 %, XYZ-Wing 33 % |
+| Diabolique | 10 × 10 | 4,2 / 18 | 2,2 / 1,9 / 8,4 s | 12,6 (8-17), 13 % | chaîne X 80 %, forcing 53 %, chaîne XY 23 % |
+
+Grilles minimales au hasard : Difficile et Expert rares (1 à 5 %), Diabolique 6 à 18 %, essai-erreur
+5 à 6 % (6 × 6, 7 × 7), 21 % (8 × 8, 9 × 9), 33 % (10 × 10).
+
+Variantes écartées : **zones de 6 cases** en Expert et Diabolique (deux fois plus de chiffres donnés, 28 %
+des cases au lieu de 14 % ; génération 2 à 3 fois plus longue ; pas de techniques plus riches) ;
+Diabolique en 9 × 9 (0,7 s en moyenne, moins de chaînes : choisi 10 × 10).
+
+#### Force (1 à 10)
+
+Même règle que le sudoku (`SEUILS_FORCE_TECTONIC`, score et chiffres donnés) ; Expert = 9, Diabolique = 10.
+
+| Niveau | Force basse / haute | Force haute si | Part en force haute (100 grilles) |
+|---|---|---|---|
+| Débutant | 1 / 2 | ≤ 13 chiffres donnés (le score compte les cases vides) | 56 % |
+| Facile | 3 / 4 | score ≥ 6 ou ≤ 12 chiffres donnés | 53 % |
+| Moyen | 5 / 6 | score ≥ 4 ou ≤ 6 chiffres donnés | 52 % |
+| Difficile | 7 / 8 | score ≥ 5 ou ≤ 7 chiffres donnés | 50 % |
+
+#### Utilisation dans l'appli et packs
+
+- Débutant à Moyen : générés dans le worker (budget de 4 s ; Moyen au pire 0,66 s sur PC).
+- **Difficile** (au pire 4,7 s sur PC, jusqu'à ~25 s sur tablette) : pack de 200 grilles servi quand la
+  réserve est vide, réalimentation de fond avec **30 s** (`meta.generation`).
+- **Expert** et **Diabolique** (~2 s en moyenne sur PC, ~10 s sur tablette) : packs de 200 grilles,
+  réalimentation de fond avec **60 s**.
+- Packs (`src/games/tectonic/packs/`, format `PackTectonic` : zones en base 36, solution et énoncé en
+  texte, lignes séparées par « / ») : `npm run packs -- --jeu=tectonic` (graines 1, 2, 3…, aucune sautée),
+  ~3 min (Difficile), ~7 min (Expert), ~5 min (Diabolique) sur PC. Taille : 95, 106 et 124 Ko (490 à
+  630 octets par grille), **19, 24 et 29 Ko** compressés (gzip). **Si `VERSION_NOTATION_TECTONIC` change,
+  les régénérer.**

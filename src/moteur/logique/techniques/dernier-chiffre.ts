@@ -16,7 +16,7 @@ export const dernierChiffre: Technique = {
     for (const r of regionsCompletes(ctx, null)) {
       const [cellule, ...autres] = casesVides(ctx, etat, r);
       if (cellule === undefined || autres.length > 0) continue;
-      const manquant = ctx.masqueValeurs & ~valeursPlacees(ctx, etat, r);
+      const manquant = (ctx.valeursRegion[r] ?? 0) & ~valeursPlacees(ctx, etat, r);
       if (compterBits(manquant) !== 1 || ((etat.candidats[cellule] ?? 0) & manquant) === 0) continue;
       const v = plusPetiteValeur(manquant);
       const etape = construireEtape(infos, ctx, etat, {

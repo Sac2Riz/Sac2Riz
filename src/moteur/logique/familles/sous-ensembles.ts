@@ -64,7 +64,7 @@ export function chercherSousEnsembleCache(
   taille: number,
 ): Etape | null {
   for (const r of regionsCompletes(ctx, null)) {
-    const manquantes = valeursDuMasque(ctx.masqueValeurs & ~valeursPlacees(ctx, etat, r));
+    const manquantes = valeursDuMasque((ctx.valeursRegion[r] ?? 0) & ~valeursPlacees(ctx, etat, r));
     if (manquantes.length <= taille) continue;
     const placesDe = new Map<number, Cellule[]>();
     for (const v of manquantes) placesDe.set(v, positions(ctx, etat, r, v));

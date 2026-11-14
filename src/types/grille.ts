@@ -8,8 +8,11 @@ export type Cellule = number;
 /** Valeurs des cases d'une grille, ligne par ligne ; 0 = case vide. */
 export type ValeursGrille = readonly number[];
 
-/** Formes possibles d'une région d'unicité (chaque valeur au plus une fois). */
-export type FormeUnicite = 'ligne' | 'colonne' | 'bloc' | 'diagonale' | 'irreguliere';
+/**
+ * Formes possibles d'une région d'unicité (chaque valeur au plus une fois).
+ * 'zone' : zone du Tectonic (N cases, valeurs 1 à N) ; 'carre' : carré 2×2 de cases qui se touchent.
+ */
+export type FormeUnicite = 'ligne' | 'colonne' | 'bloc' | 'diagonale' | 'irreguliere' | 'zone' | 'carre';
 
 /** Région où chaque valeur apparaît au plus une fois. */
 export type RegionUnicite = {
@@ -40,6 +43,12 @@ export type DefinitionGrille = {
   /** Valeurs autorisées dans les cases (ex. 1 à 9). */
   readonly valeurs: readonly number[];
   readonly regions: readonly Region[];
+  /**
+   * Domaine de chaque case (étape 7a) : masque des valeurs autorisées dans la case (voir Candidats),
+   * inclus dans « valeurs ». null = toutes les valeurs partout (sudoku). Ex. Tectonic : une case d'une
+   * zone de 3 cases n'accepte que 1, 2, 3.
+   */
+  readonly domaines: readonly Candidats[] | null;
 };
 
 /**

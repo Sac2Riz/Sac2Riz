@@ -37,7 +37,19 @@ export const IDS_TECHNIQUES = [
   'forcing-simple',
 ] as const;
 
-export type IdTechnique = (typeof IDS_TECHNIQUES)[number];
+/**
+ * Techniques génériques ajoutées à l'étape 7a pour le Tectonic : elles ne font PAS partie de la liste du
+ * sudoku (IDS_TECHNIQUES, dont l'ordre fixe la notation du sudoku). Chaque jeu qui s'en sert donne sa
+ * propre liste ordonnée au solveur et à la notation.
+ */
+export const IDS_TECHNIQUES_COMPLEMENTAIRES = [
+  'singleton-cache-zone',
+  'voisine-commune',
+  'voisine-commune-etendue',
+  'paire-nue-etendue',
+] as const;
+
+export type IdTechnique = (typeof IDS_TECHNIQUES)[number] | (typeof IDS_TECHNIQUES_COMPLEMENTAIRES)[number];
 
 /** État d'une grille en cours de résolution logique. */
 export type EtatLogique = {

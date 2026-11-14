@@ -57,7 +57,7 @@ export function compterSolutionsAvec(
   options: Partial<OptionsComptage> = {},
 ): ResultatComptage {
   const { limite, noeudsMax, alea } = { ...OPTIONS_PAR_DEFAUT, ...options };
-  const { nombreCellules, cellulesRegion, regionsCellule, distincte, total, dansUneSomme, masqueValeurs } =
+  const { nombreCellules, cellulesRegion, regionsCellule, distincte, total, dansUneSomme, masqueValeurs, domaine } =
     structure;
   if (valeurs.length !== nombreCellules) {
     throw new Error(`Grille de ${valeurs.length} cases au lieu de ${nombreCellules}`);
@@ -116,7 +116,7 @@ export function compterSolutionsAvec(
   /** Candidats actuels d'une case vide. */
   function candidats(c: number): number {
     const regions = regionsCellule[c] ?? new Int32Array(0);
-    let masque = masqueValeurs;
+    let masque = domaine[c] ?? 0;
     for (const r of regions) if (distincte[r] === 1) masque &= ~(utilises[r] ?? 0);
     if (dansUneSomme[c] === 1 && masque !== 0) {
       for (const r of regions) {
@@ -133,7 +133,7 @@ export function compterSolutionsAvec(
   for (let c = 0; c < nombreCellules; c++) {
     const v = valeurs[c] ?? 0;
     if (v === 0) continue;
-    if (!Number.isInteger(v) || v < 1 || v > 31 || (masqueValeurs & masqueDe(v)) === 0) return aucune;
+    if (!Number.isInteger(v) || v < 1 || v > 31 || ((domaine[c] ?? 0) & masqueDe(v)) === 0) return aucune;
     for (const r of regionsCellule[c] ?? []) {
       if (distincte[r] === 1 && ((utilises[r] ?? 0) & masqueDe(v)) !== 0) return aucune;
     }

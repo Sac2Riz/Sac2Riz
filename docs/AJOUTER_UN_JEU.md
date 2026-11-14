@@ -2,9 +2,10 @@
 
 Ajouter un jeu ne demande **aucune modification du socle** : un nouveau dossier + une ligne dans le registre.
 
-Deux jeux ont suivi ce guide : le sudoku classique (famille sudoku, moteur commun) et les chiffres
-casés (étape 4, jeu sans régions, avec son propre solveur). La section « Jeu hors de la famille
-sudoku » ci-dessous rassemble ce que ce second jeu a appris.
+Trois jeux ont suivi ce guide : le sudoku classique (famille sudoku, moteur commun), les chiffres
+casés (étape 4, jeu sans régions, avec son propre solveur) et le Tectonic (étape 7, moteur commun étendu
+d'un domaine par case). Les sections « Jeu hors de la famille sudoku » et « Jeu de la famille sudoku qui
+n'est pas un sudoku » ci-dessous rassemblent ce que ces deux jeux ont appris.
 
 ## 1. Choisir l'identifiant
 
@@ -187,6 +188,34 @@ d'une autre nature apporte tout dans son dossier, sans toucher au socle :
 - **Grille non carrée** : la vue donne à sa grille les proportions `--l / --h` et la largeur
   `min(100cqw, 100cqh × l / h)`. Cases noires : `--couleur-case-noire`, qui pointe sur le fond de l'appli
   (`var(--couleur-fond)`) ; la forme de la grille est dessinée par le contour des cases blanches.
+
+## Jeu de la famille sudoku qui n'est pas un sudoku (leçons du Tectonic, étape 7a)
+
+Un jeu de chiffres dans des cases, avec des contraintes « chiffres différents », se décrit souvent avec le
+moteur même s'il n'a ni lignes ni colonnes :
+
+- **Tout exprimer en régions** : une contrainte « ces cases ont des chiffres différents » est une région
+  d'unicité ; une région qui contient forcément chacune de ses valeurs est **complète** (déduit tout seul :
+  autant de cases que de valeurs possibles). Une contrainte de voisinage se ramène à de petites régions
+  (Tectonic : les carrés 2×2 pour « deux cases qui se touchent »). Forme nouvelle → l'ajouter à
+  `FormeUnicite` et lui donner un nom dans `moteur/logique/noms.ts`.
+- **Domaine par case** (`DefinitionGrille.domaines`) quand toutes les cases n'acceptent pas les mêmes
+  valeurs (Tectonic : 1 à N selon la zone) ; `null` sinon.
+- **Sa propre liste de techniques** : reprendre celles du moteur qui valent pour le jeu, en ajouter de
+  génériques dans `moteur/logique/techniques/` (sans les mettre dans `TECHNIQUES`, la liste du sudoku, dont
+  l'ordre fixe sa notation), déclarer leurs identifiants dans `IDS_TECHNIQUES_COMPLEMENTAIRES`, puis passer
+  la liste au solveur (`techniques`) et l'ordre à `noterEtapes`. Les techniques fondées sur les lignes et
+  les colonnes ne se déclenchent pas sans ces régions : les retirer de la liste plutôt que les laisser
+  tourner pour rien.
+- **Une constante de notation propre** (`VERSION_NOTATION_TECTONIC`) : `VERSION_NOTATION` reste celle du sudoku.
+- **Données D minimales** (carte des zones, énoncé, solution) et structure déduite en cache (`WeakMap`),
+  comme les chiffres casés.
+- **Grille pleine** : si « tirer la forme au hasard puis remplir » échoue presque toujours (Tectonic : moins
+  de 1 % des découpages 9 × 9 se remplissent), construire la forme et les chiffres ensemble
+  (`tectonic/construction.ts`).
+- **Tests** : le test de sûreté du moteur (`verifierGrille` de `tests/moteur/logique/surete-commun.ts`)
+  accepte la liste de techniques du jeu ; les sudokus doivent rester inchangés (tests existants, packs
+  re-notés à l'identique, `npm run test:long`).
 
 ## Si le format d'un jeu change plus tard
 

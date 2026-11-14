@@ -289,6 +289,48 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   rechargement, reprise de l'essai (Terminal → Rétro, BBS ANSI conservé), copie reconstruite depuis
   IndexedDB, barre d'état, pastilles en clair et en sombre.
 
+## Étape 7 — Tectonic (découpée en deux sous-étapes, un commit chacune)
+
+Troisième jeu (aussi appelé Suguru, Number Blocks ou Nanbaburokku) : grille découpée en zones de 1 à 5
+cases ; une zone de N cases contient les chiffres 1 à N ; deux cases qui se touchent (côté ou diagonale)
+n'ont jamais le même chiffre. **Décision de l'utilisateur** : il réutilise le moteur de contraintes de la
+famille sudoku (zones = régions complètes, carrés 2×2 = cases qui se touchent), étendu par un domaine par
+case, sans changer le sudoku ni sa notation.
+
+### ✅ Étape 7a — Logique pure
+- Moteur : domaine par case (`DefinitionGrille.domaines`), régions complètes déduites des domaines, formes
+  `zone` et `carre` (fabriques `regionsZones`, `domainesZones`, `regionsCarres`), ordre des techniques
+  en paramètre de `noterEtapes` (changements validés par l'utilisateur ; sudoku inchangé :
+  `VERSION_NOTATION` = 1, 400 grilles de ses packs re-notées à l'identique, test long vert).
+- Techniques génériques complémentaires (`TECHNIQUES_COMPLEMENTAIRES`, hors de la liste du sudoku) : seule
+  place dans la zone, voisine commune (2 places), voisine commune étendue (3 places ou plus), paire nue
+  étendue ; un fichier de tests chacune.
+- Module `src/games/tectonic/` (non enregistré avant la 7b) : modèle (D, E, A, gardes), règles (chiffre
+  hors de la zone refusé, retrait des notes dans la zone et les cases qui touchent), génération par
+  niveau, notation, indices en deux temps, packs. Données pour la vue prêtes : `bordures`,
+  `valeursAutorisees`, `voisines`.
+- **Écart au plan expliqué à l'utilisateur** : le découpage aléatoire puis remplissage échouait (moins de
+  1 % des découpages 9 × 9 se remplissent) ; remplacé par une construction conjointe des zones et des
+  chiffres (`construction.ts`).
+- **Calibrage validé par l'utilisateur** : 6 × 6, 7 × 7, 8 × 8, 8 × 8, 9 × 9, Diabolique 10 × 10 ; zones de
+  5 cases au plus partout (zones de 6 mesurées puis écartées) ; arrêt tôt 12-15 chiffres donnés
+  (Débutant, Facile) ; seuils de force ; packs de 200 grilles Difficile (fond 30 s), Expert et Diabolique
+  (fond 60 s).
+- Bench `npm run bench -- --jeu=tectonic` (options `--zones-max`, `--cote`) ; tests (`tests/games/tectonic/`,
+  `tests/moteur/domaines.test.ts`) ; tests longs `surete.long.ts` (sûreté du solveur, grilles brutes,
+  niveaux lents) et `packs.long.ts`.
+
+### Étape 7b — Interface et intégration
+- `vue.ts` (zones en bordures épaisses, d'après `bordures`), `style.css`, `fiche.ts` (règles ; Suguru et
+  Number Blocks cités), ligne dans `registre.ts`, ligne dans `nouveautes.json`.
+- **Décision de l'utilisateur** : le pavé commun grise les chiffres impossibles pour la case sélectionnée,
+  grâce à une **extension générique du contrat de vue** (ce besoin reviendra avec d'autres jeux), à
+  expliquer avant de la faire ; données déjà prêtes en 7a (`valeursAutorisees`).
+- **Décision de l'utilisateur** (option A) : les explications des techniques reprises du sudoku disent
+  « voit » ; la fiche du jeu définit ce mot en une phrase (« deux cases se voient quand elles se touchent
+  ou sont dans la même zone »), sans modifier le moteur.
+- `index.ts` avec `chargerPack` (déjà écrit dans `packs.ts`).
+
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.
 - Kakuro.

@@ -36,9 +36,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run check` | vérification des types (4 configs) + tests + syntaxe des workflows GitHub. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
 | `npm run workflows` | vérifie les workflows `.github/workflows/*.yml` (lecteur YAML strict sans dépendance + structure attendue par GitHub) ; inclus dans `check` |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
-| `npm run test:long` | tests longs (fichiers `tests/**/*.long.ts`, quelques minutes) : sûreté des solveurs logiques (sudoku : 4100 grilles ; chiffres casés : grilles de chaque niveau, contrat des niveaux lents), packs des chiffres casés. Hors de `check` ; **à lancer quand on touche à un solveur, un générateur ou des packs** |
-| `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) |
-| `npm run packs` | régénère les packs Expert/Diabolique de chaque jeu (`--jeu=<id>`, `--niveau=<id>`, `--n=`). Sudoku ~1 min ; chiffres casés ~40 min. **À relancer si la version de notation du jeu change** |
+| `npm run test:long` | tests longs (fichiers `tests/**/*.long.ts`, quelques minutes) : sûreté des solveurs logiques (sudoku : 4100 grilles ; chiffres casés et Tectonic : grilles de chaque niveau, contrat des niveaux lents), packs des chiffres casés et du Tectonic. Hors de `check` ; **à lancer quand on touche à un solveur, un générateur ou des packs** |
+| `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) ; `--jeu=tectonic` : Tectonic (~4 min) |
+| `npm run packs` | régénère les packs Expert/Diabolique de chaque jeu (`--jeu=<id>`, `--niveau=<id>`, `--n=`). Sudoku ~1 min ; chiffres casés ~40 min ; Tectonic ~15 min. **À relancer si la version de notation du jeu change** |
 | `npm run apercu` | build de production + serveur local : tester le service worker et le hors-ligne dans Edge |
 | `npm run icones` | régénère l'icône de l'appli (style Rétro, `public/icones/`) depuis `scripts/icones/dessin.ts` ; à relancer quand le design change |
 
@@ -58,6 +58,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
+  Tectonic : moteur commun avec un domaine par case et sa propre liste de techniques (`src/games/tectonic/`,
+  `VERSION_NOTATION_TECTONIC`).
 - Design : **6 styles au choix** (réglage « Style », Rétro par défaut) : `<html data-style>` + une feuille par
   style (`src/styles/visuels/`, Ardoise = `theme.css`), liste dans `src/types/style.ts` **et** `public/demarrage.js`
   (script classique qui pose le style avant le premier rendu, d'après une copie locale ; IndexedDB = référence).
@@ -141,4 +143,10 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   BBS ANSI, MS-DOS, Rétro (défaut) ; Années 80-90 et Terminal retirés. Réglage « Style » avec pastilles
   d'aperçu, enregistré et exporté (export n° 3) ; reprise unique du choix d'essai (stockage local) ;
   démarrage sans clignotement (`public/demarrage.js`) ; icône de l'appli et couleurs du manifest Rétro.
-- ⏭️ Prochaine : variantes et nouveaux jeux (voir [docs/ROADMAP.md](docs/ROADMAP.md)).
+- ✅ Étape 7a — Tectonic, logique pure : moteur étendu d'un **domaine par case** (`DefinitionGrille.domaines`,
+  régions complètes déduites des domaines, formes `zone` / `carre`, ordre des techniques en paramètre de
+  `noterEtapes` ; sudoku inchangé), 4 techniques complémentaires, module `src/games/tectonic/` (construction
+  conjointe zones + chiffres, génération, notation `VERSION_NOTATION_TECTONIC`, indices, packs Difficile /
+  Expert / Diabolique), non enregistré au registre.
+- ⏭️ Prochaine : étape 7b — Tectonic jouable (vue, extension générique du contrat de vue pour griser le
+  pavé, fiche, registre) ; voir [docs/ROADMAP.md](docs/ROADMAP.md).

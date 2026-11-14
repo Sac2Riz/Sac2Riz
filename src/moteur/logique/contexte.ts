@@ -4,6 +4,7 @@
 // variantes décrites par des régions (classique, diagonal, irrégulier, 6x6…). Code pur.
 
 import type { Cellule, DefinitionGrille, FormeUnicite } from '../../types/grille.ts';
+import { compterBits } from '../candidats.ts';
 import { compiler, type Structure } from '../structure.ts';
 
 /** Forme d'une région, cages comprises. */
@@ -16,10 +17,14 @@ export type Contexte = {
   readonly colonnes: number;
   /** Masque de toutes les valeurs autorisées. */
   readonly masqueValeurs: number;
+  /** Domaine de chaque case (masque ; masqueValeurs partout pour un sudoku). */
+  readonly domaine: Int32Array;
+  /** Valeurs possibles de chaque région (réunion des domaines de ses cases ; masqueValeurs pour un sudoku). */
+  readonly valeursRegion: Int32Array;
   /** Indices des régions à chiffres distincts : les seules utilisées par les techniques. */
   readonly regionsDistinctes: readonly number[];
   /**
-   * 1 si la région a des chiffres distincts ET autant de cases que de valeurs :
+   * 1 si la région a des chiffres distincts ET autant de cases que de valeurs possibles (valeursRegion) :
    * chaque valeur y figure alors exactement une fois. Les singletons cachés, les
    * sous-ensembles cachés et les liens forts ne sont valables que dans ces régions.
    */
@@ -38,7 +43,6 @@ export type Contexte = {
 /** Précalcule le contexte à partir d'une structure déjà compilée. */
 export function creerContexteAvec(structure: Structure): Contexte {
   const { definition, nombreCellules, cellulesRegion, distincte } = structure;
-  const nombreValeurs = structure.valeurs.length;
   const nombreRegions = cellulesRegion.length;
 
   const regionsDistinctes: number[] = [];
@@ -63,7 +67,7 @@ export function creerContexteAvec(structure: Structure): Contexte {
 
     if (distincte[r] !== 1) return;
     regionsDistinctes.push(r);
-    if (cellules.length === nombreValeurs) complete[r] = 1;
+    if (cellules.length === compterBits(structure.valeursRegion[r] ?? 0)) complete[r] = 1;
     for (const a of cellules) {
       for (const b of cellules) if (a !== b) voit[a * nombreCellules + b] = 1;
     }
@@ -81,6 +85,8 @@ export function creerContexteAvec(structure: Structure): Contexte {
     nombreCellules,
     colonnes: definition.colonnes,
     masqueValeurs: structure.masqueValeurs,
+    domaine: structure.domaine,
+    valeursRegion: structure.valeursRegion,
     regionsDistinctes,
     complete,
     formes,

@@ -397,15 +397,50 @@ Tests : `tests/games/chiffres-cases/` (une technique par fichier dans `technique
 `surete.long.ts` (sûreté du solveur, contrat des niveaux lents) et `packs.long.ts`. Bench :
 `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]`. Détail de la difficulté : docs/DIFFICULTE.md.
 
+## Tectonic (étape 7a) — `src/games/tectonic/`
+
+Troisième jeu, de la famille des grilles à contraintes : il **réutilise le moteur** (`src/moteur/`), étendu
+d'un domaine par case. Vue et intégration au registre : étape 7b.
+
+- **Modélisation** : chaque zone est une région d'unicité de forme `zone` (N cases, domaine 1 à N : région
+  complète) ; chaque **carré 2×2** est une région d'unicité de forme `carre` (deux cases qui se touchent, même
+  en diagonale, sont toujours dans un même carré 2×2 : « se voient » = « se touchent ou sont dans la même
+  zone »). Le backtracking, le retrait des chiffres, le solveur logique, les étapes et les indices du moteur
+  servent tels quels.
+
+```
+src/games/tectonic/
+├─ meta.ts, types.ts     D = { lignes, colonnes, zones (carte numérotée dans l'ordre de lecture), enonce, solution } ;
+│                        E = { valeurs, notes } ; A = placer | placer-seul | noter | effacer | definir-notes
+├─ geometrie.ts          cases qui se touchent, zones (numérotation, connexité), bordures épaisses (vue)
+├─ grille.ts             structure déduite de D, en cache (WeakMap) : définition du moteur, contexte, tailles,
+│                        voisines (zone + cases qui touchent), bordures ; valeursAutorisees (pavé, 7b)
+├─ construction.ts       grille pleine : zones ET chiffres construits ensemble (voir DIFFICULTE.md)
+├─ generateur.ts         génération par niveau (PARAMETRES_NIVEAUX), retrait des chiffres du moteur
+├─ techniques.ts         liste ordonnée des techniques du jeu (toutes dans le moteur)
+├─ notation.ts           niveau + force (VERSION_NOTATION_TECTONIC, SEUILS_FORCE_TECTONIC)
+├─ indice.ts             indices en deux temps (chiffre faux d'abord, puis étape du solveur), comme au sudoku
+├─ gardes.ts, logique.ts règles (chiffre hors zone refusé, retrait des notes zone + voisines), gardes strictes
+```
+
+Tests : `tests/games/tectonic/` ; test long `surete.long.ts`. Bench : `npm run bench -- --jeu=tectonic`.
+
 ## Moteur de contraintes (famille sudoku, étapes 1-2)
 
 Types dans `src/types/grille.ts`.
 
-- **Grille** = `DefinitionGrille` : dimensions, valeurs autorisées, liste de **régions typées** :
-  - `unicite` (formes `ligne`, `colonne`, `bloc`, `diagonale`, `irreguliere`) : chaque valeur au plus une fois ;
+- **Grille** = `DefinitionGrille` : dimensions, valeurs autorisées, liste de **régions typées**, **domaines** :
+  - `unicite` (formes `ligne`, `colonne`, `bloc`, `diagonale`, `irreguliere`, `zone` et `carre` du
+    Tectonic) : chaque valeur au plus une fois ;
   - `somme` (forme `cage`) : somme imposée `total` ; si `distinctes` est vrai (règle du Killer,
     valeur par défaut de la fabrique `cage()`), les valeurs de la cage sont aussi toutes différentes :
     une cage de 8 sur deux cases accepte 1+7, 2+6, 3+5, jamais 4+4.
+- **Domaine par case** (étape 7a) : `domaines` = masque des valeurs autorisées de chaque case, ou `null`
+  (toutes les valeurs partout : sudoku). `compiler` calcule `domaine` (par case) et `valeursRegion`
+  (réunion des domaines des cases d'une région). Une région distincte est **complète** si elle a autant de
+  cases que de valeurs possibles (règle toujours juste : principe des tiroirs) ; sans domaines, c'est
+  l'ancienne règle. Backtracking, état de départ, contradictions et techniques partent du domaine de la case
+  et des valeurs de la région : le sudoku ne change pas (test `tests/moteur/domaines.test.ts`).
 - **Une variante = une déclaration de régions** : sudoku 9x9 = 9 lignes + 9 colonnes + 9 blocs ;
   diagonal = + 2 diagonales ; Windoku = + 4 blocs ; irrégulier = blocs remplacés par des régions
   irrégulières ; Killer = + cages.
@@ -417,12 +452,14 @@ Types dans `src/types/grille.ts`.
 src/moteur/
 ├─ candidats.ts        masqueDe, masqueComplet, contient, compterBits, valeursDuMasque, plusPetiteValeur
 ├─ regions.ts          fabriques : regionsLignes/Colonnes/Blocs/Diagonales/Irregulieres, cage,
-│                      regionsClassiques, definitionClassique(taille, hBloc, lBloc)
+│                      regionsClassiques, definitionClassique(taille, hBloc, lBloc) ; regionsZones,
+│                      domainesZones, regionsCarres (Tectonic, étape 7a)
 ├─ structure.ts        compiler(def) : vérifie la définition, précalcule les tables du solveur
 ├─ validation.ts       conflits, estComplete, estSolution (pour erreurs() / estTerminee() des jeux)
 ├─ backtracking.ts     compterSolutions, compterSolutionsAvec, estUnique
 ├─ generateur.ts       genererGrilleComplete, retirerChiffres, genererGrille
-├─ notation.ts         noterGrille, noterEtapes, calculerForce, SEUILS_FORCE, VERSION_NOTATION (étape 2b)
+├─ notation.ts         noterGrille, noterEtapes (ordre des techniques en paramètre, étape 7a), calculerForce,
+│                      SEUILS_FORCE, VERSION_NOTATION (étape 2b)
 ├─ generation-niveau.ts genererParNiveau, CIBLES_ARRET_TOT (étape 2b)
 ├─ pack.ts             estPackSudoku (garde), grilleEnTexte, texteEnGrille (étape 2b)
 └─ logique/            solveur logique (étape 2a) — voir ci-dessous
@@ -433,7 +470,8 @@ src/moteur/
    ├─ outils.ts        combinaisons, positions d'un chiffre, liens forts, cases bivaleurs…
    ├─ familles/        logique partagée : singleton-cache, sous-ensembles, intersections, poissons,
    │                   liens-forts, propagation (forcing)
-   ├─ techniques/      UNE TECHNIQUE PAR FICHIER (21) + index.ts (liste ordonnée TECHNIQUES)
+   ├─ techniques/      UNE TECHNIQUE PAR FICHIER (21 du sudoku + 4 complémentaires) + index.ts (liste
+   │                   ordonnée TECHNIQUES du sudoku) + complementaires.ts (TECHNIQUES_COMPLEMENTAIRES)
    └─ solveur.ts       resoudreLogique, prochaineEtape
 ```
 
@@ -453,6 +491,10 @@ src/moteur/
   et revient à la première après chaque progrès. Résultat `{ statut, etapes, etat, raison }`, statut
   `'resolu'`, `'bloque'` (plus rien ne progresse : essai-erreur nécessaire ou solutions multiples) ou
   `'contradiction'` (énoncé incohérent).
+- **Techniques complémentaires** (étape 7a, pour le Tectonic, hors de la liste du sudoku) :
+  `singleton-cache-zone`, `voisine-commune`, `voisine-commune-etendue`, `paire-nue-etendue`
+  (`IDS_TECHNIQUES_COMPLEMENTAIRES`). Un jeu compose sa liste ordonnée et la passe au solveur
+  (`resoudreLogique(ctx, enonce, { techniques })`) et à la notation (`noterEtapes(…, ordre)`).
 - **Généricité** : les techniques ne connaissent que les régions. Une **région complète** (chiffres distincts
   et autant de cases que de valeurs) contient chaque valeur exactement une fois : singletons cachés,
   sous-ensembles cachés et liens forts n'utilisent que celles-là ; les sous-ensembles nus marchent dans

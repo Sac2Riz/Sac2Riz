@@ -3,7 +3,7 @@
 // Les tables sont des tableaux typés (Int32Array…), plus rapides que des tableaux ordinaires. Code pur.
 
 import type { DefinitionGrille } from '../types/grille.ts';
-import { masqueComplet, VALEUR_MAX } from './candidats.ts';
+import { compterBits, masqueComplet, VALEUR_MAX } from './candidats.ts';
 
 /** Version « prête au calcul » d'une définition de grille. Ne pas modifier ses tableaux. */
 export type Structure = {
@@ -13,6 +13,13 @@ export type Structure = {
   readonly valeurs: readonly number[];
   /** Masque de toutes les valeurs autorisées. */
   readonly masqueValeurs: number;
+  /** Domaine de chaque case : masque de ses valeurs autorisées (masqueValeurs si la définition n'en donne pas). */
+  readonly domaine: Int32Array;
+  /**
+   * Valeurs possibles de chaque région : réunion des domaines de ses cases (masqueValeurs sans domaines).
+   * Une région distincte qui a autant de cases que de valeurs possibles les contient toutes, une fois chacune.
+   */
+  readonly valeursRegion: Int32Array;
   /** Cases de chaque région (même ordre que definition.regions). */
   readonly cellulesRegion: readonly Int32Array[];
   /** Indices des régions contenant chaque case. */
@@ -51,26 +58,44 @@ export function compiler(definition: DefinitionGrille): Structure {
   });
 
   const nombreCellules = lignes * colonnes;
+  const masqueValeurs = masqueComplet(valeurs);
+  const domaine = new Int32Array(nombreCellules).fill(masqueValeurs);
+  if (definition.domaines !== null) {
+    if (definition.domaines.length !== nombreCellules) {
+      throw new Error(`${definition.domaines.length} domaines pour ${nombreCellules} cases`);
+    }
+    definition.domaines.forEach((masque, c) => {
+      if (!Number.isInteger(masque) || masque === 0 || (masque & ~masqueValeurs) !== 0) {
+        throw new Error(`Case ${c} : domaine ${masque} vide ou hors des valeurs autorisées`);
+      }
+      domaine[c] = masque;
+    });
+  }
   const listesParCellule: number[][] = Array.from({ length: nombreCellules }, () => []);
   const distincte = new Uint8Array(regions.length);
   const total = new Int32Array(regions.length).fill(-1);
   const dansUneSomme = new Uint8Array(nombreCellules);
 
+  const valeursRegion = new Int32Array(regions.length);
   const cellulesRegion = regions.map((region, r) => {
     const vues = new Set<number>();
+    let reunion = 0;
     for (const c of region.cellules) {
       if (!Number.isInteger(c) || c < 0 || c >= nombreCellules) {
         throw new Error(`Région ${r} : case ${c} hors de la grille`);
       }
       if (vues.has(c)) throw new Error(`Région ${r} : case ${c} en double`);
       vues.add(c);
+      reunion |= domaine[c] ?? 0;
       // Le « ! » est sûr : c a été vérifiée dans [0, nombreCellules[
       listesParCellule[c]!.push(r);
     }
+    valeursRegion[r] = reunion;
     if (region.type === 'unicite') {
       distincte[r] = 1;
-      if (region.cellules.length > valeurs.length) {
-        throw new Error(`Région ${r} : ${region.cellules.length} cases pour ${valeurs.length} valeurs distinctes`);
+      const possibles = compterBits(reunion);
+      if (region.cellules.length > possibles) {
+        throw new Error(`Région ${r} : ${region.cellules.length} cases pour ${possibles} valeurs distinctes`);
       }
     } else {
       distincte[r] = region.distinctes ? 1 : 0;
@@ -93,7 +118,9 @@ export function compiler(definition: DefinitionGrille): Structure {
     definition,
     nombreCellules,
     valeurs,
-    masqueValeurs: masqueComplet(valeurs),
+    masqueValeurs,
+    domaine,
+    valeursRegion,
     cellulesRegion,
     regionsCellule: listesParCellule.map((liste) => Int32Array.from(liste)),
     distincte,

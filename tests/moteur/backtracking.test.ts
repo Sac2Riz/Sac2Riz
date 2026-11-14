@@ -110,7 +110,7 @@ describe('compterSolutions — variantes', () => {
 
 describe('compterSolutions — cages (régions somme)', () => {
   function cageDeHuit(distinctes: boolean): DefinitionGrille {
-    return { lignes: 1, colonnes: 2, valeurs: valeursUnA(9), regions: [cage([0, 1], 8, distinctes)] };
+    return { lignes: 1, colonnes: 2, valeurs: valeursUnA(9), regions: [cage([0, 1], 8, distinctes)], domaines: null };
   }
 
   test('cage de 8 sur deux cases : 6 solutions, jamais 4+4', () => {
@@ -135,7 +135,7 @@ describe('compterSolutions — cages (régions somme)', () => {
   });
 
   test('cage de 3 cases (total 6) : seulement les permutations de 1+2+3', () => {
-    const def: DefinitionGrille = { lignes: 1, colonnes: 3, valeurs: valeursUnA(9), regions: [cage([0, 1, 2], 6)] };
+    const def: DefinitionGrille = { lignes: 1, colonnes: 3, valeurs: valeursUnA(9), regions: [cage([0, 1, 2], 6)], domaines: null };
     assert.equal(compterSolutions(def, [0, 0, 0], { limite: 100 }).nombre, 6);
   });
 

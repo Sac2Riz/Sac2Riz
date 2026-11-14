@@ -60,7 +60,7 @@ export function propagerSingletons(
       if (ctx.complete[r] !== 1) continue;
       let placees = 0;
       for (const c of cellulesDe(ctx, r)) placees |= valeurs[c] !== 0 ? masqueDe(valeurs[c] ?? 0) : 0;
-      let reste = ctx.masqueValeurs & ~placees;
+      let reste = (ctx.valeursRegion[r] ?? 0) & ~placees;
       while (reste !== 0 && !contradiction) {
         const bit = reste & -reste;
         reste ^= bit;

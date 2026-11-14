@@ -26,6 +26,13 @@ export function nomRegion(ctx: Contexte, region: number): string {
     }
     case 'irreguliere':
       return `la région ${rang}`;
+    case 'zone':
+      // Zone du Tectonic : nommée par sa première case (les numéros de zone ne se voient pas sur la grille)
+      return `la zone de ${nomCellule(ctx, cellulesDe(ctx, region)[0] ?? 0)}`;
+    case 'carre': {
+      const cellules = cellulesDe(ctx, region);
+      return `le carré ${nomCellule(ctx, cellules[0] ?? 0)}-${nomCellule(ctx, cellules[cellules.length - 1] ?? 0)}`;
+    }
     default:
       return `la cage ${rang}`;
   }
