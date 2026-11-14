@@ -152,3 +152,9 @@ d'une autre nature apporte tout dans son dossier, sans toucher au socle :
 
 Incrémenter `meta.versionFormat` et implémenter `migrer(ancien, versionOrigine)` pour que les parties
 sauvegardées et les exports anciens restent lisibles.
+
+## Hors ligne et export (étape 5)
+
+Rien à faire : tous les fichiers du jeu copiés dans `dist/` (modules, `style.css`, `packs/`) sont mis en
+cache par le service worker au build suivant, et ses parties, statistiques et avancement dans les packs font
+partie de l'export (l'import rejoue chaque partie avec les gardes du jeu).

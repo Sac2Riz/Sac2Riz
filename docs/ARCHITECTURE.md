@@ -62,8 +62,13 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
 - **Nouvelle partie alors qu'une partie est en cours sur ce jeu** : confirmation ; si le joueur confirme et
   qu'une grille est obtenue, l'ancienne partie compte comme abandonnée puis est remplacée (s'il annule le
   chargement, elle reste intacte).
-- **Export/import** de toutes les données (`FichierExport`, fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`) ;
-  à l'import, chaque champ est validé (gardes de type des jeux pour D/E/A).
+- **Export/import** (Réglages → Sauvegarde, étape 5) : `FichierExport` (`format`, `version`, `exporteLe`,
+  `donnees` : réglages, parties en cours, statistiques, avancement dans les packs ; **pas la réserve**),
+  fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`. Import **depuis l'accueil seulement** (pendant une partie,
+  l'écran de partie réécrirait sa partie par-dessus) : `analyserImport` (`socle/donnees/import.ts`, pur)
+  vérifie tout avant d'écrire (JSON, format, version — plus récente : message dédié —, gardes du stockage,
+  jeux connus, une partie par jeu, chaque partie **rejouée** par `depuisSauvegarde`), puis confirmation avec
+  résumé, `Stockage.remplacerDonnees` (**atomique**) et redémarrage de l'appli.
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
   Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
   suit le thème choisi (`src/socle/theme.ts`).
@@ -106,7 +111,11 @@ src/socle/
 ├─ reserve.ts         réserve de grilles d'avance, obtenirGrille, réalimentation
 ├─ historique.ts      annuler / rétablir (pur, générique)
 ├─ chrono.ts          chronomètre avec pauses manuelle et automatique (pur)
-└─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono)
+├─ visibilite.ts      surveillance de visibilitychange (branchée sur le chrono)
+├─ donnees/           export / import (étape 5) : export.ts (lecture, fichier, nom daté),
+│                     import.ts (analyse complète, pur), actions-donnees.ts (téléchargement, dialogues)
+└─ pwa/               mise-a-jour.ts (enregistrement du service worker, nouvelle version signalée,
+                      jamais de rechargement sans clic), bandeau-mise-a-jour.ts
 ```
 
 ### Indices du sudoku classique (étape 3c) — `games/sudoku-classique/indice.ts`
@@ -190,7 +199,7 @@ src/socle/
   urgente, budget par défaut comme garde-fou), réponse `genere` avec le puzzle préparé (mêmes jeu, graine et
   notation ; seules les données changent).
 - **Stockage** : interface `Stockage` (`lire`, `ecrire`, `supprimer`, `lister(prefixe)`, `compter(prefixe)`,
-  `prendrePremier(prefixe)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
+  `prendrePremier(prefixe)`, `remplacerDonnees(donnees)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
   `reserve` (clé `<jeu>/<niveau>/<horodatage>-<compteur>`), `packsJoues` (clé `<jeu>/<niveau>`), `stats`
   (clé = id du jeu), `reglages` (clé unique). Toute valeur relue passe par la garde de son magasin
   (`src/utils/gardes-sauvegarde.ts`) : une entrée invalide est ignorée. **`prendrePremier` est atomique**
@@ -198,6 +207,8 @@ src/socle/
   même avec deux onglets. À l'ouverture, IndexedDB applique les **migrations** manquantes
   (`onupgradeneeded`) puis demande le **stockage persistant** (résultat simplement journalisé).
   Pour changer le schéma : ajouter une migration à la fin de `MIGRATIONS`, ne jamais modifier les anciennes.
+  **`remplacerDonnees` est atomique** (import) : une seule transaction vide puis remplit `parties`, `stats`,
+  `reglages` et `packsJoues` ; en cas d'erreur, rien n'est changé. La réserve n'est pas touchée.
 - **Packs** (`creerServicePacks`) : pour chaque jeu/niveau, un ordre mélangé des grilles et une position
   (`EtatPack`) ; pack épuisé → nouvel ordre (cycle suivant) qui ne commence pas par la dernière grille servie ;
   taille du pack changée → nouvel ordre. Tirages d'un même jeu/niveau mis en série.
@@ -460,5 +471,37 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
 
 ## PWA (étape 5)
 
-Manifest (`public/manifest.webmanifest`), service worker qui met en cache tous les fichiers de `dist/`
-(liste générée au build, versionnée), 100 % hors ligne. Icônes PNG 192 et 512 (dont « maskable »).
+- **Manifest** (`public/manifest.webmanifest`) : `id`, `start_url` et `scope` = `./` (relatifs : l'appli
+  marche dans `/Sac2Riz/`), icônes SVG, PNG 192 et 512 « any », 512 « maskable » (Android).
+- **Icônes** : `npm run icones` (`scripts/generer-icones.ts`) écrit les 4 fichiers dans `public/icones/`
+  depuis une seule description de formes (`scripts/icones/dessin.ts`) ; rendu lissé (4 × 4 points par pixel)
+  et encodeur PNG maison (`scripts/icones/png.ts`, zlib de Node). Fichiers commités.
+- **Service worker** (`src/service-worker.ts`, compilé par `src/worker/tsconfig.json` — lib WebWorker — en
+  `dist/service-worker.js` : à la racine, sa portée couvre toute l'appli ; enregistré comme module) :
+  - le build (`scripts/manifeste-precache.ts`, dernière commande de `npm run build`) remplace le marqueur
+    `'__MANIFESTE_PRECACHE__'` par le **manifeste** `{ version, fichiers }` : tous les fichiers de `dist/` sauf
+    `*.map` et le service worker ; version = 12 premiers caractères du SHA-256 du contenu. Le fichier change
+    dès qu'un fichier de l'appli change → le navigateur voit la mise à jour ; un build identique → même
+    version. Rien à faire pour un nouveau jeu : ses fichiers (packs, CSS) sont dans `dist/`, donc en cache ;
+  - `install` : tout en cache dans `sac2riz-<version>` (requêtes `cache: 'reload'`, pour ne pas reprendre un
+    ancien fichier du cache HTTP) ; **pas de `skipWaiting`** : la nouvelle version attend ;
+  - `activate` : suppression des autres caches `sac2riz-*`, `clients.claim()` ;
+  - `fetch` (GET, même origine) : cache d'abord (navigation → `index.html`), sinon réseau ;
+  - message `{ type: 'activer' }` → `skipWaiting()` ;
+  - jamais d'accès à IndexedDB : parties, stats, réglages, réserve survivent aux mises à jour (les
+    changements de schéma passent par les migrations du stockage) ;
+  - en développement (`npm run dev`), le marqueur n'est pas remplacé : rien en cache, le réseau répond.
+- **Côté page** (`socle/pwa/mise-a-jour.ts`, testé avec de faux objets) : nouvelle version signalée si elle
+  attend au démarrage ou quand elle passe à « installed » alors qu'une version contrôle la page (jamais à
+  la première installation) → bandeau (Recharger / Plus tard). Recharger : `App.sauvegarder()` (partie en
+  cours, chrono compris), message `activer`, rechargement au `controllerchange` — uniquement après ce clic.
+  `verifier()` relance la recherche au retour au premier plan, au plus une fois par heure.
+- **Test local** : `npm run apercu` (build + serveur) ; localhost est un contexte sécurisé, le service
+  worker y fonctionne. Sur le réseau local (`http://192.168…`), non : le test sur tablette se fait en ligne.
+
+## Déploiement (étape 5)
+
+`.github/workflows/deployer.yml` : à chaque push sur `main` (ou à la main depuis l'onglet Actions), job
+`construire` (`npm ci`, `npm run check`, `npm run build`, envoi de `dist/`) puis job `publier`
+(`actions/deploy-pages`), qui ne tourne que si le premier a réussi. Prérequis : Settings → Pages → Source
+« GitHub Actions ». Adresse : https://sac2riz.github.io/Sac2Riz/.

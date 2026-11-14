@@ -56,8 +56,11 @@ export type OptionsEcranPartie = {
   readonly maintenant: () => number;
 };
 
-/** Écran affiché ; quitter() sauvegarde, libère tout et retourne à l'accueil. */
-export type EcranPartie = { readonly quitter: () => Promise<void> };
+/**
+ * Écran affiché ; quitter() sauvegarde, libère tout et retourne à l'accueil ;
+ * sauvegarder() enregistre la partie tout de suite (avant une mise à jour de l'appli).
+ */
+export type EcranPartie = { readonly quitter: () => Promise<void>; readonly sauvegarder: () => Promise<void> };
 
 const RAFRAICHISSEMENT_CHRONO_MS = 250;
 /** Pause entre la dernière case remplie et l'écran de fin (on voit la grille complète). */
@@ -366,5 +369,5 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   partie = changerVisibilitePartie(partie, estVisible(document), o.maintenant());
   dessiner();
   void sauvegarder();
-  return { quitter };
+  return { quitter, sauvegarder };
 }

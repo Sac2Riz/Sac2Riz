@@ -177,15 +177,22 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
     surligné ; s'il est hors de vue, la liste défile doucement juste assez pour le montrer
     (`defilementPourVoir`, pur et testé), sinon rien ne bouge.
 
-## Étape 5 — PWA, sauvegarde externe, déploiement
-- Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.
-- **Icônes PNG 192×192 et 512×512, dont une version « maskable »**, nécessaires à l'installation sur
-  Android (l'icône SVG provisoire suffit d'ici là).
-- Export/import JSON de toutes les données, avec validation du fichier importé.
+## ✅ Étape 5 — PWA, sauvegarde externe, déploiement
+- Icônes provisoires (le design complet sera refait) : SVG, PNG 192 et 512, 512 « maskable », générées par
+  `npm run icones` (script Node sans dépendance, relançable quand le design change).
+- Service worker : tous les fichiers (packs compris) en cache, 100 % hors ligne ; liste et version écrites
+  automatiquement au build (empreinte du contenu) ; anciens caches supprimés ; IndexedDB jamais touché.
+- Mise à jour : bandeau « Nouvelle version disponible » (Recharger / Plus tard), jamais de rechargement
+  automatique ; la partie en cours est sauvegardée avant de recharger.
+- Export/import JSON (Réglages → Sauvegarde) : fichier daté ; import depuis l'accueil, validation complète
+  (fichier invalide ou version inconnue refusé avec un message, rien n'est modifié), confirmation, écriture
+  atomique, redémarrage. **Décisions** : la réserve n'est pas exportée (régénérée toute seule) ;
+  l'avancement dans les packs l'est.
 - GitHub Action : `npm ci`, `npm run check`, `npm run build`, publication de `dist/` sur GitHub Pages
-  à chaque push sur `main`, à l'adresse https://sac2riz.github.io/Sac2Riz/.
-- README : retirer la mention « bientôt disponible » du lien vers l'appli.
-- Test d'installation sur la tablette.
+  à chaque push sur `main` (seulement si tout passe), https://sac2riz.github.io/Sac2Riz/.
+- README : mention « bientôt disponible » retirée une fois l'appli en ligne.
+- Vérifié dans Edge automatisé (installation, hors ligne, import, mise à jour). Test sur la tablette :
+  installation, mode avion, reprise, export/import, réception d'une mise à jour.
 
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.

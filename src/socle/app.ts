@@ -12,6 +12,8 @@
 // Bouton « retour » d'Android hors de l'accueil : retour à l'accueil (UNE entrée est ajoutée à
 // l'historique du navigateur en quittant l'accueil ; la fin de partie et la partie suivante
 // réutilisent cette entrée), sans quitter l'appli.
+// Mise à jour de l'appli (étape 5) : demarrerApp renvoie sauvegarder(), appelée avant de passer à
+// la nouvelle version (la partie en cours est enregistrée, chrono compris).
 
 import type { OptionsDepart, Puzzle } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
@@ -22,6 +24,7 @@ import { afficherAccueil, type JeuAccueil } from './accueil.ts';
 import type { BilanFin } from './bilan-fin.ts';
 import { afficherChargement } from './chargement.ts';
 import type { DemandeEnCours } from './client-worker.ts';
+import type { ActionsDonnees } from './donnees/actions-donnees.ts';
 import { confirmer, informer } from './dialogue.ts';
 import { afficherFin } from './ecran-fin.ts';
 import { afficherPartie } from './ecran-partie.ts';
@@ -44,12 +47,22 @@ export type OptionsApp = {
   readonly preparer: (puzzle: Puzzle<Json>, options: OptionsDepart) => DemandeEnCours;
   /** Enregistre les réglages modifiés (écran des réglages). */
   readonly enregistrerReglages: (reglages: Reglages) => Promise<void>;
+  /** Export / import des données (section « Sauvegarde » des réglages). */
+  readonly donnees: ActionsDonnees;
+};
+
+/** Ce que l'appli expose à main.ts. */
+export type App = {
+  /** Enregistre tout de suite la partie en cours, s'il y en a une (avant une mise à jour). */
+  readonly sauvegarder: () => Promise<void>;
 };
 
 /** Écran autre que l'accueil : quitter() y revient (bouton retour d'Android). */
-type EcranCourant = { readonly quitter: () => Promise<void> };
+type EcranCourant = { readonly quitter: () => Promise<void>; readonly sauvegarder: () => Promise<void> };
 
-export function demarrerApp(o: OptionsApp): void {
+const rienASauvegarder = (): Promise<void> => Promise.resolve();
+
+export function demarrerApp(o: OptionsApp): App {
   const maintenant = (): number => Date.now();
   let ecranCourant: EcranCourant | null = null;
   /** Vrai pendant une opération (chargement, confirmation) : ignore les doubles touchers. */
@@ -63,7 +76,12 @@ export function demarrerApp(o: OptionsApp): void {
     o.enregistrerReglages(reglages).catch((erreur: unknown) => console.error('Réglages non enregistrés :', erreur));
   }
 
-  const afficherReglages = (): Promise<void> => ouvrirReglages(() => reglages, changerReglages);
+  // L'import n'est proposé que depuis l'accueil (voir ecran-reglages.ts)
+  const afficherReglages = (): Promise<void> =>
+    ouvrirReglages(() => reglages, changerReglages, {
+      exporter: o.donnees.exporter,
+      importer: ecranCourant === null ? o.donnees.importer : null,
+    });
 
   // ---------- Navigation ----------
   /** En quittant l'accueil : une entrée dans l'historique du navigateur (une seule). */
@@ -106,12 +124,12 @@ export function demarrerApp(o: OptionsApp): void {
 
   async function statistiques(): Promise<void> {
     const jeux = await Promise.all(o.jeux.map(async ({ meta }) => ({ meta, stats: await o.parties.stats(meta.id) })));
-    entrer({ quitter: async () => sortir() });
+    entrer({ quitter: async () => sortir(), sauvegarder: rienASauvegarder });
     afficherStats(o.racine, jeux, sortir);
   }
 
   function fin(bilan: BilanFin): void {
-    entrer({ quitter: async () => sortir() });
+    entrer({ quitter: async () => sortir(), sauvegarder: rienASauvegarder });
     afficherFin(o.racine, bilan, {
       accueil: sortir,
       nouvelle: () => void enSecurite(() => nouvelle(bilan.jeu, bilan.niveau)),
@@ -135,7 +153,7 @@ export function demarrerApp(o: OptionsApp): void {
 
   function ouvrir(logique: Logique, vue: VueJeu<Json, Json, Json>, partie: Partie): void {
     // entrer() avant l'affichage : ecranCourant n'est jamais null pendant la partie
-    entrer({ quitter: () => Promise.resolve() });
+    entrer({ quitter: () => Promise.resolve(), sauvegarder: rienASauvegarder });
     ecranCourant = afficherPartie({
       conteneur: o.racine,
       logique,
@@ -231,4 +249,5 @@ export function demarrerApp(o: OptionsApp): void {
   });
 
   void accueil();
+  return { sauvegarder: () => ecranCourant?.sauvegarder() ?? Promise.resolve() };
 }

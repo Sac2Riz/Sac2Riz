@@ -2,6 +2,38 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 5] — PWA hors ligne, export/import, déploiement — 2026-11-14
+
+### Ajouté
+- **Icônes** provisoires : `icone.svg`, `icone-192.png`, `icone-512.png`, `icone-maskable-512.png`
+  (Android), générées depuis une même description de formes par `npm run icones`
+  (`scripts/generer-icones.ts`, `scripts/icones/` : rendu lissé et encodeur PNG sans dépendance, zlib de Node).
+  Manifest : `id`, icônes PNG « any » et « maskable ».
+- **Service worker** (`src/service-worker.ts`, compilé à la racine de `dist/`, portée = toute l'appli) : tous
+  les fichiers de l'appli, packs des deux jeux compris, mis en cache à l'installation → 100 % hors ligne.
+  Liste et version écrites automatiquement à la fin de `npm run build` (`scripts/manifeste-precache.ts` :
+  version = empreinte du contenu de `dist/`, identique tant que rien ne change). Un cache par version,
+  anciens caches supprimés à l'activation. IndexedDB jamais touché : données conservées aux mises à jour.
+- **Mises à jour** (`src/socle/pwa/`) : bandeau discret « Nouvelle version disponible » (Recharger / Plus
+  tard) ; l'appli ne se recharge jamais d'elle-même ; « Recharger » sauvegarde d'abord la partie en cours
+  (`App.sauvegarder`). Nouvelle recherche quand l'appli revient au premier plan (au plus une fois par heure).
+- **Export / import** (Réglages → Sauvegarde) : fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json` (réglages,
+  parties en cours, statistiques, avancement dans les packs ; pas la réserve). Import depuis l'accueil
+  seulement : analyse complète (`socle/donnees/import.ts` : format, version, gardes, jeux connus, parties
+  rejouées par leur jeu), message clair en cas de refus sans rien modifier, confirmation avec résumé, puis
+  remplacement **atomique** (`Stockage.remplacerDonnees`, une transaction IndexedDB) et redémarrage.
+- **Déploiement** : GitHub Action `.github/workflows/deployer.yml` (`npm ci`, `npm run check`,
+  `npm run build`, publication de `dist/` sur GitHub Pages seulement si tout passe).
+- `npm run apercu` : build puis serveur local (tester le hors-ligne dans Edge).
+- Tests : export/import et `remplacerDonnees`, suivi des mises à jour (faux service worker), encodeur PNG et
+  icônes, manifeste du service worker (498 tests). Vérifié dans Edge automatisé : installation, hors ligne
+  (serveur arrêté, partie Expert depuis le pack), import refusé puis accepté, bandeau sans rechargement
+  automatique, rechargement au clic avec la partie conservée, ancien cache supprimé.
+
+### Modifié
+- `FichierExport` : les données sont regroupées dans `donnees` (`DonneesExportees`, + `packsJoues`),
+  `VERSION_EXPORT` = 1. Écran des réglages : section « Sauvegarde » (`SauvegardeReglages`).
+
 ## [Étape 4b, corrections] — Chiffres casés : après les essais sur tablette — 2026-11-14
 
 ### Ajouté

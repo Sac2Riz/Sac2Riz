@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Sac2Riz",
   "short_name": "Sac2Riz",
   "description": "Jeux de logique à chiffres, 100 % hors ligne.",
@@ -10,11 +11,9 @@
   "background_color": "#eef1f4",
   "theme_color": "#eef1f4",
   "icons": [
-    {
-      "src": "./icones/icone.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "./icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icones/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

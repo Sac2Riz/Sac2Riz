@@ -116,12 +116,28 @@ export type EtatPack = {
   readonly cycle: number;
 };
 
+/**
+ * Données de l'appli sauvegardées dans le fichier d'export et remplacées à l'import.
+ * La réserve n'en fait pas partie : ce ne sont que des grilles d'avance, régénérées toutes seules.
+ */
+export type DonneesExportees = {
+  readonly reglages: Reglages;
+  /** Parties en cours (au plus une par jeu). */
+  readonly parties: readonly PartieSauvegardee[];
+  /** Statistiques par id de jeu. */
+  readonly stats: { readonly [jeu: string]: StatsJeu };
+  /** Avancement dans les packs, par clé « <jeu>/<niveau> » (évite de rejouer les mêmes grilles). */
+  readonly packsJoues: { readonly [cle: string]: EtatPack };
+};
+
+/** Version du format du fichier d'export (à incrémenter si sa forme change, avec conversion à l'import). */
+export const VERSION_EXPORT = 1;
+
 /** Contenu du fichier d'export (sac2riz-sauvegarde-AAAA-MM-JJ.json). */
 export type FichierExport = {
   readonly format: 'sac2riz-export';
-  readonly version: 1;
+  readonly version: typeof VERSION_EXPORT;
+  /** Date de l'export au format ISO 8601. */
   readonly exporteLe: string;
-  readonly reglages: Reglages;
-  readonly parties: readonly PartieSauvegardee[];
-  readonly stats: { readonly [jeu: string]: StatsJeu };
+  readonly donnees: DonneesExportees;
 };

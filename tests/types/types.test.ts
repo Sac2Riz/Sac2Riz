@@ -13,13 +13,16 @@ const exemple: FichierExport = {
   format: 'sac2riz-export',
   version: 1,
   exporteLe: '2026-01-01T00:00:00.000Z',
-  reglages: REGLAGES_PAR_DEFAUT,
-  parties: [],
-  stats: {
-    'jeu-exemple': {
-      debutant: statsVides, facile: statsVides, moyen: statsVides,
-      difficile: statsVides, expert: statsVides, diabolique: statsVides,
+  donnees: {
+    reglages: REGLAGES_PAR_DEFAUT,
+    parties: [],
+    stats: {
+      'jeu-exemple': {
+        debutant: statsVides, facile: statsVides, moyen: statsVides,
+        difficile: statsVides, expert: statsVides, diabolique: statsVides,
+      },
     },
+    packsJoues: { 'jeu-exemple/expert': { taille: 2, ordre: [1, 0], position: 1, derniere: 1, cycle: 1 } },
   },
 };
 

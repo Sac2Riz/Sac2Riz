@@ -8,6 +8,7 @@
 
 import type { Niveau } from '../../types/niveaux.ts';
 import type {
+  DonneesExportees,
   EntreeReserve,
   EtatPack,
   PartieSauvegardee,
@@ -62,6 +63,21 @@ export function prefixeReserve(jeu: string, niveau: Niveau): string {
   return `${cleJeuNiveau(jeu, niveau)}/`;
 }
 
+/** Magasins remplacés par remplacerDonnees (tous sauf la réserve). */
+export const MAGASINS_EXPORTES = ['parties', 'stats', 'reglages', 'packsJoues'] as const;
+
+type EcritureMagasin = { readonly [M in NomMagasin]: { readonly magasin: M; readonly cle: string; readonly valeur: ContenuMagasins[M] } }[NomMagasin];
+
+/** Écritures (magasin, clé, valeur) qui rangent ces données dans les magasins. */
+export function ecrituresDonnees(donnees: DonneesExportees): readonly EcritureMagasin[] {
+  return [
+    { magasin: 'reglages', cle: CLE_REGLAGES, valeur: donnees.reglages },
+    ...donnees.parties.map((p): EcritureMagasin => ({ magasin: 'parties', cle: p.jeu, valeur: p })),
+    ...Object.entries(donnees.stats).map(([jeu, s]): EcritureMagasin => ({ magasin: 'stats', cle: jeu, valeur: s })),
+    ...Object.entries(donnees.packsJoues).map(([cle, e]): EcritureMagasin => ({ magasin: 'packsJoues', cle, valeur: e })),
+  ];
+}
+
 export type Entree<M extends NomMagasin> = { readonly cle: string; readonly valeur: ContenuMagasins[M] };
 
 export interface Stockage {
@@ -80,6 +96,12 @@ export interface Stockage {
    * Les entrées invalides rencontrées en chemin sont supprimées. null si rien ne correspond.
    */
   prendrePremier<M extends NomMagasin>(magasin: M, prefixe: string): Promise<Entree<M> | null>;
+  /**
+   * Remplace TOUT le contenu des magasins parties, stats, reglages et packsJoues par ces données
+   * (import d'une sauvegarde), EN UNE SEULE OPÉRATION ATOMIQUE : soit tout est remplacé, soit rien
+   * (en cas d'erreur, les anciennes données restent intactes). La réserve n'est pas touchée.
+   */
+  remplacerDonnees(donnees: DonneesExportees): Promise<void>;
   /** Libère la base (le stockage n'est plus utilisable ensuite). */
   fermer(): void;
 }

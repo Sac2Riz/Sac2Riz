@@ -10,7 +10,16 @@
 import { journalConsole, type Journal } from '../environnement.ts';
 import { demanderStockagePersistant, type GestionnaireStockage } from './persistance.ts';
 import { migrer, VERSION_SCHEMA } from './schema.ts';
-import { GARDES, type ContenuMagasins, type Entree, type NomMagasin, type Stockage } from './stockage.ts';
+import type { DonneesExportees } from '../../types/sauvegarde.ts';
+import {
+  ecrituresDonnees,
+  GARDES,
+  MAGASINS_EXPORTES,
+  type ContenuMagasins,
+  type Entree,
+  type NomMagasin,
+  type Stockage,
+} from './stockage.ts';
 
 export const NOM_BASE = 'sac2riz';
 
@@ -153,6 +162,16 @@ function creerStockage(db: IDBDatabase): Stockage {
       };
       await fin;
       return trouvee.entree;
+    },
+    async remplacerDonnees(donnees: DonneesExportees): Promise<void> {
+      // UNE transaction sur les quatre magasins : IndexedDB annule tout si une écriture échoue
+      const transaction = db.transaction([...MAGASINS_EXPORTES], 'readwrite');
+      const fin = finTransaction(transaction);
+      for (const nom of MAGASINS_EXPORTES) transaction.objectStore(nom).clear();
+      for (const { magasin: nom, cle, valeur } of ecrituresDonnees(donnees)) {
+        transaction.objectStore(nom).put(valeur, cle);
+      }
+      await fin;
     },
     fermer(): void {
       db.close();

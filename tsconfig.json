@@ -11,6 +11,7 @@
     "outDir": "dist"
   },
   "include": ["src/**/*.ts"],
-  // Le worker a sa propre configuration ; les dossiers « _xxx » ne sont jamais publiés.
-  "exclude": ["src/worker/**", "src/games/_*/**"]
+  // Le worker et le service worker ont leur propre configuration (src/worker/tsconfig.json) ;
+  // les dossiers « _xxx » ne sont jamais publiés.
+  "exclude": ["src/worker/**", "src/service-worker.ts", "src/games/_*/**"]
 }

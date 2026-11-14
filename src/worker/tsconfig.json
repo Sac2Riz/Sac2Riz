@@ -10,8 +10,11 @@
     "rootDir": "..",
     "outDir": "../../dist"
   },
+  // Le service worker (src/service-worker.ts) est compilé ici aussi : la lib WebWorker contient
+  // ses types (ServiceWorkerGlobalScope…) ; il est écrit à la racine de dist/.
   "include": [
     "./**/*.ts",
+    "../service-worker.ts",
     "../types/**/*.ts",
     "../utils/**/*.ts",
     "../moteur/**/*.ts",

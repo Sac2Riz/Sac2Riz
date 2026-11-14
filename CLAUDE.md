@@ -38,6 +38,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run test:long` | tests longs (fichiers `tests/**/*.long.ts`, quelques minutes) : sûreté des solveurs logiques (sudoku : 4100 grilles ; chiffres casés : grilles de chaque niveau, contrat des niveaux lents), packs des chiffres casés. Hors de `check` ; **à lancer quand on touche à un solveur, un générateur ou des packs** |
 | `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) |
 | `npm run packs` | régénère les packs Expert/Diabolique de chaque jeu (`--jeu=<id>`, `--niveau=<id>`, `--n=`). Sudoku ~1 min ; chiffres casés ~40 min. **À relancer si la version de notation du jeu change** |
+| `npm run apercu` | build de production + serveur local : tester le service worker et le hors-ligne dans Edge |
+| `npm run icones` | régénère les icônes (`public/icones/`) depuis `scripts/icones/dessin.ts` ; à relancer quand le design change |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
@@ -54,6 +56,10 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
+- PWA : `src/service-worker.ts` (racine de `dist/`) ; liste des fichiers et version **écrites automatiquement**
+  par `npm run build` (`scripts/manifeste-precache.ts`). Mise à jour proposée par un bandeau, **jamais de
+  rechargement automatique** (`src/socle/pwa/`). Export/import : `src/socle/donnees/`, écriture atomique
+  `Stockage.remplacerDonnees`. Déploiement : `.github/workflows/deployer.yml` (push sur `main`).
 - `MetaJeu.generation` : un niveau peut être servi uniquement par son pack (`{ mode: 'pack' }`) ou avoir un
   budget de génération de fond plus long (`{ mode: 'worker', budgetFondMs }`).
 
@@ -102,4 +108,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   cases noires = fond de l'appli, pose en un toucher (sélection levée), pose refusée en cas de conflit ;
   réglage « nombre au départ » (contrat logique `preparer`, exécuté dans le worker) ; liste des nombres à
   ordre fixe (groupe visé surligné, défilement minimal).
-- ⏭️ Prochaine : **Étape 5** — PWA, sauvegarde externe, déploiement.
+- ✅ Étape 5 — PWA installable et 100 % hors ligne (service worker versionné automatiquement, bandeau de
+  mise à jour), icônes provisoires (`npm run icones`), export/import validé, déploiement GitHub Pages
+  automatique à chaque push sur `main`.
+- ⏭️ Prochaine : refonte du design de l'appli (annoncée par l'utilisateur), puis variantes et nouveaux jeux.

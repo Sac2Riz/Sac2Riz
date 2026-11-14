@@ -3,7 +3,16 @@
 // modifier un objet après l'avoir écrit ne change pas ce qui est stocké.
 
 import { migrer } from './schema.ts';
-import { GARDES, type ContenuMagasins, type Entree, type NomMagasin, type Stockage } from './stockage.ts';
+import type { DonneesExportees } from '../../types/sauvegarde.ts';
+import {
+  ecrituresDonnees,
+  GARDES,
+  MAGASINS_EXPORTES,
+  type ContenuMagasins,
+  type Entree,
+  type NomMagasin,
+  type Stockage,
+} from './stockage.ts';
 
 /** Contenu brut : magasin → (clé → valeur). Exposé pour que les tests puissent l'abîmer exprès. */
 export type DonneesBrutes = Map<string, Map<string, unknown>>;
@@ -80,6 +89,15 @@ export function creerStockageMemoire(): StockageMemoire {
         if (garde(valeur)) return { cle, valeur };
       }
       return null;
+    },
+    // Atomique : tout est préparé avant de toucher aux magasins, puis remplacé sans « await »
+    async remplacerDonnees(donnees: DonneesExportees): Promise<void> {
+      const nouveaux = new Map<string, Map<string, unknown>>(MAGASINS_EXPORTES.map((nom) => [nom, new Map()]));
+      for (const { magasin: nom, cle, valeur } of ecrituresDonnees(donnees)) {
+        nouveaux.get(nom)?.set(cle, structuredClone(valeur));
+      }
+      for (const nom of MAGASINS_EXPORTES) magasin(nom); // erreur si fermé, avant toute modification
+      for (const [nom, contenu] of nouveaux) brut.set(nom, contenu);
     },
     fermer(): void {
       ferme = true;
