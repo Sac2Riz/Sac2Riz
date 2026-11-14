@@ -147,7 +147,8 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   estompées, sans effet). **Décision de l'utilisateur** : nombre d'abord aussi — sans sélection, toucher un
   nombre met en évidence les emplacements vides de sa longueur ; toucher l'un d'eux l'y place ; toucher à
   nouveau le nombre ou une zone vide annule.
-- Liste groupée par longueur (groupe visé en tête et surligné), nombres utilisés barrés et déplaçables,
+- Liste groupée par longueur (groupe visé surligné ; d'abord placé en tête, puis laissé à sa place — voir
+  les corrections ci-dessous), nombres utilisés barrés et déplaçables,
   pré-placés distincts et verrouillés, « Effacer » ; signal bref sur un nombre déplacé ou retiré.
 - Indices, erreurs, réglages, chrono, sauvegarde, statistiques, fin de partie : socle commun.
 - **Changements du contrat acceptés par l'utilisateur** (génériques, sudoku inchangé, documentés dans
@@ -172,6 +173,9 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
     pré-placé en reçoit un, choisi pour la meilleure ouverture en gardant le niveau (`depart.ts`, mesures dans
     DIFFICULTE.md) ; contrat logique `preparer`, demande `preparer` au worker (second worker dédié).
     Tests : 460. Vérifié dans Edge (réglage conservé, partie en cours inchangée, sudoku inchangé).
+  - la liste des nombres ne change jamais d'ordre (longueurs croissantes) : le groupe visé est seulement
+    surligné ; s'il est hors de vue, la liste défile doucement juste assez pour le montrer
+    (`defilementPourVoir`, pur et testé), sinon rien ne bouge.
 
 ## Étape 5 — PWA, sauvegarde externe, déploiement
 - Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.

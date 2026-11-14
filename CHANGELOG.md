@@ -28,6 +28,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une
   conflit clignotent (signal ambré, 3 pulsations, ~1 s). Même règle pour un déplacement : en cas de conflit,
   le nombre reste à son ancien emplacement. Un déplacement compatible ne change pas (cases quittées
   signalées).
+- La liste des nombres garde toujours le même ordre (longueurs croissantes) : le groupe de la longueur
+  visée n'est plus remonté en tête, il est seulement surligné (les autres longueurs restent estompées). S'il
+  est hors de vue, la liste défile doucement juste assez pour le montrer (`defilementPourVoir` dans
+  `interaction.ts`, sans animation si les animations sont réduites) ; s'il est visible, rien ne bouge.
 - `consequencesPlacement` : `conflits` (cases en conflit) remplace `retires`. `interaction.ts` :
   `Reaction.signal` (`deplacement` | `conflit`) et `poser` remplacent `casesASignaler`.
 - L'indice n'est pas modifié et n'entre pas en conflit avec la règle : il signale d'abord les nombres faux,

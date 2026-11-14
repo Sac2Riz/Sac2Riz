@@ -100,5 +100,6 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 4b — Chiffres casés jouables (registre, vue, liste groupée, nombre d'abord, signal) ; contrat de
   vue : `monter(zones, contexte)` (zone du pavé confiée à la vue) et `outilsMasques`. Corrigé après essais :
   cases noires = fond de l'appli, pose en un toucher (sélection levée), pose refusée en cas de conflit ;
-  réglage « nombre au départ » (contrat logique `preparer`, exécuté dans le worker).
+  réglage « nombre au départ » (contrat logique `preparer`, exécuté dans le worker) ; liste des nombres à
+  ordre fixe (groupe visé surligné, défilement minimal).
 - ⏭️ Prochaine : **Étape 5** — PWA, sauvegarde externe, déploiement.

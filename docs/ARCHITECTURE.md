@@ -307,7 +307,7 @@ src/games/chiffres-cases/
 ├─ gardes.ts, logique.ts, packs.ts, packs/
 ├─ interaction.ts        touchers (pur) : emplacement d'abord (horizontal puis vertical au second toucher) ou
 │                        nombre d'abord (cibles = emplacements vides de sa longueur), liste groupée (groupe
-│                        visé en tête, barrés, verrouillés, estompés), pose en un toucher (sélection levée),
+│                        visé surligné sans changer de place, barrés, verrouillés, estompés ; défilement minimal pour le montrer), pose en un toucher (sélection levée),
 │                        refus en cas de conflit, signal (déplacement / conflit), Effacer, flèches
 ├─ vue.ts, style.css     grille (proportions --l / --h ; cases noires = fond de l'appli, contour des cases
 │                        blanches), liste dans la zone du pavé, animations des signaux ; index.ts (registre)

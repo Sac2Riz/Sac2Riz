@@ -164,7 +164,7 @@ export type NombreListe = {
 
 export type GroupeListe = {
   readonly longueur: number;
-  /** Groupe de la longueur de la sélection : affiché en premier et surligné. */
+  /** Groupe de la longueur de la sélection : surligné (il reste à sa place dans la liste). */
   readonly enAvant: boolean;
   readonly nombres: readonly NombreListe[];
 };
@@ -178,7 +178,10 @@ export function longueurSelection(selection: Selection, donnees: DonneesCases): 
   return null;
 }
 
-/** Liste groupée par longueur ; le groupe de la sélection en tête, les autres par longueur croissante. */
+/**
+ * Liste groupée par longueur croissante, TOUJOURS dans le même ordre quelle que soit la sélection :
+ * le groupe de la longueur visée est seulement mis en avant (surligné), sans changer de place.
+ */
 export function groupesListe(selection: Selection, etat: EtatCases, donnees: DonneesCases): GroupeListe[] {
   const { probleme: p } = structureDe(donnees);
   const utilises = new Set(nombresUtilises(etat, donnees));
@@ -198,7 +201,27 @@ export function groupesListe(selection: Selection, etat: EtatCases, donnees: Don
       };
     }),
   }));
-  return [...groupes.filter((g) => g.enAvant), ...groupes.filter((g) => !g.enAvant)];
+  return groupes;
+}
+
+/** Position verticale d'un élément dans le contenu qui défile (en pixels). */
+export type Intervalle = { readonly haut: number; readonly bas: number };
+
+/** Marge laissée au-dessus ou au-dessous du groupe rendu visible (pixels). */
+export const MARGE_DEFILEMENT = 8;
+
+/**
+ * Défilement de la liste pour rendre visible le groupe visé, SANS rien réordonner : nouvelle position
+ * de défilement, ou null si le groupe est déjà entièrement visible (rien ne bouge).
+ * groupe : position du groupe dans le contenu ; position : défilement actuel ; hauteur : partie visible.
+ * Le défilement est le plus petit possible : groupe au-dessus → son haut en haut de la zone ; au-dessous
+ * → son bas en bas de la zone (son haut en haut s'il est plus grand que la zone).
+ */
+export function defilementPourVoir(groupe: Intervalle, position: number, hauteur: number, marge = MARGE_DEFILEMENT): number | null {
+  if (groupe.haut >= position && groupe.bas <= position + hauteur) return null;
+  const versLeHaut = Math.max(0, groupe.haut - marge);
+  if (groupe.haut < position) return versLeHaut;
+  return Math.min(versLeHaut, groupe.bas - hauteur + marge);
 }
 
 // ---------- Mises en évidence de la grille ----------

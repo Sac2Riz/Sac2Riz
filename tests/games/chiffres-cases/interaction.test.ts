@@ -7,6 +7,7 @@ import {
   AUCUNE,
   caseVoisine,
   casesEnEvidence,
+  defilementPourVoir,
   emplacementsCibles,
   groupesListe,
   selectionParFleche,
@@ -236,16 +237,28 @@ describe('chiffres casés : liste groupée', () => {
     assert.ok(groupes.every((g) => g.nombres.every((n) => !n.estompe && !n.choisi && n.etat === 'libre')));
   });
 
-  test('emplacement sélectionné : son groupe en tête et en avant, les autres estompés ; nombre posé « choisi »', () => {
+  test('emplacement sélectionné : son groupe en avant SANS changer de place, les autres estompés ; nombre posé « choisi »', () => {
     const { donnees, etat } = grilleB();
     const pose = placerNombre(etat, donnees, H3, '345');
     const groupes = groupesListe(emplacement(H3, 4), pose, donnees);
-    assert.deepEqual(groupes.map((g) => [g.longueur, g.enAvant]), [[3, true], [2, false]]);
-    assert.ok(groupes[1]?.nombres.every((n) => n.estompe));
-    assert.deepEqual(groupes[0]?.nombres.map((n) => [n.texte, n.etat, n.choisi]), [
+    assert.deepEqual(groupes.map((g) => [g.longueur, g.enAvant]), [[2, false], [3, true]]);
+    assert.ok(groupes[0]?.nombres.every((n) => n.estompe));
+    assert.ok(groupes[1]?.nombres.every((n) => !n.estompe));
+    assert.deepEqual(groupes[1]?.nombres.map((n) => [n.texte, n.etat, n.choisi]), [
       ['246', 'libre', false],
       ['345', 'utilise', true],
     ]);
+  });
+
+  test('l\'ordre de la liste ne change jamais, quelle que soit la sélection', () => {
+    const { donnees, etat } = grilleB();
+    const ordre = (s: Selection): string[] => groupesListe(s, etat, donnees).flatMap((g) => g.nombres.map((n) => n.texte));
+    const reference = ordre(AUCUNE);
+    assert.deepEqual(reference, ['12', '13', '57', '67', '246', '345']);
+    for (const s of [emplacement(H0, 0), emplacement(V2, 1), emplacement(H3, 4), { type: 'nombre', nombre: '246' } as const, { type: 'nombre', nombre: '57' } as const]) {
+      assert.deepEqual(ordre(s), reference);
+      assert.deepEqual(groupesListe(s, etat, donnees).map((g) => g.longueur), [2, 3]);
+    }
   });
 
   test('nombre sélectionné : son groupe en avant, rien d\'estompé ; pré-placés verrouillés', () => {
@@ -272,6 +285,20 @@ describe('chiffres casés : effacer, signal, clavier', () => {
     assert.deepEqual(actionEffacer({ type: 'nombre', nombre: '12' }, pose, donnees), { type: 'effacer', emplacement: H0 });
     assert.equal(actionEffacer({ type: 'nombre', nombre: '345' }, pose, donnees), null); // pré-placé
     assert.equal(actionEffacer(AUCUNE, pose, donnees), null);
+  });
+
+  test('défilement : rien si le groupe est visible, sinon juste assez (avec une marge)', () => {
+    // Zone visible de 300 px, défilée à 100 : on voit le contenu de 100 à 400
+    assert.equal(defilementPourVoir({ haut: 150, bas: 350 }, 100, 300), null);
+    assert.equal(defilementPourVoir({ haut: 100, bas: 400 }, 100, 300), null);
+    // Au-dessus (même en partie) : son haut en haut de la zone
+    assert.equal(defilementPourVoir({ haut: 40, bas: 120 }, 100, 300), 32);
+    assert.equal(defilementPourVoir({ haut: 4, bas: 120 }, 100, 300), 0);
+    // Au-dessous (même en partie) : son bas en bas de la zone
+    assert.equal(defilementPourVoir({ haut: 380, bas: 460 }, 100, 300), 168);
+    assert.equal(defilementPourVoir({ haut: 600, bas: 700 }, 100, 300), 408);
+    // Plus grand que la zone : son haut en haut
+    assert.equal(defilementPourVoir({ haut: 500, bas: 900 }, 100, 300), 492);
   });
 
   test('flèches : case voisine (cases noires sautées), emplacement dans le sens de la flèche', () => {

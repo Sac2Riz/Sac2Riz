@@ -7,7 +7,8 @@
 // chiffres des pré-placés en gras, erreurs en rouge, signal bref sur les cases quittées par un nombre
 // déplacé, clignotement des cases en conflit quand une pose est refusée. Indice affiché (1er temps) : cases de l'emplacement sur fond ambré avec ses chiffres en
 // vert, emplacements qui justifient la déduction en fond léger ; la sélection est alors suspendue.
-// Liste : groupée par longueur, le groupe de la sélection en tête et surligné ; nombres utilisés
+// Liste : groupée par longueur, toujours dans le même ordre ; le groupe de la sélection est surligné
+// (et, s'il est hors de vue, la liste défile doucement juste assez pour le montrer) ; nombres utilisés
 // barrés (toujours touchables : les placer ailleurs les déplace), verrouillés s'ils sont pré-placés.
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
@@ -16,6 +17,7 @@ import {
   actionEffacer,
   AUCUNE,
   casesEnEvidence,
+  defilementPourVoir,
   groupesListe,
   longueurSelection,
   selectionParFleche,
@@ -209,10 +211,24 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
 
     signalNeuf = false;
     dessinerListe(liste, groupesListe(selection, etat, donnees));
-    // Nouvelle longueur visée : le groupe mis en avant (en tête) redevient visible
+    // Nouvelle longueur visée : son groupe (resté à sa place) est montré s'il est hors de vue
     const longueur = longueurSelection(selection, donnees);
-    if (longueur !== null && longueur !== longueurAffichee) zoneListe.scrollTop = 0;
+    if (longueur !== null && longueur !== longueurAffichee) montrerGroupe();
     longueurAffichee = longueur;
+  }
+
+  /** Fait défiler la liste juste assez pour voir le groupe mis en avant (rien si déjà visible). */
+  function montrerGroupe(): void {
+    const groupe = liste.querySelector<HTMLElement>('.chiffres-cases-groupe.est-en-avant');
+    if (groupe === null) return;
+    const zone = zoneListe.getBoundingClientRect();
+    const r = groupe.getBoundingClientRect();
+    // Position du groupe dans le contenu qui défile
+    const haut = r.top - zone.top - zoneListe.clientTop + zoneListe.scrollTop;
+    const cible = defilementPourVoir({ haut, bas: haut + r.height }, zoneListe.scrollTop, zoneListe.clientHeight);
+    if (cible === null) return;
+    const doux = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    zoneListe.scrollTo({ top: cible, behavior: doux ? 'smooth' : 'auto' });
   }
 
   function auClavier(evenement: KeyboardEvent): void {
