@@ -1,16 +1,18 @@
-/* Direction de design à l'essai n° 6 — ASCII GÉNÉRATIF (étape 6b, temporaire).
+/* Style ASCII GÉNÉRATIF.
    Art génératif contemporain fait de caractères : des champs de caractères dont la densité dessine des
    ondes, en dégradés de couleur (l'ASCII n° 2, lui, est statique et artisanal).
    Clair : blanc cassé, indigo, magenta. Sombre : nuit, violet, rose, cyan.
    Police : Space Mono (tout) — SIL OFL 1.1, public/polices/.
    Décors : champ ANIMÉ dans l'en-tête de l'accueil et le haut de la fiche, motif figé au fond des cartes
-   (src/socle/design/decors.ts : ~8 images/s, arrêté en arrière-plan, figé si « réduire les
+   (src/socle/style/decors.ts : ~8 images/s, arrêté en arrière-plan, figé si « réduire les
    animations »). Rien pendant une partie. */
 
 @font-face { font-family: "Space Mono"; src: url("../../polices/space-mono-400.woff2") format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Space Mono"; src: url("../../polices/space-mono-700.woff2") format("woff2"); font-weight: 600 900; font-display: swap; }
 
-:root[data-direction="ascii-generatif"] {
+/* Variables du style : sur la page, et sur la pastille d'aperçu du réglage « Style » */
+:root[data-style="ascii-generatif"],
+.apercu-style[data-style="ascii-generatif"] {
   --couleur-fond: light-dark(#fafaf7, #0b0b12);
   --couleur-surface: light-dark(#ffffff, #14141f);
   --couleur-case: light-dark(#ffffff, #12121c);
@@ -53,21 +55,21 @@
   --carte-ombre: none;
 }
 
-:root[data-direction="ascii-generatif"] :is(h1, h2) {
+:root[data-style="ascii-generatif"] :is(h1, h2) {
   letter-spacing: -0.02em;
 }
 
 /* ---------- Champ animé : en-tête de l'accueil, haut de la fiche ---------- */
-:root[data-direction="ascii-generatif"] :is(.accueil-entete, .ecran-fiche) {
+:root[data-style="ascii-generatif"] :is(.accueil-entete, .ecran-fiche) {
   position: relative;
   isolation: isolate;
 }
 
-:root[data-direction="ascii-generatif"] .accueil-entete {
+:root[data-style="ascii-generatif"] .accueil-entete {
   padding: 2rem 0 1rem;
 }
 
-:root[data-direction="ascii-generatif"] .decor {
+:root[data-style="ascii-generatif"] .decor {
   display: block;
   position: absolute;
   z-index: -1;
@@ -77,17 +79,17 @@
   mask-image: linear-gradient(#000 55%, transparent);
 }
 
-:root[data-direction="ascii-generatif"] .accueil-entete .decor {
+:root[data-style="ascii-generatif"] .accueil-entete .decor {
   inset: -1.5rem -1.5rem 0;
 }
 
-:root[data-direction="ascii-generatif"] .ecran-fiche .decor {
+:root[data-style="ascii-generatif"] .ecran-fiche .decor {
   inset: 0 0 auto;
   height: 5rem;
 }
 
 /* Le canvas lit ses trois couleurs résolues (clair ou sombre) dans son propre style */
-:root[data-direction="ascii-generatif"] :is(.decor-genere, .decor-carte) {
+:root[data-style="ascii-generatif"] :is(.decor-genere, .decor-carte) {
   display: block;
   width: 100%;
   height: 100%;
@@ -97,12 +99,12 @@
 }
 
 /* ---------- Cartes : motif figé estompé au fond ---------- */
-:root[data-direction="ascii-generatif"] .carte-accueil {
+:root[data-style="ascii-generatif"] .carte-accueil {
   isolation: isolate;
   overflow: hidden;
 }
 
-:root[data-direction="ascii-generatif"] .decor-carte {
+:root[data-style="ascii-generatif"] .decor-carte {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -110,36 +112,36 @@
   pointer-events: none;
 }
 
-:root[data-direction="ascii-generatif"] .accueil-titre {
+:root[data-style="ascii-generatif"] .accueil-titre {
   font-size: 3rem;
   font-weight: 700;
   color: var(--couleur-texte);
 }
 
-:root[data-direction="ascii-generatif"] .accueil-titre::after {
+:root[data-style="ascii-generatif"] .accueil-titre::after {
   content: "_";
   color: var(--couleur-accent);
 }
 
-:root[data-direction="ascii-generatif"] .carte-accueil .carte-jeu-nom {
+:root[data-style="ascii-generatif"] .carte-accueil .carte-jeu-nom {
   font-size: 1.6rem;
 }
 
-:root[data-direction="ascii-generatif"] .pastille-en-cours {
+:root[data-style="ascii-generatif"] .pastille-en-cours {
   border-radius: 0;
   background: var(--couleur-accent);
   color: var(--couleur-sur-accent);
 }
 
 /* ---------- Icônes ---------- */
-:root[data-direction="ascii-generatif"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retour.svg"); mask-image: url("../../design/ascii-generatif/icones/retour.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/pause.svg"); mask-image: url("../../design/ascii-generatif/icones/pause.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/notes.svg"); mask-image: url("../../design/ascii-generatif/icones/notes.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); }
-:root[data-direction="ascii-generatif"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/indice.svg"); mask-image: url("../../design/ascii-generatif/icones/indice.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retour.svg"); mask-image: url("../../design/ascii-generatif/icones/retour.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/pause.svg"); mask-image: url("../../design/ascii-generatif/icones/pause.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/notes.svg"); mask-image: url("../../design/ascii-generatif/icones/notes.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); }
+:root[data-style="ascii-generatif"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/indice.svg"); mask-image: url("../../design/ascii-generatif/icones/indice.svg"); }

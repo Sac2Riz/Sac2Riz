@@ -80,32 +80,38 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`. Import **hors d'une partie seulement** (pendant une partie,
   l'écran de partie réécrirait sa partie par-dessus) : `analyserImport` (`socle/donnees/import.ts`, pur)
   vérifie tout avant d'écrire (JSON, format, version — plus récente : message dédié ; n° 1, d'avant
-  l'étape 6a : réglages à plat convertis par `normaliserReglages` —, gardes du stockage,
+  l'étape 6a : réglages à plat convertis par `normaliserReglages` ; n° 1 et 2, d'avant l'étape 6c : sans
+  style, Rétro par défaut ; n° 3 actuel —, gardes du stockage,
   jeux connus, une partie par jeu, chaque partie **rejouée** par `depuisSauvegarde`), puis confirmation avec
   résumé, `Stockage.remplacerDonnees` (**atomique**) et redémarrage de l'appli.
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
   Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
   est celle du fond affiché (lue sur `<body>`, `src/socle/theme.ts`). Chaque couleur s'écrit
   `light-dark(<clair>, <sombre>)` ; seul `color-scheme` dépend du thème (`src/styles/theme.css`).
-- **Directions de design à l'essai** (étape 6b, **temporaire**, retiré en 6c) : `<html data-direction>`
-  et une feuille par direction (`src/styles/directions/`), choix dans Réglages → Application, gardé dans le
-  stockage local du navigateur (`src/socle/design/`). Détail, polices et licences : docs/DESIGN.md.
-- **Icônes** (étape 6b) : SVG dessinés par direction (`public/design/<direction>/icones/`) ; le code pose
+- **Styles** (étape 6c) : six styles au choix (réglage « Style », Rétro par défaut), `<html data-style>` et
+  une feuille par style (`src/styles/visuels/`, Ardoise = `theme.css`). Le style est un réglage
+  (`Reglages.style`, IndexedDB, exporté). Pour un premier affichage sans clignotement, une copie
+  `{ style, theme }` est gardée dans le stockage local (`socle/style/affichage.ts`) et posée sur `<html>`
+  avant tout rendu par `public/demarrage.js` (script classique bloquant, seul fichier JavaScript de
+  l'appli). Reprise unique du choix d'essai de l'étape 6b (`main.ts`, `reprendreEssai`). Détail, polices et
+  licences : docs/DESIGN.md.
+- **Icônes** (étape 6b) : SVG dessinés par style (`public/design/<style>/icones/`) ; le code pose
   un nom (`icone(nom)`, `boutonIcone(classe, nom, …)` dans `dom.ts`, noms dans `socle/icones.ts`), le
   CSS choisit le dessin (`mask-image`, couleur = celle du texte). Plus aucun emoji ni symbole.
 - **Réglages** (étape 6a) : fenêtre (`<dialog>`, `ecran-reglages.ts`) ouverte depuis l'accueil, la fiche ou la
   partie ; chaque changement s'applique tout de suite. **Trois sections** :
-  1. **Application** : thème (Automatique / Clair / Sombre), sauvegarde (export / import), version
+  1. **Application** : style (avec un aperçu de chacun), thème (Automatique / Clair / Sombre), sauvegarde (export / import), version
      (« 14/11/2026 17:30 · a1b2c3d4 », lue dans `version.json` par `socle/pwa/version.ts`) ;
   2. **Tous les jeux** : vérification des erreurs, mise en évidence (la vue la lit dans `contexte.reglages()`) ;
   3. **Par jeu** : les réglages **déclarés par chaque jeu** (`MetaJeu.reglages`, voir le contrat), affichés
      automatiquement ; pendant une partie, seulement le jeu en cours.
-  Forme enregistrée `Reglages` = `{ theme, verifierErreurs, miseEnEvidence, jeux: { [idJeu]: { [idReglage]: booléen } } }`
+  Forme enregistrée `Reglages` = `{ style, theme, verifierErreurs, miseEnEvidence, jeux: { [idJeu]: { [idReglage]: booléen } } }`
   (seuls les réglages changés y figurent ; sinon la valeur par défaut déclarée par le jeu, `utils/reglages-jeu.ts`).
   **Migration** à la lecture (`socle/reglages.ts`, `normaliserReglages`, testée) : les anciennes formes « à
   plat » (`ReglagesV1` à `V3`, étapes 3b à 5) gardent thème, vérification et mise en évidence ; leurs réglages
   propres à un jeu sont rangés sous ce jeu (`ANCIENS_REGLAGES_DE_JEU`, table figée : `retraitAutoNotes` →
-  sudoku, `nombreAuDepart` → chiffres casés). Une valeur de jeu qui n'est pas un booléen est ignorée seule ;
+  sudoku, `nombreAuDepart` → chiffres casés). Les réglages par section sans style (`ReglagesV4`, étapes 6a
+  et 6b) ou avec un style inconnu reçoivent Rétro. Une valeur de jeu qui n'est pas un booléen est ignorée seule ;
   les réglages d'un jeu inconnu sont conservés. Pas de changement de schéma IndexedDB (même magasin).
 - **Préparation d'une nouvelle partie** : si un réglage du jeu marqué `preparation` est activé (chiffres
   casés : « nombre au départ »), la grille obtenue (réserve, pack, génération) passe par
@@ -196,9 +202,9 @@ src/socle/
 ├─ chargement.ts      indicateur de chargement (visible après 0,25 s) avec Annuler
 ├─ dom.ts             petits utilitaires DOM (creer, bouton, icone, boutonIcone)
 ├─ icones.ts          noms des icônes de l'interface (étape 6b, pur)
-└─ design/            directions de design à l'essai (étape 6b, temporaire) : directions.ts (liste,
-                      choix enregistré, pur), appliquer.ts (attribut data-direction), decors.ts
-                      (champ de caractères animé de l'ASCII génératif)
+└─ style/             styles de l'appli (étape 6c) : affichage.ts (copie locale { style, theme }, reprise
+                      de l'essai 6b, pur), appliquer.ts (data-style, thème, copie), decors.ts (champ de
+                      caractères animé de l'ASCII génératif)
 ```
 
 - **Partie** (`Partie`, pur) : une action **sans effet** (état identique) n'est pas enregistrée, pour
@@ -229,9 +235,9 @@ src/socle/
   (`.partie.pave-personnalise`) : zone défilable, de hauteur bornée sous la grille en portrait, colonne de
   droite plus large en paysage. La grille est placée dans un
   conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
-- **Thème** : direction visuelle « Ardoise » par défaut (gris bleutés, accent bleu encre, police du
-  système) ; couleurs, polices et formes en variables dans `src/styles/theme.css`, redéfinies par la
-  direction à l'essai (étape 6b, docs/DESIGN.md). Les jeux n'utilisent que ces variables.
+- **Thème** : couleurs, polices et formes en variables dans `src/styles/theme.css` (valeurs d'Ardoise),
+  redéfinies par le style choisi (`src/styles/visuels/`, docs/DESIGN.md). Les jeux n'utilisent que ces
+  variables.
 - **Bouton retour d'Android** : partie → fiche du jeu → accueil (voir Navigation), sans quitter l'appli.
 
 - **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond', budgetMs)` renvoie
@@ -536,8 +542,11 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
 
 - **Manifest** (`public/manifest.webmanifest`) : `id`, `start_url` et `scope` = `./` (relatifs : l'appli
   marche dans `/Sac2Riz/`), icônes SVG, PNG 192 et 512 « any », 512 « maskable » (Android).
-- **Icônes** : `npm run icones` (`scripts/generer-icones.ts`) écrit les 4 fichiers dans `public/icones/`
-  depuis une seule description de formes (`scripts/icones/dessin.ts`) ; rendu lissé (4 × 4 points par pixel)
+  `background_color` (écran de démarrage) et `theme_color` = fond du style Rétro (`#f3e9d2`), comme les
+  balises `theme-color` d'`index.html` (`#2a1d14` en sombre) ; ensuite, la barre d'état suit le style affiché.
+- **Icônes** (style Rétro depuis l'étape 6c) : `npm run icones` (`scripts/generer-icones.ts`) écrit les 4
+  fichiers dans `public/icones/` depuis une seule description de formes (`scripts/icones/dessin.ts` :
+  rectangles arrondis et demi-anneaux ; motif maskable dans la zone sûre, testé) ; rendu lissé (4 × 4 points par pixel)
   et encodeur PNG maison (`scripts/icones/png.ts`, zlib de Node). Fichiers commités.
 - **Service worker** (`src/service-worker.ts`, compilé par `src/worker/tsconfig.json` — lib WebWorker — en
   `dist/service-worker.js` : à la racine, sa portée couvre toute l'appli ; enregistré comme module) :

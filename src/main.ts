@@ -1,5 +1,6 @@
 // Point d'entrée de l'application (chargé par index.html) : ouvre le stockage, suit les mises à
-// jour (service worker : hors ligne, nouvelle version proposée au joueur), applique le thème, crée les
+// jour (service worker : hors ligne, nouvelle version proposée au joueur), applique le style et le
+// thème (déjà posés avant le premier affichage par public/demarrage.js), crée les
 // services (worker, packs, réserve, parties), affiche l'accueil, puis, si l'appli vient d'être mise à
 // jour sans passer par le bouton, montre ses nouveautés (« Sac2Riz a été mis à jour »).
 
@@ -21,9 +22,10 @@ import { creerServiceParties } from './socle/service-parties.ts';
 import { ouvrirStockageIndexedDB } from './socle/stockage/indexeddb.ts';
 import { creerStockageMemoire } from './socle/stockage/memoire.ts';
 import { CLE_NOUVEAUTES_VUES, CLE_REGLAGES, type Stockage } from './socle/stockage/stockage.ts';
-import { appliquerTheme } from './socle/theme.ts';
-import { appliquerDirectionEnregistree } from './socle/design/appliquer.ts';
-import { demarrerDecors } from './socle/design/decors.ts';
+import type { Reglages } from './types/sauvegarde.ts';
+import { lireEssai, oublierEssai } from './socle/style/affichage.ts';
+import { appliquerAffichage, stockageLocal } from './socle/style/appliquer.ts';
+import { demarrerDecors } from './socle/style/decors.ts';
 import { surveillerVisibilite } from './socle/visibilite.ts';
 import { estFichierNouveautes, FICHIER_NOUVEAUTES, type FichierNouveautes, type GroupeNouveautes } from './types/nouveautes.ts';
 import { creerAlea, graineAleatoire } from './utils/alea.ts';
@@ -51,12 +53,29 @@ async function lireNouveautesInstallees(): Promise<FichierNouveautes | null> {
   return estFichierNouveautes(valeur) ? valeur : null;
 }
 
+/**
+ * Reprise UNIQUE du style choisi avec le sélecteur d'essai de l'étape 6b (stockage local) : il est
+ * enregistré dans les réglages, puis l'ancienne clé est supprimée (seulement si l'écriture a réussi :
+ * sinon, nouvel essai au prochain démarrage).
+ */
+async function reprendreEssai(stockage: Stockage, reglages: Reglages): Promise<Reglages> {
+  const local = stockageLocal();
+  const essai = lireEssai(local);
+  if (essai === null) return reglages;
+  const repris = { ...reglages, style: essai };
+  try {
+    await stockage.ecrire('reglages', CLE_REGLAGES, repris);
+    oublierEssai(local);
+  } catch (erreur) {
+    journalConsole(`Style de l'essai non enregistré (${String(erreur)}).`);
+  }
+  return repris;
+}
+
 async function demarrer(): Promise<void> {
   const racine = document.getElementById('app');
   if (racine === null) throw new Error('Élément #app introuvable dans index.html');
-  // Étape 6b (temporaire) : direction de design à l'essai (lecture synchrone : dès le premier
-  // affichage), et ses décors animés éventuels
-  appliquerDirectionEnregistree();
+  // Décors animés du style (ASCII génératif) ; le style est déjà posé par public/demarrage.js
   demarrerDecors(racine);
 
   const stockage = await ouvrirStockage();
@@ -103,8 +122,8 @@ async function demarrer(): Promise<void> {
   }
 
   // Des réglages d'une ancienne version sont convertis (les choix du joueur sont conservés)
-  const reglages = normaliserReglages(await stockage.lire('reglages', CLE_REGLAGES));
-  appliquerTheme(reglages.theme);
+  const reglages = await reprendreEssai(stockage, normaliserReglages(await stockage.lire('reglages', CLE_REGLAGES)));
+  appliquerAffichage(reglages);
 
   // Charge uniquement les points d'entrée (index.ts) des jeux : métadonnées pour l'accueil
   const jeux = await Promise.all(REGISTRE.map(async (entree) => (await entree.charger()).jeu));

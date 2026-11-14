@@ -4,7 +4,8 @@
 //   1. texte JSON lisible ;
 //   2. fichier de sauvegarde Sac2Riz (champ « format ») ;
 //   3. version du format connue (une version plus récente vient d'une appli plus récente) ; un
-//      fichier n° 1 (avant l'étape 6a) est accepté : ses réglages « à plat » sont convertis ;
+//      fichier n° 1 (avant l'étape 6a) est accepté : ses réglages « à plat » sont convertis ; un
+//      fichier n° 1 ou 2 (avant l'étape 6c) n'a pas de style : style par défaut ;
 //   4. chaque donnée, avec les gardes de type de la relecture du stockage (gardes-sauvegarde.ts) ;
 //   5. jeux connus de cette version de l'appli, une seule partie en cours par jeu ;
 //   6. chaque partie en cours REJOUÉE par la logique de son jeu (gardes estDonnees / estAction,
@@ -32,8 +33,8 @@ import {
 import { depuisSauvegarde, type Logique } from '../partie.ts';
 import { normaliserReglages } from '../reglages.ts';
 
-/** Versions du fichier d'export acceptées à l'import (n° 1 : réglages à plat, convertis). */
-const VERSIONS_ACCEPTEES: readonly number[] = [1, VERSION_EXPORT];
+/** Versions du fichier d'export acceptées à l'import (n° 1 : réglages à plat, convertis ; n° 1 et 2 : sans style). */
+const VERSIONS_ACCEPTEES: readonly number[] = [1, 2, VERSION_EXPORT];
 
 /** Ce que le joueur voit avant de confirmer le remplacement. */
 export type ResumeImport = {
@@ -87,7 +88,8 @@ export function analyserImport(texte: string, logiques: readonly Logique[]): Res
 
 /**
  * Réglages du fichier dans la forme actuelle, ou null s'ils sont abîmés. N° 1 : réglages à plat
- * (étapes 3b à 5), convertis ; n° 2 : forme actuelle, valeurs des jeux qui ne sont pas des oui/non ignorées.
+ * (étapes 3b à 5), convertis ; n° 2 et 3 : réglages par section, valeurs des jeux qui ne sont pas des
+ * oui/non ignorées, style absent (n° 2) ou inconnu → style par défaut.
  */
 function lireReglages(valeur: Json | undefined, version: number): Reglages | null {
   if (version === 1) {

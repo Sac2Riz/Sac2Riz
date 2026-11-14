@@ -1,13 +1,15 @@
 {
   "versions": [
     {
-      "id": "2026-11-14-styles-a-essayer",
+      "id": "2026-11-14-styles",
       "date": "2026-11-14",
-      "titre": "Sept styles à essayer",
+      "titre": "Choisissez le style de l'appli",
       "nouveautes": [
-        "À l'essai : dans Réglages, « Direction de design (essai) » propose sept styles pour l'appli (Années 80-90, ASCII, MS-DOS, BBS ANSI, Rétro, ASCII génératif, Terminal), en clair comme en sombre. Le style retenu remplacera ce choix.",
+        "Nouveau réglage « Style » (Réglages, section Application) : six styles au choix pour toute l'appli, Ardoise, ASCII, ASCII génératif, BBS ANSI, MS-DOS et Rétro. Chacun existe en clair et en sombre, et un petit aperçu montre à quoi il ressemble. Le style Rétro est proposé par défaut.",
+        "Votre style est conservé dans la sauvegarde exportée, et il s'affiche dès l'ouverture de l'appli.",
         "Les symboles des boutons sont remplacés par des icônes dessinées, propres à chaque style.",
-        "Les petits chiffres des notes et la case choisie sont plus contrastés."
+        "Les petits chiffres des notes et la case choisie sont plus contrastés.",
+        "Nouvelle icône de l'appli, dans le style Rétro."
       ]
     },
     {

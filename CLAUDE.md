@@ -40,7 +40,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) |
 | `npm run packs` | régénère les packs Expert/Diabolique de chaque jeu (`--jeu=<id>`, `--niveau=<id>`, `--n=`). Sudoku ~1 min ; chiffres casés ~40 min. **À relancer si la version de notation du jeu change** |
 | `npm run apercu` | build de production + serveur local : tester le service worker et le hors-ligne dans Edge |
-| `npm run icones` | régénère les icônes (`public/icones/`) depuis `scripts/icones/dessin.ts` ; à relancer quand le design change |
+| `npm run icones` | régénère l'icône de l'appli (style Rétro, `public/icones/`) depuis `scripts/icones/dessin.ts` ; à relancer quand le design change |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
@@ -58,8 +58,11 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
-- Design : variables de `src/styles/theme.css` (couleurs `light-dark(clair, sombre)`, polices, formes),
-  icônes SVG nommées (`icone(nom)`, aucun emoji) → [docs/DESIGN.md](docs/DESIGN.md).
+- Design : **6 styles au choix** (réglage « Style », Rétro par défaut) : `<html data-style>` + une feuille par
+  style (`src/styles/visuels/`, Ardoise = `theme.css`), liste dans `src/types/style.ts` **et** `public/demarrage.js`
+  (script classique qui pose le style avant le premier rendu, d'après une copie locale ; IndexedDB = référence).
+  Variables de `src/styles/theme.css` (couleurs `light-dark(clair, sombre)`, polices, formes), icônes SVG
+  nommées par style (`icone(nom)`, aucun emoji) → [docs/DESIGN.md](docs/DESIGN.md).
 - PWA : `src/service-worker.ts` (racine de `dist/`) ; liste des fichiers et version **écrites automatiquement**
   par `npm run build` (`scripts/manifeste-precache.ts`). Mise à jour proposée par un bouton « Mettre à jour »
   (à côté de Réglages) et une fenêtre de confirmation avec les nouveautés (`public/nouveautes.json`), **jamais
@@ -119,7 +122,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   réglage « nombre au départ » (contrat logique `preparer`, exécuté dans le worker) ; liste des nombres à
   ordre fixe (groupe visé surligné, défilement minimal).
 - ✅ Étape 5 — PWA installable et 100 % hors ligne (service worker versionné automatiquement, bandeau de
-  mise à jour), icônes provisoires (`npm run icones`), export/import validé, déploiement GitHub Pages
+  mise à jour), icônes (`npm run icones`), export/import validé, déploiement GitHub Pages
   automatique à chaque push sur `main`.
 - ✅ Étape 6a — Structure des écrans et des réglages : accueil = grille de cartes des jeux (aperçu, 3/2/1 colonnes) ; **fiche d'un jeu** (aperçu,
   Continuer, nouvelle partie, règles, statistiques) remplie par le module du jeu (`fiche.ts`, `vue.apercu`) ;
@@ -132,10 +135,10 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   `public/nouveautes.json`. Détection corrigée (version en cours d'installation au démarrage, recherche
   toutes les minutes) ; fenêtre « Sac2Riz a été mis à jour » quand le navigateur a installé la version à la
   fermeture de l'appli (magasin IndexedDB `appli`, schéma n° 2).
-- ✅ Étape 6b — 7 directions de design à l'essai (clair + sombre) : sélecteur **temporaire** « Direction de
-  design (essai) » dans Réglages → Application (stockage local, à retirer en 6c), `data-direction` + une
-  feuille par direction (`src/styles/directions/`), couleurs en `light-dark()`, icônes SVG par direction
-  (plus d'emoji), polices intégrées (OFL / CC BY-SA, licences dans `public/polices/licences/`), contrastes
-  testés → [docs/DESIGN.md](docs/DESIGN.md).
-- ⏭️ Prochaine : choix de la direction par l'utilisateur, puis étape 6c (finalisation, retrait du
-  sélecteur), puis variantes et nouveaux jeux.
+- ✅ Étape 6b — 7 directions de design à l'essai (clair + sombre), icônes SVG par direction (plus d'emoji),
+  polices intégrées (OFL / CC BY-SA, licences dans `public/polices/licences/`), contrastes testés.
+- ✅ Étape 6c — **Styles au choix permanents** (décision de l'utilisateur) : Ardoise, ASCII, ASCII génératif,
+  BBS ANSI, MS-DOS, Rétro (défaut) ; Années 80-90 et Terminal retirés. Réglage « Style » avec pastilles
+  d'aperçu, enregistré et exporté (export n° 3) ; reprise unique du choix d'essai (stockage local) ;
+  démarrage sans clignotement (`public/demarrage.js`) ; icône de l'appli et couleurs du manifest Rétro.
+- ⏭️ Prochaine : variantes et nouveaux jeux (voir [docs/ROADMAP.md](docs/ROADMAP.md)).

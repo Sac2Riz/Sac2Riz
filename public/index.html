@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-style="retro">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,8 +7,8 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; worker-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#151a21" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3e9d2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#2a1d14" media="(prefers-color-scheme: dark)">
   <title>Sac2Riz</title>
   <!-- Chemins relatifs (./) : l'appli fonctionne aussi dans un sous-dossier (GitHub Pages) -->
   <link rel="manifest" href="./manifest.webmanifest">
@@ -16,14 +16,14 @@
   <link rel="stylesheet" href="./styles/theme.css">
   <link rel="stylesheet" href="./styles/base.css">
   <link rel="stylesheet" href="./styles/icones.css">
-  <!-- Étape 6b (temporaire) : directions de design à l'essai, actives selon <html data-direction> -->
-  <link rel="stylesheet" href="./styles/directions/annees-80-90.css">
-  <link rel="stylesheet" href="./styles/directions/ascii.css">
-  <link rel="stylesheet" href="./styles/directions/ms-dos.css">
-  <link rel="stylesheet" href="./styles/directions/bbs-ansi.css">
-  <link rel="stylesheet" href="./styles/directions/retro.css">
-  <link rel="stylesheet" href="./styles/directions/ascii-generatif.css">
-  <link rel="stylesheet" href="./styles/directions/terminal.css">
+  <!-- Styles au choix (réglage « Style ») : chacun actif selon <html data-style> ; Ardoise = theme.css -->
+  <link rel="stylesheet" href="./styles/visuels/ascii.css">
+  <link rel="stylesheet" href="./styles/visuels/ascii-generatif.css">
+  <link rel="stylesheet" href="./styles/visuels/bbs-ansi.css">
+  <link rel="stylesheet" href="./styles/visuels/ms-dos.css">
+  <link rel="stylesheet" href="./styles/visuels/retro.css">
+  <!-- Style et thème choisis posés AVANT le premier affichage (script classique, bloquant) -->
+  <script src="./demarrage.js"></script>
   <script type="module" src="./main.js"></script>
 </head>
 <body>

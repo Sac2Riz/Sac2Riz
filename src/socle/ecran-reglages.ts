@@ -1,21 +1,20 @@
 // ÉCRAN DES RÉGLAGES : fenêtre (<dialog>) ouverte depuis l'accueil, la fiche d'un jeu ou une partie.
 // Trois sections clairement séparées (étape 6a) :
-//   1. Application : thème, [direction de design à l'essai — étape 6b, retirée en 6c], sauvegarde
+//   1. Application : style, thème, sauvegarde
 //      (export / import), version de l'appli ;
 //   2. Tous les jeux : vérification des erreurs, mise en évidence ;
 //   3. Par jeu : une sous-section par jeu avec SES réglages, déclarés par le jeu (MetaJeu.reglages)
 //      et affichés automatiquement ; pendant une partie, seulement le jeu en cours.
-// Chaque changement est appliqué tout de suite (changer() : thème, enregistrement, nouvel affichage
+// Chaque changement est appliqué tout de suite (changer() : style et thème, enregistrement, nouvel affichage
 // de la grille) ; « Fermer », Échap ou le bouton retour d'Android ferment la fenêtre.
 // Import : seulement hors d'une partie (l'écran de partie sauvegarde la partie en cours et
 // écraserait celle qui vient d'être importée).
 
 import type { MetaJeu, ReglageJeu } from '../types/jeu.ts';
 import type { Reglages, Theme } from '../types/sauvegarde.ts';
+import { NOMS_STYLES, STYLES, type Style } from '../types/style.ts';
 import { estActif } from '../utils/reglages-jeu.ts';
 import { bouton, creer } from './dom.ts';
-import { changerDirection, directionCourante } from './design/appliquer.ts';
-import { DIRECTIONS, type Direction } from './design/directions.ts';
 import { changerReglageJeu, reglagesDuJeu } from './reglages.ts';
 import { NOMS_THEMES, ORDRE_THEMES } from './theme.ts';
 
@@ -80,33 +79,46 @@ function choixTheme(lire: Lire, changer: Changer): HTMLElement {
 }
 
 /**
- * Étape 6b, TEMPORAIRE (retiré à l'étape 6c) : « Direction de design (essai) ». S'applique tout de
- * suite et se combine avec le thème ; enregistré à part (design/directions.ts).
+ * Pastille d'aperçu d'un style : elle porte data-style, donc les variables de ce style (couleurs,
+ * polices : voir src/styles/visuels/) ; « Aa » dans sa police de titre, un chiffre saisi, ses couleurs.
+ * Elle suit le thème clair / sombre en cours.
  */
-function choixDirection(): HTMLElement {
-  const groupe = creer('div', 'reglage reglage-direction');
-  const textes = creer('span', 'reglage-textes');
-  const titre = creer('span', 'reglage-titre', 'Direction de design (essai)');
-  titre.id = 'reglage-direction-titre';
-  textes.append(titre, creer('span', 'reglage-detail', 'Pour comparer les styles proposés : ce choix disparaîtra quand l’un d’eux sera retenu.'));
-  const choix = creer('div', 'choix-direction');
+function apercuStyle(style: Style): HTMLElement {
+  const apercu = creer('span', 'apercu-style');
+  apercu.dataset['style'] = style;
+  apercu.setAttribute('aria-hidden', 'true');
+  const texte = creer('span', 'apercu-style-texte', 'Aa');
+  texte.append(creer('span', 'apercu-style-chiffre', '7'));
+  const couleurs = creer('span', 'apercu-style-couleurs');
+  for (let i = 0; i < 4; i++) couleurs.append(creer('span', ''));
+  apercu.append(texte, couleurs);
+  return apercu;
+}
+
+/** Choix du style : une option par style (aperçu + nom), appliqué tout de suite et enregistré. */
+function choixStyle(lire: Lire, changer: Changer): HTMLElement {
+  const groupe = creer('div', 'reglage reglage-style');
+  const titre = creer('span', 'reglage-titre', 'Style');
+  titre.id = 'reglage-style-titre';
+  const choix = creer('div', 'choix-style');
   choix.setAttribute('role', 'radiogroup');
   choix.setAttribute('aria-labelledby', titre.id);
-  const boutons = new Map<Direction, HTMLButtonElement>();
+  const boutons = new Map<Style, HTMLButtonElement>();
   const marquer = (): void => {
-    for (const [direction, b] of boutons) b.setAttribute('aria-checked', String(directionCourante() === direction));
+    for (const [style, b] of boutons) b.setAttribute('aria-checked', String(lire().style === style));
   };
-  for (const { id, nom } of DIRECTIONS) {
-    const b = bouton('bouton choix-theme-bouton', nom, () => {
-      changerDirection(id);
+  for (const style of STYLES) {
+    const b = bouton('bouton choix-theme-bouton choix-style-bouton', '', () => {
+      changer({ ...lire(), style });
       marquer();
     });
+    b.append(apercuStyle(style), creer('span', 'choix-style-nom', NOMS_STYLES[style]));
     b.setAttribute('role', 'radio');
-    boutons.set(id, b);
+    boutons.set(style, b);
     choix.append(b);
   }
   marquer();
-  groupe.append(textes, choix);
+  groupe.append(titre, choix);
   return groupe;
 }
 
@@ -219,8 +231,8 @@ export function ouvrirReglages(lire: Lire, changer: Changer, o: OptionsReglages)
     section(
       'application',
       'Application',
+      choixStyle(lire, changer),
       choixTheme(lire, changer),
-      choixDirection(),
       sauvegarde(o.sauvegarde),
       version(o.version),
     ),

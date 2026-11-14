@@ -1,5 +1,5 @@
 /* Styles de base du socle (formes communes ; couleurs, polices et formes variables dans theme.css,
-   redéfinies par chaque direction de design à l'essai : src/styles/directions/). Tablette d'abord : grandes zones tactiles,
+   redéfinies par chaque style : src/styles/visuels/). Tablette d'abord : grandes zones tactiles,
    mise en page qui s'adapte au paysage comme au portrait. Couleurs : variables de theme.css. */
 
 *,
@@ -46,7 +46,7 @@ button:disabled {
   outline-offset: 2px;
 }
 
-/* Icône SVG dessinée (src/styles/icones.css, puis chaque direction) : le fichier sert de masque, la
+/* Icône SVG dessinée (src/styles/icones.css, puis chaque style) : le fichier sert de masque, la
    couleur est celle du texte (elle suit donc le thème et l'état du bouton). */
 .icone {
   display: inline-block;
@@ -63,12 +63,12 @@ button:disabled {
   mask-repeat: no-repeat;
 }
 
-/* Décor d'une direction de design (en-tête de l'accueil, haut de la fiche) : rien par défaut */
+/* Décor d'un style (en-tête de l'accueil, haut de la fiche) : rien par défaut */
 .decor {
   display: none;
 }
 
-/* Titres : police des titres de la direction */
+/* Titres : police des titres du style */
 h1,
 h2,
 h3,
@@ -824,23 +824,76 @@ h4 {
   padding: 0.4rem 0.8rem;
 }
 
-/* Étape 6b, TEMPORAIRE (retiré à l'étape 6c) : choix de la direction de design à l'essai */
-.reglage-direction {
+/* Réglage « Style » : une option = une pastille d'aperçu dessinée par le style lui-même (ses
+   variables sont actives sur .apercu-style[data-style], voir src/styles/visuels/) + son nom */
+.reglage-style {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+  gap: 0.5rem;
+  cursor: default;
+}
+
+.choix-style {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
   gap: 0.5rem;
 }
 
-.choix-direction {
+.choix-style-bouton {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.4rem;
-}
-
-.choix-direction .choix-theme-bouton {
-  padding: 0.4rem 0.6rem;
+  min-width: 0;
+  justify-items: stretch;
+  gap: 0.35rem;
+  padding: 0.4rem;
   font-size: 0.95rem;
 }
+
+.apercu-style {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.35rem 0.5rem;
+  overflow: hidden;
+  border: 2px solid var(--couleur-trait-epais);
+  border-radius: var(--grille-rayon);
+  background: var(--couleur-fond);
+  color: var(--couleur-texte);
+}
+
+.apercu-style-texte {
+  font-family: var(--police-titre);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.apercu-style-chiffre {
+  margin-left: 0.3em;
+  color: var(--couleur-saisie);
+  font-family: var(--police-chiffres);
+}
+
+.apercu-style-couleurs {
+  display: flex;
+  flex: none;
+  gap: 0.15rem;
+}
+
+.apercu-style-couleurs span {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+.apercu-style-couleurs span:nth-child(1) { background: var(--couleur-accent); }
+.apercu-style-couleurs span:nth-child(2) { background: var(--couleur-decor-1); }
+.apercu-style-couleurs span:nth-child(3) { background: var(--couleur-decor-2); }
+.apercu-style-couleurs span:nth-child(4) { background: var(--couleur-decor-3); }
 
 /* Sections de la fenêtre des réglages : Application, Tous les jeux, Par jeu */
 .reglages-section {

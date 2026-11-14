@@ -72,7 +72,7 @@ describe('mémoire des nouveautés vues (magasin « appli »)', () => {
     assert.equal(s.baseNeuve, true);
     await s.ecrire('appli', CLE_NOUVEAUTES_VUES, { vues: ['a'] });
     await s.remplacerDonnees({
-      reglages: { theme: 'systeme', verifierErreurs: false, miseEnEvidence: true, jeux: {} },
+      reglages: { style: 'retro', theme: 'systeme', verifierErreurs: false, miseEnEvidence: true, jeux: {} },
       parties: [],
       stats: {},
       packsJoues: {},

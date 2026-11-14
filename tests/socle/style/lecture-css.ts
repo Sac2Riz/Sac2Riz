@@ -1,4 +1,4 @@
-// Aide des tests des directions de design : lecture des variables de couleur d'une feuille CSS et
+// Aide des tests des styles : lecture des variables de couleur d'une feuille CSS et
 // calcul des contrastes (formule WCAG 2). Lecteur volontairement limité à ce que les feuilles du
 // projet écrivent : un bloc `<sélecteur> { --nom: valeur; … }`, des couleurs #rgb / #rrggbb,
 // light-dark(<clair>, <sombre>) et var(--autre).
@@ -43,7 +43,7 @@ export type Mode = 'clair' | 'sombre';
 
 /**
  * Valeur d'une variable dans un mode, var() résolues (d'abord dans `variables`, puis dans `base` :
- * une direction ne redéfinit pas forcément tout).
+ * un style ne redéfinit pas forcément tout).
  */
 export function resoudre(nom: string, mode: Mode, variables: Variables, base: Variables, profondeur = 0): string {
   if (profondeur > 10) throw new Error(`boucle de var() sur ${nom}`);

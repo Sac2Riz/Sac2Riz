@@ -2,6 +2,44 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6c] — Styles au choix, icône Rétro — 2026-11-14
+
+### Ajouté
+- **Réglage « Style »** (Réglages → Application, au-dessus du thème) : Ardoise, ASCII, ASCII génératif,
+  BBS ANSI, MS-DOS, Rétro (`src/types/style.ts` : `STYLES`, `NOMS_STYLES`, `STYLE_PAR_DEFAUT` = `retro`,
+  `estStyle`). Pastille d'aperçu par option (`.apercu-style[data-style]`, variables du style ; bloc
+  d'Ardoise de `theme.css` étendu à `.apercu-style` pour repartir de valeurs neutres).
+- `Reglages.style` (IndexedDB) ; `ReglagesV4` (forme des étapes 6a-6b) ; `ReglagesBruts` = V4 + style à
+  vérifier ; `normaliserReglages` : style absent ou inconnu → Rétro. **Export n° 3** ; import des n° 1, 2, 3.
+- `src/socle/style/affichage.ts` (pur) : copie locale `{ style, theme }` (`sac2riz-affichage`), reprise de
+  l'ancienne clé d'essai (`styleDeLEssai`, `lireEssai`, `oublierEssai`). `appliquer.ts` :
+  `appliquerAffichage` (data-style, thème, copie, écouteurs), `styleCourant`, `suivreStyle`.
+- `public/demarrage.js` : script classique bloquant chargé dans `<head>`, pose `data-style` / `data-theme`
+  avant le premier rendu ; `<html data-style="retro">` par défaut dans `index.html`.
+- `main.ts` : `reprendreEssai` (reprise unique, clé supprimée après écriture réussie).
+- Icône : `scripts/icones/dessin.ts` gère des demi-anneaux (`DemiAnneau`) en plus des rectangles ;
+  `REDUCTION_MASKABLE`.
+- Tests : `tests/socle/style/styles.test.ts` (ex-`directions.test.ts` : liste, feuilles et dossiers
+  d'icônes exacts, polices et licences sans orphelin, manifest), `demarrage.test.ts` (script exécuté avec
+  `node:vm`, listes identiques, copie, reprise), réglages et import (style), gardes, icône (demi-anneau,
+  zone sûre maskable).
+
+### Modifié
+- « direction » → « style » : `data-style`, `src/styles/directions/` → `src/styles/visuels/`,
+  `src/socle/design/` → `src/socle/style/`, `tests/socle/design/` → `tests/socle/style/`.
+- `app.ts` : `appliquerAffichage` à la place d'`appliquerTheme` ; `theme.css` : `color-scheme: light` dans
+  un bloc `:root` à part (la pastille suit le thème de la page).
+- **Icône de l'appli** dans le style Rétro (crème, arc-en-ciel, grille brune à case orange), régénérée
+  (SVG, 192, 512, maskable) ; manifest `background_color` / `theme_color` et balises `theme-color` = fond
+  de Rétro (`#f3e9d2`, `#2a1d14` en sombre).
+- docs/DESIGN.md réécrit (styles permanents, enregistrement, démarrage, ajouter un style, icône).
+- `public/nouveautes.json` : le groupe de l'étape 6b (jamais publié) devient « Choisissez le style de
+  l'appli ».
+
+### Retiré
+- Styles Années 80-90 et Terminal (feuilles, icônes, décors), polices Bungee, Rubik, VT323, JetBrains Mono et
+  leurs licences ; sélecteur d'essai (`choixDirection`, `design/directions.ts`, `design/appliquer.ts`).
+
 ## [Étape 6b] — 7 directions de design à l'essai — 2026-11-14
 
 ### Ajouté

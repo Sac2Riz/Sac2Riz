@@ -14,10 +14,12 @@ import type {
   ReglagesBruts,
   ReglagesEnregistres,
   ReglagesV1,
+  ReglagesV4,
   StatsJeu,
   StatsNiveau,
   Theme,
 } from '../types/sauvegarde.ts';
+import { estStyle } from '../types/style.ts';
 import { estEntierEntre, estJson, estNombreEntre, estObjet, estTableauDe } from './gardes-json.ts';
 
 const MAX = Number.MAX_SAFE_INTEGER;
@@ -113,18 +115,23 @@ function estSocleReglages(valeur: unknown): boolean {
   return estObjet(valeur) && typeof valeur['miseEnEvidence'] === 'boolean' && estReglagesV1(valeur);
 }
 
-/** Réglages actuels, valeurs des jeux vérifiées (export, import d'un fichier n° 2). */
+/** Réglages actuels, style et valeurs des jeux vérifiés. */
 export function estReglages(valeur: unknown): valeur is Reglages {
-  return estSocleReglages(valeur) && estObjet(valeur) && estDictionnaireDe(valeur['jeux'], estValeursJeu);
+  return (
+    estSocleReglages(valeur) && estObjet(valeur) && estStyle(valeur['style']) && estDictionnaireDe(valeur['jeux'], estValeursJeu)
+  );
 }
 
-/** Réglages actuels dont les valeurs des jeux restent à trier (normaliserReglages, socle/reglages.ts). */
-export function estReglagesBruts(valeur: unknown): valeur is ReglagesBruts {
+/**
+ * Réglages par section (avec ou sans style : étapes 6a-6b ou actuels) dont le style et les valeurs des
+ * jeux restent à trier (normaliserReglages, socle/reglages.ts).
+ */
+export function estReglagesBruts(valeur: unknown): valeur is ReglagesBruts | ReglagesV4 {
   return estSocleReglages(valeur) && estObjet(valeur) && estDictionnaireDe(valeur['jeux'], estObjetJson);
 }
 
 /**
- * Contenu acceptable du magasin « reglages » : forme actuelle (ReglagesBruts), ou une ancienne
+ * Contenu acceptable du magasin « reglages » : réglages par section (ReglagesBruts, V4), ou une ancienne
  * forme « à plat » (V1 à V3, reconnues par leur partie commune ; converties à la lecture).
  */
 export function estReglagesEnregistres(valeur: unknown): valeur is ReglagesEnregistres {

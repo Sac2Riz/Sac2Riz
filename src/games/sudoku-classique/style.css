@@ -1,6 +1,6 @@
 /* Styles du sudoku classique (classes préfixées « sudoku-classique- »).
-   Couleurs, polices et formes : variables de thème (src/styles/theme.css), redéfinies par la direction
-   de design choisie (aucune règle de direction ne vise ces classes).
+   Couleurs, polices et formes : variables de thème (src/styles/theme.css), redéfinies par le style
+   choisi (aucune règle de style ne vise ces classes).
    Le socle place la grille dans un conteneur dimensionné (container-type: size) : la grille
    prend le plus grand carré possible (min(100cqw, 100cqh)), en portrait comme en paysage. */
 

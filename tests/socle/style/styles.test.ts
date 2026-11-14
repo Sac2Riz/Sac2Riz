@@ -1,26 +1,19 @@
-// Tests des directions de design à l'essai (étape 6b) : choix enregistré, variables complètes,
-// contrastes suffisants en clair ET en sombre, icônes et polices présentes.
+// Tests des styles de l'appli (réglage « Style ») : liste, variables complètes, contrastes suffisants
+// en clair ET en sombre, icônes et polices présentes, aucun fichier orphelin des styles retirés.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
-import {
-  attributDirection,
-  CLE_DIRECTION,
-  DIRECTIONS,
-  ecrireDirection,
-  lireDirection,
-  type StockageLocal,
-} from '../../../src/socle/design/directions.ts';
 import { NOMS_ICONES } from '../../../src/socle/icones.ts';
+import { NOMS_STYLES, STYLE_PAR_DEFAUT, STYLES, estStyle } from '../../../src/types/style.ts';
 import { contraste, lireBloc, resoudre, rvb, type Mode, type Variables } from './lecture-css.ts';
 
 const THEME = 'src/styles/theme.css';
-const feuille = (id: string): string => (id === 'ardoise' ? THEME : `src/styles/directions/${id}.css`);
-const ARDOISE = lireBloc(THEME, ':root');
+const feuille = (id: string): string => (id === 'ardoise' ? THEME : `src/styles/visuels/${id}.css`);
+const ARDOISE = lireBloc(THEME, ':root,\n.apercu-style');
 const variablesDe = (id: string): Variables =>
-  id === 'ardoise' ? ARDOISE : lireBloc(feuille(id), `:root[data-direction="${id}"]`);
+  id === 'ardoise' ? ARDOISE : lireBloc(feuille(id), `:root[data-style="${id}"],\n.apercu-style[data-style="${id}"]`);
 
-/** Couleurs que chaque direction doit redéfinir (les autres peuvent garder celles d'Ardoise). */
+/** Couleurs que chaque style doit redéfinir (les autres peuvent garder celles d'Ardoise). */
 const COULEURS = [
   'fond', 'surface', 'case', 'texte', 'texte-doux', 'saisie', 'accent', 'sur-accent', 'bordure', 'trait-fin',
   'trait-epais', 'zone', 'meme', 'selection', 'note', 'erreur', 'erreur-fond', 'indice', 'indice-fond', 'place',
@@ -40,58 +33,58 @@ const PAIRES: readonly (readonly [string, string, number])[] = [
   ['accent', 'zone', 3], ['accent', 'selection', 3], ['trait-epais', 'case', 3],
 ];
 
-function memoire(depart: Record<string, string> = {}): StockageLocal & { contenu: Record<string, string> } {
-  const contenu = { ...depart };
-  return {
-    contenu,
-    getItem: (cle) => contenu[cle] ?? null,
-    setItem: (cle, valeur) => {
-      contenu[cle] = valeur;
-    },
-  };
-}
-
-describe('directions de design (étape 6b)', () => {
-  test('8 choix : Ardoise puis les 7 directions proposées', () => {
-    assert.deepEqual(
-      DIRECTIONS.map((d) => d.id),
-      ['ardoise', 'annees-80-90', 'ascii', 'ms-dos', 'bbs-ansi', 'retro', 'ascii-generatif', 'terminal'],
-    );
+describe("styles de l'appli", () => {
+  test('6 styles, Rétro par défaut ; chacun a un nom', () => {
+    assert.deepEqual([...STYLES], ['ardoise', 'ascii', 'ascii-generatif', 'bbs-ansi', 'ms-dos', 'retro']);
+    assert.equal(STYLE_PAR_DEFAUT, 'retro');
+    for (const id of STYLES) assert.ok(NOMS_STYLES[id].length > 0);
+    assert.equal(estStyle('terminal'), false);
+    assert.equal(estStyle('annees-80-90'), false);
   });
 
-  test('choix enregistré, relu ; inconnu, absent ou stockage en panne → Ardoise', () => {
-    const s = memoire();
-    assert.equal(lireDirection(s), 'ardoise');
-    ecrireDirection(s, 'terminal');
-    assert.equal(s.contenu[CLE_DIRECTION], 'terminal');
-    assert.equal(lireDirection(s), 'terminal');
-    assert.equal(lireDirection(memoire({ [CLE_DIRECTION]: 'inconnue' })), 'ardoise');
-    assert.equal(lireDirection(null), 'ardoise');
-    const enPanne: StockageLocal = {
-      getItem: () => {
-        throw new Error('bloqué');
-      },
-      setItem: () => {
-        throw new Error('bloqué');
-      },
-    };
-    assert.equal(lireDirection(enPanne), 'ardoise');
-    assert.doesNotThrow(() => ecrireDirection(enPanne, 'retro'));
-  });
-
-  test('Ardoise = pas d\'attribut data-direction', () => {
-    assert.equal(attributDirection('ardoise'), null);
-    assert.equal(attributDirection('ms-dos'), 'ms-dos');
-  });
-
-  test('index.html charge la feuille de chaque direction', () => {
+  test('index.html charge la feuille de chaque style, Rétro écrit par défaut, demarrage.js avant le code', () => {
     const index = readFileSync('public/index.html', 'utf8');
-    for (const { id } of DIRECTIONS.filter((d) => d.id !== 'ardoise')) {
-      assert.ok(index.includes(`./styles/directions/${id}.css`), id);
+    for (const id of STYLES.filter((s) => s !== 'ardoise')) assert.ok(index.includes(`./styles/visuels/${id}.css`), id);
+    assert.ok(index.includes('<html lang="fr" data-style="retro">'));
+    assert.ok(index.includes('<script src="./demarrage.js"></script>'), 'script classique (ni module, ni defer, ni async)');
+    assert.ok(index.indexOf('demarrage.js') < index.indexOf('main.js'));
+  });
+
+  test("une feuille par style conservé, rien de plus ; dossiers d'icônes de même", () => {
+    const feuilles = readdirSync('src/styles/visuels').map((f) => f.replace(/\.css$/, '')).sort();
+    assert.deepEqual(feuilles, STYLES.filter((s) => s !== 'ardoise'));
+    assert.deepEqual(readdirSync('public/design').sort(), [...STYLES]);
+  });
+
+  test('chaque police a sa licence et sert à au moins un style ; chaque licence sert à une police', () => {
+    const css = STYLES.map((id) => readFileSync(feuille(id), 'utf8')).join('\n');
+    const polices = readdirSync('public/polices').filter((f) => /\.woff2?$/.test(f));
+    const familles = new Set<string>();
+    for (const fichier of polices) {
+      assert.ok(css.includes(`polices/${fichier}`), `${fichier} n'est utilisée par aucun style`);
+      familles.add(fichier.replace(/-\d{3}\.woff2$|\.woff$/, '').replace(/^px437-.*/, 'px437'));
+    }
+    const licences = readdirSync('public/polices/licences');
+    for (const licence of licences) {
+      const famille = licence.replace(/-ofl\.txt$/, '').replace(/^px437-.*/, 'px437');
+      assert.ok(familles.has(famille), `licence orpheline : ${licence}`);
     }
   });
 
-  for (const { id } of DIRECTIONS) {
+  test("manifest et barre d'état aux couleurs de fond de Rétro", () => {
+    const retro = variablesDe('retro');
+    const clair = resoudre('--couleur-fond', 'clair', retro, ARDOISE);
+    const sombre = resoudre('--couleur-fond', 'sombre', retro, ARDOISE);
+    const manifest: unknown = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8'));
+    assert.ok(manifest !== null && typeof manifest === 'object');
+    assert.equal(Reflect.get(manifest, 'background_color'), clair);
+    assert.equal(Reflect.get(manifest, 'theme_color'), clair);
+    const index = readFileSync('public/index.html', 'utf8');
+    assert.ok(index.includes(`content="${clair}" media="(prefers-color-scheme: light)"`));
+    assert.ok(index.includes(`content="${sombre}" media="(prefers-color-scheme: dark)"`));
+  });
+
+  for (const id of STYLES) {
     describe(id, () => {
       const variables = variablesDe(id);
 

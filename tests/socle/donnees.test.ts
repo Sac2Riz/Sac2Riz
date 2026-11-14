@@ -49,7 +49,7 @@ function stats(terminees: number): StatsJeu {
 const etatPack: EtatPack = { taille: 3, ordre: [2, 0, 1], position: 1, derniere: 2, cycle: 1 };
 
 const donneesExemple: DonneesExportees = {
-  reglages: { ...REGLAGES_PAR_DEFAUT, theme: 'sombre', verifierErreurs: true, jeux: { 'jeu-futur': { option: true } } },
+  reglages: { ...REGLAGES_PAR_DEFAUT, style: 'bbs-ansi', theme: 'sombre', verifierErreurs: true, jeux: { 'jeu-futur': { option: true } } },
   parties: [partieEnCours()],
   stats: { _modele: stats(2) },
   packsJoues: { '_modele/expert': etatPack },
@@ -109,7 +109,7 @@ describe('export', () => {
   test('fichier : format, version, date', () => {
     const f = construireExport(donneesExemple, new Date(DATE));
     assert.equal(f.format, 'sac2riz-export');
-    assert.equal(f.version, 2);
+    assert.equal(f.version, 3);
     assert.equal(f.exporteLe, DATE);
   });
 });
@@ -139,6 +139,7 @@ describe('import : fichier valide', () => {
     );
     assert.ok(resultat.ok);
     assert.deepEqual(resultat.donnees.reglages, {
+      style: 'retro',
       theme: 'clair',
       verifierErreurs: true,
       miseEnEvidence: false,
@@ -146,7 +147,30 @@ describe('import : fichier valide', () => {
     });
   });
 
-  test('fichier n° 2 : une valeur de réglage de jeu d’un autre type est ignorée', () => {
+  test('fichier n° 2 (avant l’étape 6c) : sans style, style par défaut (Rétro), le reste conservé', () => {
+    const reglages = { theme: 'sombre', verifierErreurs: true, miseEnEvidence: false, jeux: { 'chiffres-cases': { nombreAuDepart: true } } };
+    const resultat = analyserImport(
+      fichier((f, d) => {
+        f['version'] = 2;
+        d['reglages'] = reglages;
+      }),
+      LOGIQUES,
+    );
+    assert.ok(resultat.ok);
+    assert.deepEqual(resultat.donnees.reglages, { style: 'retro', ...reglages });
+  });
+
+  test('fichier n° 3 : style relu ; style inconnu → style par défaut', () => {
+    const lu = (style: unknown): string => {
+      const r = analyserImport(fichier((_f, d) => (d['reglages'] = { ...REGLAGES_PAR_DEFAUT, style })), LOGIQUES);
+      assert.ok(r.ok);
+      return r.donnees.reglages.style;
+    };
+    assert.equal(lu('ms-dos'), 'ms-dos');
+    assert.equal(lu('terminal'), 'retro');
+  });
+
+  test('une valeur de réglage de jeu d’un autre type est ignorée', () => {
     const resultat = analyserImport(
       fichier((_f, d) => {
         d['reglages'] = { ...REGLAGES_PAR_DEFAUT, jeux: { 'sudoku-classique': { retraitAutoNotes: false, autre: 'texte' } } };
@@ -184,7 +208,7 @@ describe('import : fichiers refusés', () => {
   });
 
   test('version plus récente ou inconnue', () => {
-    assert.match(refuse(fichier((f) => (f['version'] = 3))), /version plus récente/);
+    assert.match(refuse(fichier((f) => (f['version'] = 4))), /version plus récente/);
     assert.match(refuse(fichier((f) => (f['version'] = 0))), /Version de sauvegarde inconnue/);
     assert.match(refuse(fichier((f) => (f['version'] = '1'))), /Version de sauvegarde inconnue/);
   });

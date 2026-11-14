@@ -1,4 +1,4 @@
-/* Direction de design à l'essai n° 2 — ASCII (étape 6b, temporaire).
+/* Style ASCII.
    Tout est fait de caractères : rien de plein ni de coloré, une page de texte tapée.
    Clair : feuille de machine à écrire (papier, encre noire, ruban rouge pour les erreurs, bleu stylo
    pour les saisies). Sombre : fichier texte .NFO (gris clair sur noir).
@@ -7,7 +7,9 @@
 @font-face { font-family: "Courier Prime"; src: url("../../polices/courier-prime-400.woff2") format("woff2"); font-weight: 400 500; font-display: swap; }
 @font-face { font-family: "Courier Prime"; src: url("../../polices/courier-prime-700.woff2") format("woff2"); font-weight: 600 900; font-display: swap; }
 
-:root[data-direction="ascii"] {
+/* Variables du style : sur la page, et sur la pastille d'aperçu du réglage « Style » */
+:root[data-style="ascii"],
+.apercu-style[data-style="ascii"] {
   --couleur-fond: light-dark(#f4f0e6, #0d0d0d);
   --couleur-surface: light-dark(#f4f0e6, #0d0d0d);
   --couleur-case: light-dark(#f4f0e6, #0d0d0d);
@@ -55,7 +57,7 @@
 }
 
 /* ---------- Cadres en caractères : bords « - - - » et « ¦ », coins « + » ---------- */
-:root[data-direction="ascii"] :is(.carte-jeu, .dialogue, .fin-carte) {
+:root[data-style="ascii"] :is(.carte-jeu, .dialogue, .fin-carte) {
   border-style: dashed;
   background-color: var(--couleur-surface);
   background-image: var(--ascii-trait), var(--ascii-trait), var(--ascii-trait), var(--ascii-trait),
@@ -67,36 +69,36 @@
     -5px 100%, 0 calc(100% + 5px), calc(100% + 5px) 100%, 100% calc(100% + 5px);
 }
 
-:root[data-direction="ascii"] :is(.bouton, .bouton-icone, .outil, .touche) {
+:root[data-style="ascii"] :is(.bouton, .bouton-icone, .outil, .touche) {
   border-style: dashed;
   border-color: var(--couleur-bordure);
   background: transparent;
 }
 
-:root[data-direction="ascii"] :is(.bouton-principal, .choix-theme-bouton[aria-checked="true"], .outil.est-actif) {
+:root[data-style="ascii"] :is(.bouton-principal, .choix-theme-bouton[aria-checked="true"], .outil.est-actif) {
   background: var(--couleur-accent);
   border-style: solid;
 }
 
 /* Nom du jeu entre crochets, sous-titres soulignés de tirets */
-:root[data-direction="ascii"] .carte-jeu-nom::before { content: "[ "; color: var(--couleur-texte-doux); }
-:root[data-direction="ascii"] .carte-jeu-nom::after { content: " ]"; color: var(--couleur-texte-doux); }
-:root[data-direction="ascii"] :is(.fiche-sous-titre, .reglages-section-titre)::before { content: "== "; }
-:root[data-direction="ascii"] .pastille-en-cours {
+:root[data-style="ascii"] .carte-jeu-nom::before { content: "[ "; color: var(--couleur-texte-doux); }
+:root[data-style="ascii"] .carte-jeu-nom::after { content: " ]"; color: var(--couleur-texte-doux); }
+:root[data-style="ascii"] :is(.fiche-sous-titre, .reglages-section-titre)::before { content: "== "; }
+:root[data-style="ascii"] .pastille-en-cours {
   border-radius: 0;
   background: transparent;
   color: var(--couleur-texte);
 }
-:root[data-direction="ascii"] .pastille-en-cours::before { content: "<"; }
-:root[data-direction="ascii"] .pastille-en-cours::after { content: ">"; }
+:root[data-style="ascii"] .pastille-en-cours::before { content: "<"; }
+:root[data-style="ascii"] .pastille-en-cours::after { content: ">"; }
 
 /* ---------- Accueil : titre en art ASCII, frise de densité ---------- */
-:root[data-direction="ascii"] .accueil-titre {
+:root[data-style="ascii"] .accueil-titre {
   font-size: 0; /* le texte « Sac2Riz » reste lu par les lecteurs d'écran */
   line-height: 1.15;
 }
 
-:root[data-direction="ascii"] .accueil-titre::before {
+:root[data-style="ascii"] .accueil-titre::before {
   content: " ___    _     ___  ___  ___  ___  ____\A / __|  /_\\   / __||_  )| _ \\|_ _||_  /\A \\__ \\ / _ \\ | (__  / / |   / | |  / / \A |___//_/ \\_\\ \\___|/___||_|_\\|___|/___|";
   display: inline-block;
   white-space: pre;
@@ -106,7 +108,7 @@
   color: var(--couleur-texte);
 }
 
-:root[data-direction="ascii"] .accueil-entete::after {
+:root[data-style="ascii"] .accueil-entete::after {
   content: " .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:. ";
   display: block;
   margin-top: var(--espace-2);
@@ -115,18 +117,18 @@
   color: var(--couleur-decor-1);
 }
 
-:root[data-direction="ascii"] .accueil-sous-titre::before { content: "-- "; }
-:root[data-direction="ascii"] .accueil-sous-titre::after { content: " --"; }
+:root[data-style="ascii"] .accueil-sous-titre::before { content: "-- "; }
+:root[data-style="ascii"] .accueil-sous-titre::after { content: " --"; }
 
 /* ---------- Icônes ---------- */
-:root[data-direction="ascii"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii/icones/retour.svg"); mask-image: url("../../design/ascii/icones/retour.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii/icones/reglages.svg"); mask-image: url("../../design/ascii/icones/reglages.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii/icones/statistiques.svg"); mask-image: url("../../design/ascii/icones/statistiques.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii/icones/pause.svg"); mask-image: url("../../design/ascii/icones/pause.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii/icones/reprendre.svg"); mask-image: url("../../design/ascii/icones/reprendre.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii/icones/notes.svg"); mask-image: url("../../design/ascii/icones/notes.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii/icones/effacer.svg"); mask-image: url("../../design/ascii/icones/effacer.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii/icones/annuler.svg"); mask-image: url("../../design/ascii/icones/annuler.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii/icones/retablir.svg"); mask-image: url("../../design/ascii/icones/retablir.svg"); }
-:root[data-direction="ascii"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii/icones/indice.svg"); mask-image: url("../../design/ascii/icones/indice.svg"); }
+:root[data-style="ascii"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii/icones/retour.svg"); mask-image: url("../../design/ascii/icones/retour.svg"); }
+:root[data-style="ascii"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii/icones/reglages.svg"); mask-image: url("../../design/ascii/icones/reglages.svg"); }
+:root[data-style="ascii"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii/icones/statistiques.svg"); mask-image: url("../../design/ascii/icones/statistiques.svg"); }
+:root[data-style="ascii"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); }
+:root[data-style="ascii"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii/icones/pause.svg"); mask-image: url("../../design/ascii/icones/pause.svg"); }
+:root[data-style="ascii"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii/icones/reprendre.svg"); mask-image: url("../../design/ascii/icones/reprendre.svg"); }
+:root[data-style="ascii"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii/icones/notes.svg"); mask-image: url("../../design/ascii/icones/notes.svg"); }
+:root[data-style="ascii"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii/icones/effacer.svg"); mask-image: url("../../design/ascii/icones/effacer.svg"); }
+:root[data-style="ascii"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii/icones/annuler.svg"); mask-image: url("../../design/ascii/icones/annuler.svg"); }
+:root[data-style="ascii"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii/icones/retablir.svg"); mask-image: url("../../design/ascii/icones/retablir.svg"); }
+:root[data-style="ascii"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii/icones/indice.svg"); mask-image: url("../../design/ascii/icones/indice.svg"); }

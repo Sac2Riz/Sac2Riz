@@ -11,7 +11,7 @@ const statsVides = { terminees: 0, abandonnees: 0, meilleurTempsMs: null, totalT
 
 const exemple: FichierExport = {
   format: 'sac2riz-export',
-  version: 2,
+  version: 3,
   exporteLe: '2026-01-01T00:00:00.000Z',
   donnees: {
     reglages: REGLAGES_PAR_DEFAUT,

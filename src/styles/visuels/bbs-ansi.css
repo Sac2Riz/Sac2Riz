@@ -1,6 +1,6 @@
-/* Direction de design à l'essai n° 4 — BBS ANSI (étape 6b, temporaire).
+/* Style BBS ANSI.
    La scène ANSI des serveurs BBS : de l'art en blocs colorés, dégradés ░▒▓█, logo en blocs, couleurs
-   CGA vives (la direction MS-DOS est une application sobre ; celle-ci est une affiche).
+   CGA vives (le style MS-DOS est une application sobre ; celle-ci est une affiche).
    Sombre : noir, magenta, cyan, jaune. Clair (réinterprétation) : ANSI imprimé dans un fanzine (papier,
    couleurs CGA assombries, blocs pastel).
    Polices : Px437 IBM BIOS (titres), Px437 IBM EGA 8x14 (texte, chiffres) — CC BY-SA 4.0, VileR
@@ -10,7 +10,9 @@
 @font-face { font-family: "Px437 IBM EGA 8x14"; src: url("../../polices/px437-ibm-ega-8x14.woff") format("woff"); font-display: swap; }
 @font-face { font-family: "Fira Mono"; src: url("../../polices/fira-mono-500.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
 
-:root[data-direction="bbs-ansi"] {
+/* Variables du style : sur la page, et sur la pastille d'aperçu du réglage « Style » */
+:root[data-style="bbs-ansi"],
+.apercu-style[data-style="bbs-ansi"] {
   --couleur-fond: light-dark(#fbfaf5, #000000);
   --couleur-surface: light-dark(#ffffff, #0a0a12);
   --couleur-case: light-dark(#ffffff, #0a0a0a);
@@ -58,12 +60,12 @@
   --carte-ombre: none;
 }
 
-:root[data-direction="bbs-ansi"] body { font-synthesis: none; }
-:root[data-direction="bbs-ansi"] :is(h1, h2, h3, h4, strong, b) { font-weight: 400; }
+:root[data-style="bbs-ansi"] body { font-synthesis: none; }
+:root[data-style="bbs-ansi"] :is(h1, h2, h3, h4, strong, b) { font-weight: 400; }
 
 /* ---------- Bandes de dégradé en blocs ---------- */
-:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::before,
-:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
+:root[data-style="bbs-ansi"] :is(.accueil, .ecran-fiche)::before,
+:root[data-style="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
   content: "░░░░▒▒▒▒▓▓▓▓████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▓▓▓▓▒▒▒▒░░░░";
   display: block;
   overflow: hidden;
@@ -74,66 +76,66 @@
   text-align: center;
 }
 
-:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
+:root[data-style="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
   color: var(--couleur-decor-2);
 }
 
 /* ---------- Logo en blocs : couches décalées ---------- */
-:root[data-direction="bbs-ansi"] .accueil-titre {
+:root[data-style="bbs-ansi"] .accueil-titre {
   font-size: 3.2rem;
   color: var(--couleur-accent);
   text-shadow: 4px 4px 0 var(--bbs-couche-1), 8px 8px 0 var(--bbs-couche-2);
   letter-spacing: 0.05em;
 }
 
-:root[data-direction="bbs-ansi"] :is(.ecran-titre, .fin-titre, .dialogue-titre) {
+:root[data-style="bbs-ansi"] :is(.ecran-titre, .fin-titre, .dialogue-titre) {
   color: var(--couleur-accent);
   text-shadow: 3px 3px 0 var(--bbs-couche-2);
 }
 
 /* ---------- Cartes : cadre de demi-blocs, couleur différente par carte ---------- */
-:root[data-direction="bbs-ansi"] .carte-jeu {
+:root[data-style="bbs-ansi"] .carte-jeu {
   --bbs-cadre: var(--couleur-decor-2);
   border: 0;
   box-shadow: inset 0 0 0 6px var(--bbs-cadre), inset 0 0 0 8px var(--couleur-fond), inset 0 0 0 10px var(--bbs-cadre);
 }
 
-:root[data-direction="bbs-ansi"] .carte-accueil:nth-child(3n + 2) { --bbs-cadre: var(--couleur-decor-1); }
-:root[data-direction="bbs-ansi"] .carte-accueil:nth-child(3n + 3) { --bbs-cadre: var(--couleur-decor-3); }
+:root[data-style="bbs-ansi"] .carte-accueil:nth-child(3n + 2) { --bbs-cadre: var(--couleur-decor-1); }
+:root[data-style="bbs-ansi"] .carte-accueil:nth-child(3n + 3) { --bbs-cadre: var(--couleur-decor-3); }
 
-:root[data-direction="bbs-ansi"] .carte-jeu-nom {
+:root[data-style="bbs-ansi"] .carte-jeu-nom {
   color: var(--couleur-accent);
 }
 
-:root[data-direction="bbs-ansi"] .carte-jeu-nom::before {
+:root[data-style="bbs-ansi"] .carte-jeu-nom::before {
   content: "▓▒░ ";
   color: var(--bbs-cadre);
 }
 
-:root[data-direction="bbs-ansi"] .pastille-en-cours {
+:root[data-style="bbs-ansi"] .pastille-en-cours {
   border-radius: 0;
   background: var(--couleur-indice-fond);
   color: var(--couleur-indice);
 }
 
-:root[data-direction="bbs-ansi"] :is(.bouton, .bouton-icone, .outil, .touche, .dialogue) {
+:root[data-style="bbs-ansi"] :is(.bouton, .bouton-icone, .outil, .touche, .dialogue) {
   border-width: 2px;
   border-color: var(--couleur-bordure);
 }
 
-:root[data-direction="bbs-ansi"] .dialogue {
+:root[data-style="bbs-ansi"] .dialogue {
   box-shadow: 0 0 0 4px var(--couleur-decor-1);
 }
 
 /* ---------- Icônes ---------- */
-:root[data-direction="bbs-ansi"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retour.svg"); mask-image: url("../../design/bbs-ansi/icones/retour.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/pause.svg"); mask-image: url("../../design/bbs-ansi/icones/pause.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/notes.svg"); mask-image: url("../../design/bbs-ansi/icones/notes.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); }
-:root[data-direction="bbs-ansi"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/indice.svg"); mask-image: url("../../design/bbs-ansi/icones/indice.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retour.svg"); mask-image: url("../../design/bbs-ansi/icones/retour.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/pause.svg"); mask-image: url("../../design/bbs-ansi/icones/pause.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/notes.svg"); mask-image: url("../../design/bbs-ansi/icones/notes.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); }
+:root[data-style="bbs-ansi"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/indice.svg"); mask-image: url("../../design/bbs-ansi/icones/indice.svg"); }

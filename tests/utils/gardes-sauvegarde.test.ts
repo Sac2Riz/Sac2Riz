@@ -89,6 +89,8 @@ describe('gardes des données conservées', () => {
   test('estReglages', () => {
     assert.ok(estReglages(REGLAGES_PAR_DEFAUT));
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'theme', 'violet')), false);
+    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'style', 'terminal')), false, 'style retiré');
+    assert.equal(estReglages({ theme: 'clair', verifierErreurs: true, miseEnEvidence: true, jeux: {} }), false, 'sans style : à convertir');
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'verifierErreurs', 'oui')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 1)), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'jeux', [])), false);
@@ -106,6 +108,8 @@ describe('gardes des données conservées', () => {
     assert.ok(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': { option: 'oui', autre: true } })));
     assert.equal(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': 3 })), false);
     assert.equal(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 'oui')), false);
+    assert.ok(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'style', 'inconnu')), 'style trié à la lecture');
+    assert.ok(estReglagesBruts({ theme: 'clair', verifierErreurs: true, miseEnEvidence: true, jeux: {} }), 'étapes 6a-6b, sans style');
   });
 
   test('estReglagesEnregistres : forme actuelle ou anciennes formes à plat', () => {

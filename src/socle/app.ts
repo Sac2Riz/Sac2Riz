@@ -43,7 +43,7 @@ import { depuisSauvegarde, nouvellePartie, versSauvegarde, type Logique, type Pa
 import { reglagesDuJeu, reglagesVue } from './reglages.ts';
 import type { ServiceParties } from './service-parties.ts';
 import type { ServiceReserve } from './reserve.ts';
-import { appliquerTheme } from './theme.ts';
+import { appliquerAffichage } from './style/appliquer.ts';
 import { estVisible } from './visibilite.ts';
 
 export type OptionsApp = {
@@ -96,7 +96,7 @@ export function demarrerApp(o: OptionsApp): App {
   // ---------- Réglages ----------
   function changerReglages(nouveaux: Reglages): void {
     reglages = nouveaux;
-    appliquerTheme(reglages.theme);
+    appliquerAffichage(reglages);
     o.enregistrerReglages(reglages).catch((erreur: unknown) => console.error('Réglages non enregistrés :', erreur));
   }
 

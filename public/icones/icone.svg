@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Icône provisoire, générée par « npm run icones » (scripts/icones/dessin.ts) : ne pas modifier à la main. -->
-  <rect x="0" y="0" width="512" height="512" rx="96" fill="#2f5d8a"/>
-  <rect x="89" y="89" width="14" height="334" fill="#f6f4ef"/>
-  <rect x="89" y="89" width="334" height="14" fill="#f6f4ef"/>
-  <rect x="196" y="89" width="14" height="334" fill="#f6f4ef"/>
-  <rect x="89" y="196" width="334" height="14" fill="#f6f4ef"/>
-  <rect x="302" y="89" width="14" height="334" fill="#f6f4ef"/>
-  <rect x="89" y="302" width="334" height="14" fill="#f6f4ef"/>
-  <rect x="409" y="89" width="14" height="334" fill="#f6f4ef"/>
-  <rect x="89" y="409" width="334" height="14" fill="#f6f4ef"/>
-  <rect x="221" y="209" width="70" height="14" rx="7" fill="#f6f4ef"/>
-  <rect x="277" y="209" width="14" height="54" rx="7" fill="#f6f4ef"/>
-  <rect x="221" y="249" width="70" height="14" rx="7" fill="#f6f4ef"/>
-  <rect x="221" y="249" width="14" height="54" rx="7" fill="#f6f4ef"/>
-  <rect x="221" y="289" width="70" height="14" rx="7" fill="#f6f4ef"/>
+  <!-- Icône générée par « npm run icones » (scripts/icones/dessin.ts) : ne pas modifier à la main. -->
+  <rect x="0" y="0" width="512" height="512" rx="96" fill="#f3e9d2"/>
+  <path d="M16 300A240 240 0 0 1 496 300H446A190 190 0 0 0 66 300Z" fill="#c4511b"/>
+  <path d="M66 300A190 190 0 0 1 446 300H396A140 140 0 0 0 116 300Z" fill="#e0a526"/>
+  <path d="M116 300A140 140 0 0 1 396 300H346A90 90 0 0 0 166 300Z" fill="#7a8b3a"/>
+  <rect x="131" y="210" width="250" height="250" rx="28" fill="#5a3d22"/>
+  <rect x="155" y="234" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="227.66666666666666" y="234" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="300.3333333333333" y="234" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="155" y="306.66666666666663" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="227.66666666666666" y="306.66666666666663" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#c4511b"/>
+  <rect x="300.3333333333333" y="306.66666666666663" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="155" y="379.3333333333333" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="227.66666666666666" y="379.3333333333333" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
+  <rect x="300.3333333333333" y="379.3333333333333" width="56.666666666666664" height="56.666666666666664" rx="6" fill="#fffaf0"/>
 </svg>

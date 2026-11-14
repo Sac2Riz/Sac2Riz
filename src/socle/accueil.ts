@@ -73,7 +73,7 @@ export function afficherAccueil(
 ): ReadonlyMap<string, HTMLElement> {
   const accueil = creer('div', 'accueil');
   const entete = creer('header', 'accueil-entete');
-  // Décor de la direction de design (vide, rempli seulement par certaines directions : design/decors.ts)
+  // Décor du style (vide, rempli seulement par certains styles : style/decors.ts)
   const decor = creer('div', 'decor');
   decor.setAttribute('aria-hidden', 'true');
   entete.append(

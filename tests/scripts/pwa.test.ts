@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { crc32, inflateSync } from 'node:zlib';
 import { genererIcones } from '../../scripts/generer-icones.ts';
-import { contient, formesIcone, iconeSvg, rendre } from '../../scripts/icones/dessin.ts';
+import { contient, formesIcone, iconeSvg, rendre, TAILLE_REPERE } from '../../scripts/icones/dessin.ts';
 import { encoderPng, SIGNATURE_PNG } from '../../scripts/icones/png.ts';
 import { cheminsModifies, choisirDateBuild } from '../../scripts/date-build.ts';
 import { construireManifeste, ecrireManifeste, injecterManifeste } from '../../scripts/manifeste-precache.ts';
@@ -88,6 +88,29 @@ describe('icônes', () => {
     assert.equal(any[3], 0);
     assert.equal(maskable[3], 255);
     assert.equal(maskable[(64 * 64 - 1) * 4 + 3], 255);
+  });
+
+  test('demi-anneau : dans la bande, au-dessus du centre seulement', () => {
+    const f = { cx: 100, cy: 100, rInt: 40, rExt: 60, couleur: '#000000' };
+    assert.ok(contient(f, 100, 50));
+    assert.ok(!contient(f, 100, 70)); // dans le trou
+    assert.ok(!contient(f, 100, 30)); // au-delà de la bande
+    assert.ok(!contient(f, 100, 150)); // moitié basse
+  });
+
+  test('icône « maskable » : tout le motif dans la zone sûre (cercle central de rayon 40 %)', () => {
+    const c = TAILLE_REPERE / 2;
+    const rayonSur = 0.4 * TAILLE_REPERE;
+    const [, ...motif] = formesIcone(true);
+    for (const f of motif) {
+      const points: (readonly [number, number])[] = [];
+      if ('cx' in f) {
+        for (let i = 0; i <= 180; i++) points.push([f.cx + f.rExt * Math.cos((i * Math.PI) / 180), f.cy - f.rExt * Math.sin((i * Math.PI) / 180)]);
+      } else {
+        points.push([f.x, f.y], [f.x + f.l, f.y], [f.x, f.y + f.h], [f.x + f.l, f.y + f.h]);
+      }
+      for (const [x, y] of points) assert.ok(Math.hypot(x - c, y - c) <= rayonSur, `point (${x}, ${y}) hors de la zone sûre`);
+    }
   });
 
   test('genererIcones écrit le SVG et les trois PNG aux bonnes tailles', () => {

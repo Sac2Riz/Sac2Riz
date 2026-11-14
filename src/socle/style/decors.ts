@@ -1,14 +1,14 @@
-// DÉCORS GÉNÉRATIFS (étape 6b, direction « ASCII génératif » seulement ; TEMPORAIRE comme le choix
-// des directions). Deux décors faits de caractères dessinés dans un <canvas> :
+// DÉCORS GÉNÉRATIFS (style « ASCII génératif » seulement). Deux décors faits de caractères dessinés dans un <canvas> :
 //   - champ ANIMÉ dans les zones .decor (en-tête de l'accueil, haut de la fiche d'un jeu) ;
 //   - motif FIGÉ au fond de chaque carte de l'accueil (graine = nom du jeu : toujours le même).
 // Sobriété : ~8 images par seconde, arrêt quand l'appli est en arrière-plan ou que le décor n'est plus
 // affiché, une seule image fixe si le système demande de réduire les animations. Jamais pendant une
-// partie (l'écran de partie n'a pas de zone .decor). Les autres directions n'y touchent pas.
+// partie (l'écran de partie n'a pas de zone .decor). Les autres styles n'y touchent pas.
 
-import { directionCourante, suivreDirection } from './appliquer.ts';
+import type { Style } from '../../types/style.ts';
+import { styleCourant, suivreStyle } from './appliquer.ts';
 
-const DIRECTION = 'ascii-generatif';
+const STYLE: Style = 'ascii-generatif';
 /** Du plus clair au plus dense. */
 const RAMPE = ' .·:-=+*#%@';
 const TAILLE_CASE = 14; // px CSS
@@ -102,7 +102,7 @@ export function demarrerDecors(racine: HTMLElement): void {
   }
 
   function actualiser(): void {
-    const actif = directionCourante() === DIRECTION;
+    const actif = styleCourant() === STYLE;
     arreter();
     if (!actif) {
       for (const c of racine.querySelectorAll('.decor-genere, .decor-carte')) c.remove();
@@ -127,7 +127,7 @@ export function demarrerDecors(racine: HTMLElement): void {
 
   // Un changement d'écran remplace les enfants de la racine
   new MutationObserver(actualiser).observe(racine, { childList: true });
-  suivreDirection(actualiser);
+  suivreStyle(actualiser);
   reduire.addEventListener('change', actualiser);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && minuteur === null) image();

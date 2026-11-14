@@ -1,11 +1,13 @@
-// DESSIN DE L'ICÔNE (provisoire), décrit par des formes simples dans un carré de 512 × 512 :
-// fond bleu, grille 3 × 3 claire, un « 2 » façon afficheur à segments dans la case centrale.
+// DESSIN DE L'ICÔNE, style « Rétro » (le style par défaut de l'appli), décrit par des formes simples
+// dans un carré de 512 × 512 : fond crème, arc-en-ciel des années 70 (orange brûlé, moutarde, olive)
+// qui se lève derrière une grille brune dont la case centrale est choisie (orange).
+// Couleurs : celles du style Rétro (src/styles/visuels/retro.css).
 // La même description produit l'icône SVG et les PNG (rendus ici, sans dépendance) : les
 // fichiers restent toujours cohérents. Pour changer le design : modifier ce fichier, puis
 // « npm run icones ».
 
 /** Rectangle à coins arrondis (r = rayon des coins), dans le repère 512 × 512. */
-export type Forme = {
+export type Rectangle = {
   readonly x: number;
   readonly y: number;
   readonly l: number;
@@ -14,70 +16,102 @@ export type Forme = {
   readonly couleur: string;
 };
 
-export const TAILLE_REPERE = 512;
-const FOND = '#2f5d8a';
-const TRAIT = '#f6f4ef';
+/** Moitié haute d'un anneau (bande d'arc-en-ciel) de centre (cx, cy), entre les rayons rInt et rExt. */
+export type DemiAnneau = {
+  readonly cx: number;
+  readonly cy: number;
+  readonly rInt: number;
+  readonly rExt: number;
+  readonly couleur: string;
+};
 
-/** Grille 3 × 3 (traits pleins) et chiffre « 2 » (5 segments), sans le fond. */
+export type Forme = Rectangle | DemiAnneau;
+
+export const TAILLE_REPERE = 512;
+
+const CREME = '#f3e9d2';
+const CASE = '#fffaf0';
+const BRUN = '#5a3d22';
+const ORANGE = '#c4511b';
+const MOUTARDE = '#e0a526';
+const OLIVE = '#7a8b3a';
+
+/** Arc-en-ciel et grille, sans le fond. */
 function motif(): Forme[] {
   const formes: Forme[] = [];
-  const debut = 96;
-  const fin = 416;
-  const e = 14;
-  for (const position of [debut, 203, 309, fin]) {
-    formes.push({ x: position - e / 2, y: debut - e / 2, l: e, h: fin - debut + e, r: 0, couleur: TRAIT });
-    formes.push({ x: debut - e / 2, y: position - e / 2, l: fin - debut + e, h: e, r: 0, couleur: TRAIT });
+  // Arc-en-ciel : trois bandes, de l'extérieur vers l'intérieur
+  const cx = 256;
+  const cy = 300;
+  const bande = 50;
+  const rExt = 240;
+  [ORANGE, MOUTARDE, OLIVE].forEach((couleur, i) => {
+    formes.push({ cx, cy, rInt: rExt - (i + 1) * bande, rExt: rExt - i * bande, couleur });
+  });
+  // Grille 3 × 3 : un carreau brun (cadre et traits épais, lisibles en 48 px), cases claires, case
+  // centrale orange (une case choisie). Pas de chiffre : illisible à la taille de l'écran d'accueil.
+  const cote = 250;
+  const x0 = cx - cote / 2;
+  const y0 = 210;
+  const cadre = 24;
+  const trait = 16;
+  formes.push({ x: x0, y: y0, l: cote, h: cote, r: 28, couleur: BRUN });
+  const caseL = (cote - 2 * cadre - 2 * trait) / 3;
+  for (let ligne = 0; ligne < 3; ligne++) {
+    for (let col = 0; col < 3; col++) {
+      const centre = col === 1 && ligne === 1;
+      formes.push({
+        x: x0 + cadre + col * (caseL + trait),
+        y: y0 + cadre + ligne * (caseL + trait),
+        l: caseL,
+        h: caseL,
+        r: 6,
+        couleur: centre ? ORANGE : CASE,
+      });
+    }
   }
-  // « 2 » à segments : haut, haut droite, milieu, bas gauche, bas
-  const g = 228;
-  const d = 284;
-  const haut = 216;
-  const milieu = 256;
-  const bas = 296;
-  const s = 14;
-  const segment = (x: number, y: number, l: number, h: number): Forme => ({ x, y, l, h, r: s / 2, couleur: TRAIT });
-  formes.push(
-    segment(g - s / 2, haut - s / 2, d - g + s, s),
-    segment(d - s / 2, haut - s / 2, s, milieu - haut + s),
-    segment(g - s / 2, milieu - s / 2, d - g + s, s),
-    segment(g - s / 2, milieu - s / 2, s, bas - milieu + s),
-    segment(g - s / 2, bas - s / 2, d - g + s, s),
-  );
   return formes;
 }
 
 /** Réduit une forme autour du centre (version « maskable »). */
 function reduire(forme: Forme, facteur: number): Forme {
   const c = TAILLE_REPERE / 2;
-  return {
-    x: c + (forme.x - c) * facteur,
-    y: c + (forme.y - c) * facteur,
-    l: forme.l * facteur,
-    h: forme.h * facteur,
-    r: forme.r * facteur,
-    couleur: forme.couleur,
-  };
+  const p = (v: number): number => c + (v - c) * facteur;
+  if ('cx' in forme) {
+    return { cx: p(forme.cx), cy: p(forme.cy), rInt: forme.rInt * facteur, rExt: forme.rExt * facteur, couleur: forme.couleur };
+  }
+  return { x: p(forme.x), y: p(forme.y), l: forme.l * facteur, h: forme.h * facteur, r: forme.r * facteur, couleur: forme.couleur };
 }
+
+/** Réduction du motif dans la version « maskable » (il tient dans la zone sûre : cercle de rayon 40 %). */
+export const REDUCTION_MASKABLE = 0.82;
 
 /**
  * Formes de l'icône, dans l'ordre de dessin.
  * « maskable » : Android découpe l'icône (rond, goutte…) ; le fond couvre tout le carré et le
- * motif tient dans la zone sûre (cercle central de rayon 40 %) : réduit à 85 %, ses coins sont à ~38 %.
+ * motif, réduit, tient dans la zone sûre (cercle central de rayon 40 % : vérifié par un test).
  */
 export function formesIcone(maskable: boolean): readonly Forme[] {
-  const fond: Forme = { x: 0, y: 0, l: TAILLE_REPERE, h: TAILLE_REPERE, r: maskable ? 0 : 96, couleur: FOND };
-  return [fond, ...motif().map((f) => (maskable ? reduire(f, 0.85) : f))];
+  const fond: Rectangle = { x: 0, y: 0, l: TAILLE_REPERE, h: TAILLE_REPERE, r: maskable ? 0 : 96, couleur: CREME };
+  return [fond, ...motif().map((f) => (maskable ? reduire(f, REDUCTION_MASKABLE) : f))];
+}
+
+function formeSvg(f: Forme): string {
+  if ('cx' in f) {
+    const { cx, cy, rInt, rExt } = f;
+    return (
+      `  <path d="M${cx - rExt} ${cy}A${rExt} ${rExt} 0 0 1 ${cx + rExt} ${cy}H${cx + rInt}` +
+      `A${rInt} ${rInt} 0 0 0 ${cx - rInt} ${cy}Z" fill="${f.couleur}"/>`
+    );
+  }
+  return `  <rect x="${f.x}" y="${f.y}" width="${f.l}" height="${f.h}"${f.r > 0 ? ` rx="${f.r}"` : ''} fill="${f.couleur}"/>`;
 }
 
 /** Icône SVG (vectorielle : favicon et icône de taille libre). */
 export function iconeSvg(): string {
-  const lignes = formesIcone(false).map(
-    (f) => `  <rect x="${f.x}" y="${f.y}" width="${f.l}" height="${f.h}"${f.r > 0 ? ` rx="${f.r}"` : ''} fill="${f.couleur}"/>`,
-  );
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${TAILLE_REPERE} ${TAILLE_REPERE}">`,
-    '  <!-- Icône provisoire, générée par « npm run icones » (scripts/icones/dessin.ts) : ne pas modifier à la main. -->',
-    ...lignes,
+    '  <!-- Icône générée par « npm run icones » (scripts/icones/dessin.ts) : ne pas modifier à la main. -->',
+    ...formesIcone(false).map(formeSvg),
     '</svg>',
     '',
   ].join('\n');
@@ -88,8 +122,13 @@ function couleurEnRvb(couleur: string): readonly [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** Vrai si le point (px, py) est dans la forme (rectangle à coins arrondis). */
+/** Vrai si le point (px, py) est dans la forme. */
 export function contient(f: Forme, px: number, py: number): boolean {
+  if ('cx' in f) {
+    if (py > f.cy) return false;
+    const d2 = (px - f.cx) ** 2 + (py - f.cy) ** 2;
+    return d2 >= f.rInt * f.rInt && d2 <= f.rExt * f.rExt;
+  }
   const demiL = f.l / 2;
   const demiH = f.h / 2;
   const ecartX = Math.abs(px - (f.x + demiL));

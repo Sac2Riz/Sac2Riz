@@ -1,13 +1,17 @@
-/* Variables de thème (couleurs, polices, formes) — direction visuelle « Ardoise » (par défaut) :
+/* Variables de thème (couleurs, polices, formes) — valeurs du style « Ardoise », qui servent aussi de
+   valeurs de secours pour les autres styles :
    gris bleutés, accent bleu encre, police du système (Roboto sur Android).
    Clair / sombre : chaque couleur est écrite light-dark(<clair>, <sombre>) ; le navigateur prend
    l'une ou l'autre selon color-scheme, fixé ci-dessous : suit le système (prefers-color-scheme), ou
    forcé par <html data-theme="clair|sombre"> (src/socle/theme.ts).
-   Étape 6b : les directions de design à l'essai (src/styles/directions/<id>.css, attribut
-   <html data-direction="<id>">) redéfinissent ces mêmes variables. Les jeux n'utilisent que ces
-   variables : un changement ici s'applique partout. */
+   Les styles (src/styles/visuels/<id>.css, attribut <html data-style="<id>">, réglage « Style »)
+   redéfinissent ces mêmes variables ; Ardoise n'a pas de feuille à lui. Les jeux n'utilisent que ces
+   variables : un changement ici s'applique partout.
+   .apercu-style : chaque pastille d'aperçu du réglage « Style » repart de ces valeurs (au lieu d'hériter
+   de celles du style affiché), puis prend celles de son style. */
 
-:root {
+:root,
+.apercu-style {
   /* ---------- Couleurs ---------- */
   --couleur-fond: light-dark(#eef1f4, #151a21);
   --couleur-surface: light-dark(#ffffff, #1d242d);
@@ -36,7 +40,7 @@
   --couleur-place: light-dark(#1d7a3c, #7fd49b);
   /* Voile derrière les fenêtres (confirmation, chargement, pause) */
   --couleur-voile: light-dark(rgb(29 37 48 / 45%), rgb(5 8 12 / 65%));
-  /* Décors des directions (motifs, ombres dures, halos) : rien pour Ardoise */
+  /* Décors des styles (motifs, ombres dures, halos) : rien pour Ardoise */
   --couleur-decor-1: var(--couleur-accent);
   --couleur-decor-2: var(--couleur-accent);
   --couleur-decor-3: var(--couleur-accent);
@@ -70,7 +74,10 @@
   --carte-ombre: none;
   /* Zone tactile minimale recommandée (doigt sur tablette) */
   --cible-tactile: 3.25rem;
+}
 
+/* Thème clair par défaut (la pastille d'aperçu d'un style suit, elle, le thème de la page) */
+:root {
   color-scheme: light;
 }
 

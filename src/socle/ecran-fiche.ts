@@ -110,7 +110,7 @@ export function afficherFiche(conteneur: HTMLElement, o: OptionsFiche, actions: 
 
   const corps = creer('div', 'fiche-corps');
   corps.append(apercu(o), presentation);
-  // Décor de la direction de design (vide, rempli seulement par certaines directions : design/decors.ts)
+  // Décor du style (vide, rempli seulement par certains styles : style/decors.ts)
   const decor = creer('div', 'decor');
   decor.setAttribute('aria-hidden', 'true');
   ecran.append(decor, barre, corps, sectionRegles(o), stats);

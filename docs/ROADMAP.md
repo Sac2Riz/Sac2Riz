@@ -179,7 +179,7 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
     (`defilementPourVoir`, pur et testé), sinon rien ne bouge.
 
 ## ✅ Étape 5 — PWA, sauvegarde externe, déploiement
-- Icônes provisoires (le design complet sera refait) : SVG, PNG 192 et 512, 512 « maskable », générées par
+- Icônes provisoires (remplacées à l'étape 6c par l'icône Rétro) : SVG, PNG 192 et 512, 512 « maskable », générées par
   `npm run icones` (script Node sans dépendance, relançable quand le design change).
 - Service worker : tous les fichiers (packs compris) en cache, 100 % hors ligne ; liste et version écrites
   automatiquement au build (empreinte du contenu) ; anciens caches supprimés ; IndexedDB jamais touché.
@@ -244,9 +244,9 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   validées par l'utilisateur avant le code) : Années 80-90 (Memphis / néon), ASCII (machine à écrire /
   .NFO), MS-DOS (LCD de portable / bleu VGA), BBS ANSI (fanzine / noir CGA), Rétro 60-70, ASCII génératif
   (champ de caractères animé), Terminal (papier listing / phosphore vert). Détail : docs/DESIGN.md.
-- **Sélecteur TEMPORAIRE « Direction de design (essai) »** dans Réglages → Application : s'applique tout
-  de suite, se combine avec Automatique / Clair / Sombre, gardé dans le stockage local du navigateur (hors
-  des réglages enregistrés). **À retirer à l'étape 6c** (procédure dans docs/DESIGN.md).
+- **Sélecteur d'essai « Direction de design (essai) »** dans Réglages → Application : s'appliquait tout
+  de suite, se combinait avec Automatique / Clair / Sombre, gardé dans le stockage local du navigateur.
+  Devenu le réglage permanent « Style » à l'étape 6c (jamais publié sous sa forme d'essai).
 - Couche visuelle seulement : variables de thème en `light-dark()` (+ polices, échelles, formes de la
   grille et des cartes), une feuille par direction, aucune règle de direction sur une classe de jeu.
 - Tous les emojis et symboles de l'interface remplacés par des **icônes SVG** dessinées, un jeu de 11 par
@@ -261,10 +261,33 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
 - 80 captures dans Edge (tablette simulée 1280 × 800, paysage) : accueil, fiche, sudoku avec notes,
   chiffres casés, réglages, pour chaque direction en clair et en sombre (`captures/6b/`, non versionné).
 
-### Étape 6c — Finalisation du design choisi
-- Finalisation de la direction retenue (et des icônes).
-- **Retirer le sélecteur temporaire « Direction de design (essai) »** de l'étape 6b, les autres
-  directions, leurs icônes et leurs polices (procédure dans docs/DESIGN.md).
+### ✅ Étape 6c — Styles au choix
+- **Décision de l'utilisateur** : au lieu d'une seule direction, **plusieurs styles au choix de façon
+  permanente** : Ardoise, ASCII, ASCII génératif, BBS ANSI, MS-DOS et Rétro, chacun en clair et en sombre.
+  Années 80-90 et Terminal retirés complètement (feuilles, icônes, décors, polices Bungee, Rubik, VT323,
+  JetBrains Mono et leurs licences).
+- **Réglage « Style »** (Réglages → Application, au-dessus du thème) : chaque option montre une pastille
+  d'aperçu dessinée par le style lui-même (fond, police de titre, chiffre saisi, couleurs), qui suit le
+  thème clair / sombre. **Rétro par défaut** pour une nouvelle installation.
+- Le style est un **réglage enregistré** (`Reglages.style`, IndexedDB) et **exporté** : format d'export
+  n° 3 ; les fichiers n° 1 et 2, comme les réglages d'avant, reçoivent Rétro (style inconnu : idem).
+- **Reprise unique** du choix fait avec le sélecteur d'essai (stockage local) : enregistré dans les
+  réglages, puis clé supprimée ; Années 80-90 et Terminal → Rétro.
+- **Démarrage sans clignotement** (**décision de l'utilisateur** : copie dans le stockage local) : copie
+  `{ style, theme }` lue par `public/demarrage.js`, script classique bloquant qui pose `data-style` et
+  `data-theme` avant le premier rendu ; IndexedDB reste la référence.
+- Vocabulaire : « direction » devient « style » dans le code (`data-style`, `src/styles/visuels/`,
+  `src/socle/style/`, `src/types/style.ts`), décision de l'utilisateur.
+- **Icône Rétro** (`npm run icones`) : fond crème, arc-en-ciel à trois bandes, grille 3 × 3 brune à case
+  centrale orange. Vérifiée en 48 et 72 px et en forme ronde : le chiffre du premier essai, illisible à ces
+  tailles, a été retiré et la grille épaissie (**validée par l'utilisateur**). Motif maskable dans la zone
+  sûre (testé). Manifest et `theme-color` aux couleurs de fond de Rétro.
+- Tests (604) : styles (liste, feuilles, icônes, polices et licences sans orphelin, manifest), contrastes des
+  12 variantes, `demarrage.js` exécuté dans un bac à sable, copie locale et reprise de l'essai, réglages
+  (style par défaut, inconnu), import n° 1, 2, 3, icône (demi-anneau, zone sûre). Vérifié dans Edge
+  automatisé : Rétro sur une installation neuve, style et thème justes dès la première image après
+  rechargement, reprise de l'essai (Terminal → Rétro, BBS ANSI conservé), copie reconstruite depuis
+  IndexedDB, barre d'état, pastilles en clair et en sombre.
 
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.

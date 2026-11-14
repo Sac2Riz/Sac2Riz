@@ -19,6 +19,7 @@ import {
   type ReglagesEnregistres,
   type ReglagesV2,
   type ReglagesV3,
+  type ReglagesV4,
 } from '../../src/types/sauvegarde.ts';
 import { estReglages } from '../../src/utils/gardes-sauvegarde.ts';
 
@@ -34,7 +35,7 @@ async function relire(enregistres: ReglagesEnregistres): Promise<Reglages> {
 describe('réglages : migration des anciennes formes', () => {
   test('aucun réglage enregistré : valeurs par défaut', () => {
     assert.deepEqual(normaliserReglages(null), REGLAGES_PAR_DEFAUT);
-    assert.deepEqual(REGLAGES_PAR_DEFAUT, { theme: 'systeme', verifierErreurs: false, miseEnEvidence: true, jeux: {} });
+    assert.deepEqual(REGLAGES_PAR_DEFAUT, { style: 'retro', theme: 'systeme', verifierErreurs: false, miseEnEvidence: true, jeux: {} });
   });
 
   test('les anciens réglages de jeu correspondent bien aux réglages déclarés par ces jeux', () => {
@@ -47,7 +48,7 @@ describe('réglages : migration des anciennes formes', () => {
 
   test("étape 3b (V1) : thème et vérification conservés, le reste par défaut", async () => {
     const reglages = await relire({ theme: 'sombre', verifierErreurs: true });
-    assert.deepEqual(reglages, { theme: 'sombre', verifierErreurs: true, miseEnEvidence: true, jeux: {} });
+    assert.deepEqual(reglages, { style: 'retro', theme: 'sombre', verifierErreurs: true, miseEnEvidence: true, jeux: {} });
     assert.equal(reglagesDuJeu(reglages, META_SUDOKU)['retraitAutoNotes'], true);
     assert.equal(reglagesDuJeu(reglages, META_CASES)['nombreAuDepart'], false);
   });
@@ -55,6 +56,7 @@ describe('réglages : migration des anciennes formes', () => {
   test('étapes 3c à 4b (V2) : retrait des notes rangé sous le sudoku', async () => {
     const anciens: ReglagesV2 = { theme: 'clair', verifierErreurs: false, miseEnEvidence: false, retraitAutoNotes: false };
     assert.deepEqual(await relire(anciens), {
+      style: 'retro',
       theme: 'clair',
       verifierErreurs: false,
       miseEnEvidence: false,
@@ -72,6 +74,7 @@ describe('réglages : migration des anciennes formes', () => {
     };
     const reglages = await relire(anciens);
     assert.deepEqual(reglages, {
+      style: 'retro',
       theme: 'sombre',
       verifierErreurs: true,
       miseEnEvidence: false,
@@ -81,8 +84,23 @@ describe('réglages : migration des anciennes formes', () => {
     assert.deepEqual(reglagesDuJeu(reglages, META_CASES), { nombreAuDepart: true });
   });
 
+  test('étapes 6a et 6b (V4, sans style) : style par défaut (Rétro), le reste conservé', async () => {
+    const anciens: ReglagesV4 = { theme: 'sombre', verifierErreurs: true, miseEnEvidence: false, jeux: { 'chiffres-cases': { nombreAuDepart: true } } };
+    assert.deepEqual(await relire(anciens), { style: 'retro', ...anciens });
+  });
+
+  test('style inconnu ou abîmé : style par défaut, le reste conservé', async () => {
+    for (const style of ['terminal', 'annees-80-90', 3, null]) {
+      const stockage = creerStockageMemoire();
+      await stockage.ecrire('reglages', CLE_REGLAGES, { style, theme: 'clair', verifierErreurs: false, miseEnEvidence: true, jeux: {} });
+      const relus = normaliserReglages(await stockage.lire('reglages', CLE_REGLAGES));
+      assert.deepEqual(relus, { ...REGLAGES_PAR_DEFAUT, theme: 'clair' }, String(style));
+    }
+  });
+
   test('forme actuelle : relue telle quelle (jeu inconnu conservé)', async () => {
     const choisis: Reglages = {
+      style: 'ms-dos',
       theme: 'clair',
       verifierErreurs: true,
       miseEnEvidence: false,

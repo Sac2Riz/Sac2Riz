@@ -1,7 +1,8 @@
 // Thème clair/sombre.
 // Par défaut (« systeme »), le CSS suit le réglage de la tablette (prefers-color-scheme) ;
 // sinon l'attribut data-theme sur <html> force le thème choisi (voir src/styles/theme.css).
-// Le choix se fait dans l'écran des réglages et est enregistré avec eux.
+// Le choix se fait dans l'écran des réglages et est enregistré avec eux (appliqué avec le style :
+// style/appliquer.ts).
 
 import type { Theme } from '../types/sauvegarde.ts';
 
@@ -16,7 +17,7 @@ export const NOMS_THEMES: Readonly<Record<Theme, string>> = {
 
 /**
  * Couleur de la barre d'état d'Android = fond de l'appli tel qu'il est affiché (il dépend du thème ET
- * de la direction de design) : lu sur <body>, déjà calculé par le navigateur. Les deux balises
+ * du style) : lu sur <body>, déjà calculé par le navigateur. Les deux balises
  * theme-color d'index.html (une par thème du système) prennent la couleur affichée.
  */
 export function mettreAJourCouleurBarre(): void {

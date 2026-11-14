@@ -4,16 +4,19 @@
 import type { Puzzle, ValeursReglagesJeu } from './jeu.ts';
 import type { Json } from './json.ts';
 import type { Niveau } from './niveaux.ts';
+import { STYLE_PAR_DEFAUT, type Style } from './style.ts';
 
 export type Theme = 'systeme' | 'clair' | 'sombre';
 
 /**
  * Réglages du joueur (étape 6a), en trois sections dans l'écran des réglages :
- * - Application : thème (la sauvegarde et la version ne sont pas des réglages enregistrés) ;
+ * - Application : style, thème (la sauvegarde et la version ne sont pas des réglages enregistrés) ;
  * - Tous les jeux : vérification des erreurs, mise en évidence ;
  * - Par jeu : réglages déclarés par chaque jeu (MetaJeu.reglages), rangés par id de jeu.
  */
 export type Reglages = {
+  /** Style de l'appli (src/types/style.ts), étape 6c. */
+  readonly style: Style;
   /** « systeme » suit le thème clair/sombre de la tablette. */
   readonly theme: Theme;
   /** Signale les cases fausses (comparaison avec la solution). */
@@ -29,6 +32,7 @@ export type Reglages = {
 };
 
 export const REGLAGES_PAR_DEFAUT: Reglages = {
+  style: STYLE_PAR_DEFAUT,
   theme: 'systeme',
   verifierErreurs: false,
   miseEnEvidence: true,
@@ -36,10 +40,14 @@ export const REGLAGES_PAR_DEFAUT: Reglages = {
 };
 
 /**
- * Réglages tels que relus du stockage ou d'un fichier, dans la forme actuelle mais avec des valeurs de
- * jeu non encore vérifiées (une valeur d'un type inconnu est ignorée à la lecture, sans perdre les autres).
+ * Réglages tels que relus du stockage ou d'un fichier, dans la forme actuelle mais avec un style et
+ * des valeurs de jeu non encore vérifiés (une valeur inconnue est remplacée par la valeur par défaut,
+ * ou ignorée pour un jeu, sans perdre les autres).
  */
-export type ReglagesBruts = {
+export type ReglagesBruts = ReglagesV4 & { readonly style: Json };
+
+/** Réglages par section des étapes 6a et 6b (avant le style). */
+export type ReglagesV4 = {
   readonly theme: Theme;
   readonly verifierErreurs: boolean;
   readonly miseEnEvidence: boolean;
@@ -72,7 +80,7 @@ export type ReglagesV1 = {
 };
 
 /** Ce que le magasin « reglages » peut contenir : forme actuelle ou ancienne (convertie à la lecture). */
-export type ReglagesEnregistres = ReglagesBruts | ReglagesV3 | ReglagesV2 | ReglagesV1;
+export type ReglagesEnregistres = ReglagesBruts | ReglagesV4 | ReglagesV3 | ReglagesV2 | ReglagesV1;
 
 /**
  * Partie en cours, sauvegardée automatiquement.
@@ -158,10 +166,11 @@ export type DonneesExportees = {
 
 /**
  * Version du format du fichier d'export (à incrémenter si sa forme change, avec conversion à l'import).
- * 1 : réglages « à plat » (étape 5) ; 2 : réglages par section, avec les réglages par jeu (étape 6a).
- * L'import accepte les deux (les réglages d'un fichier n° 1 sont convertis).
+ * 1 : réglages « à plat » (étape 5) ; 2 : réglages par section, avec les réglages par jeu (étape 6a) ;
+ * 3 : réglages avec le style (étape 6c).
+ * L'import accepte les trois (réglages d'un fichier n° 1 convertis, style par défaut avant le n° 3).
  */
-export const VERSION_EXPORT = 2;
+export const VERSION_EXPORT = 3;
 
 /** Contenu du fichier d'export (sac2riz-sauvegarde-AAAA-MM-JJ.json). */
 export type FichierExport = {

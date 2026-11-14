@@ -2,7 +2,8 @@
 // jeu. Code pur, testé sous Node.
 //
 // Conversion (normaliserReglages) — rien de ce que le joueur a choisi n'est perdu :
-// - forme actuelle : les valeurs des jeux qui ne sont pas des oui/non sont ignorées, une à une ;
+// - réglages par section : les valeurs des jeux qui ne sont pas des oui/non sont ignorées, une à une ;
+// - style (étape 6c) : absent (réglages d'avant) ou inconnu → style par défaut (Rétro) ;
 // - anciennes formes « à plat » (étapes 3b à 5 : ReglagesV1, V2, V3) : thème, vérification des
 //   erreurs et mise en évidence gardent leur valeur ; les deux réglages qui étaient propres à un jeu
 //   sont rangés sous ce jeu (table ANCIENS_REGLAGES_DE_JEU, figée : elle décrit le passé) ;
@@ -10,6 +11,7 @@
 
 import type { MetaJeu, ValeursReglagesJeu } from '../types/jeu.ts';
 import { REGLAGES_PAR_DEFAUT, type Reglages, type ReglagesEnregistres } from '../types/sauvegarde.ts';
+import { estStyle, STYLE_PAR_DEFAUT } from '../types/style.ts';
 import type { ReglagesVue } from '../types/vue.ts';
 import { valeursCompletes } from '../utils/reglages-jeu.ts';
 
@@ -26,6 +28,7 @@ export const ANCIENS_REGLAGES_DE_JEU: Readonly<Record<'retraitAutoNotes' | 'nomb
 export function normaliserReglages(enregistres: ReglagesEnregistres | null): Reglages {
   if (enregistres === null) return REGLAGES_PAR_DEFAUT;
   const communs = {
+    style: 'style' in enregistres && estStyle(enregistres.style) ? enregistres.style : STYLE_PAR_DEFAUT,
     theme: enregistres.theme,
     verifierErreurs: enregistres.verifierErreurs,
     miseEnEvidence: 'miseEnEvidence' in enregistres ? enregistres.miseEnEvidence : REGLAGES_PAR_DEFAUT.miseEnEvidence,

@@ -22,7 +22,7 @@ export function bouton(classe: string, texte: string, action: () => void): HTMLB
   return b;
 }
 
-/** Icône SVG décorative (le dessin dépend de la direction de design : voir icones.ts). */
+/** Icône SVG décorative (le dessin dépend du style : voir icones.ts). */
 export function icone(nom: NomIcone): HTMLSpanElement {
   const span = creer('span', 'icone');
   span.dataset['icone'] = nom;
