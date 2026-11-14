@@ -2,6 +2,16 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6a, complément] — Accueil en grille de cartes — 2026-11-14
+
+### Modifié
+- **Accueil** : les jeux s'affichent en grille de cartes (`repeat(auto-fill, minmax(min(100%, 19rem), 1fr))` :
+  3 colonnes en paysage sur tablette, 2 en portrait, 1 sur un écran très étroit), de même hauteur par rangée.
+  Chaque carte montre en haut un petit aperçu en lecture seule (partie en cours, sinon grille d'exemple,
+  dessiné par `vue.apercu` dès que le jeu est chargé), puis le nom, la description et la pastille « Partie en
+  cours ». Toute la carte se touche (un bouton invisible la couvre : l'aperçu peut contenir des boutons de
+  cases, et un bouton ne doit pas en contenir d'autres). Style actuel conservé (le design viendra en 6b).
+
 ## [Étape 6a] — Nouvelle structure des écrans et des réglages — 2026-11-14
 
 ### Ajouté

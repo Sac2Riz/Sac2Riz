@@ -77,8 +77,9 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
    - `afficher` reçoit `{ etat, donnees, erreurs, indice }` : dessiner les marques de l'indice quand il
      n'est pas `null`. Relire `contexte.reglages()` à chaque affichage (réglages modifiables en cours de
      partie) : `miseEnEvidence` (commun) et `jeu` (réglages du jeu).
-   - **`apercu(conteneur, { donnees, etat })`** (fiche du jeu) : dessiner la grille **en lecture seule**, sans
-     écouteur ni clavier, sans sélection ni mise en évidence. Le conteneur est carré, petit (≈ 20rem) et
+   - **`apercu(conteneur, { donnees, etat })`** (fiche du jeu et carte du jeu sur l'accueil) : dessiner la
+     grille **en lecture seule**, sans écouteur ni clavier, sans sélection ni mise en évidence. Le conteneur
+     est petit (≈ 20rem de côté sur la fiche, 11rem de haut sur l'accueil, fond `--couleur-fond`) et
      dimensionné par le socle comme la zone de grille d'une partie (`container-type: size`) : la même CSS que
      la grille jouée convient. Le socle rend le conteneur inerte et le vide ensuite (rien à libérer). Le plus
      simple : réutiliser la fonction qui crée le plateau de `monter` et n'y écrire que les chiffres.

@@ -47,8 +47,13 @@ fonctions sans effet de bord.
 
 Le socle gère tout ce qui est commun, pour tous les jeux :
 
-- **Écrans** (étape 6a) : **accueil** = liste des jeux du registre (nom, description courte, pastille
-  « Partie en cours ») + Statistiques (tous les jeux) et Réglages ; toucher un jeu ouvre sa **fiche**
+- **Écrans** (étape 6a) : **accueil** = **grille de cartes** des jeux du registre (`repeat(auto-fill,
+  minmax(min(100%, 19rem), 1fr))` : 3 colonnes en paysage sur tablette, 2 en portrait, 1 sur un écran très
+  étroit ; cartes d'une rangée de même hauteur). Chaque carte : petit aperçu en lecture seule (partie en
+  cours, sinon grille d'exemple, dessiné par `vue.apercu` dès que le jeu est chargé — l'accueil s'affiche
+  sans l'attendre), nom, description courte, pastille « Partie en cours » ; un bouton invisible couvre toute
+  la carte (pas de bouton dans un bouton : l'aperçu peut contenir des cases-boutons, il est inerte et
+  `pointer-events: none`). En haut : Statistiques (tous les jeux) et Réglages ; toucher un jeu ouvre sa **fiche**
   (`ecran-fiche.ts`) : nom et description, **aperçu** non jouable (partie en cours, sinon grille d'exemple),
   « Continuer » (niveau, force exacte, temps), « Nouvelle partie » avec le choix du niveau, **règles**,
   statistiques de ce jeu. Tout le contenu propre au jeu vient de son module (`meta.ts`, `fiche.ts`,
@@ -169,7 +174,7 @@ src/socle/
 ├─ navigation.ts      écrans, parents et profondeurs (pur, étape 6a)
 ├─ app.ts             navigation (accueil, fiche, partie, statistiques, fin), confirmation, chargement,
 │                     bouton retour d'Android, réglages appliqués et enregistrés
-├─ accueil.ts         écran d'accueil : liste des jeux, menu Statistiques / Réglages
+├─ accueil.ts         écran d'accueil : grille de cartes des jeux (avec aperçu), menu Statistiques / Réglages
 ├─ ecran-fiche.ts     fiche d'un jeu : aperçu, Continuer, nouvelle partie, règles (étape 6a)
 ├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Indice),
 │                     pavé, bandeau de l'indice, chrono, sauvegarde, clavier

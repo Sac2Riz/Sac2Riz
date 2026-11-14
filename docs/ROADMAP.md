@@ -219,6 +219,10 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   n° 2, import des fichiers n° 1 et n° 2.
 - **Navigation** : bouton retour d'Android partie → fiche du jeu → accueil ; fin de partie : « Nouvelle
   partie » et « Retour » (vers la fiche).
+- **Accueil en grille de cartes** (demande de l'utilisateur après la 6a) : 3 colonnes en paysage sur
+  tablette, 2 en portrait, 1 sur un écran très étroit (grille CSS `auto-fill`), cartes de même hauteur par
+  rangée, entièrement touchables, avec un petit aperçu du jeu (`vue.apercu` : partie en cours ou exemple).
+  Vérifié dans Edge : 1280 × 800, 800 × 1280 (sombre), 400 × 860 ; toucher l'aperçu ouvre la fiche.
 - Tests (525) ; vérifié dans Edge en tablette simulée (1280 × 800 clair, 800 × 1280 sombre) : migration
   d'anciens réglages, accueil, fiches (exemple et partie en cours), réglages, partie, retour à chaque
   niveau, partie finie et écran de fin, statistiques, nombre au départ.

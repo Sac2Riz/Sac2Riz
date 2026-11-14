@@ -23,7 +23,7 @@
 import type { MetaJeu, Puzzle, ValeursReglagesJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import type { Niveau } from '../types/niveaux.ts';
-import type { Reglages } from '../types/sauvegarde.ts';
+import type { PartieSauvegardee, Reglages } from '../types/sauvegarde.ts';
 import type { ModuleJeuQuelconque, VueJeu } from '../types/vue.ts';
 import { preparationDemandee } from '../utils/reglages-jeu.ts';
 import { afficherAccueil, type JeuAccueil } from './accueil.ts';
@@ -181,11 +181,31 @@ export function demarrerApp(o: OptionsApp): App {
       o.jeux.map(async (module) => ({ module, partie: await o.parties.lire(module.meta.id) })),
     );
     if (j !== jeton) return; // un autre écran a été ouvert entre-temps
-    afficherAccueil(o.racine, jeux, {
+    const apercus = afficherAccueil(o.racine, jeux, {
       ouvrir: (id) => void enSecurite(() => ouvrirFiche(id)),
       statistiques: () => void enSecurite(() => ouvrirStats(null)),
       reglages: () => void afficherReglages(o.jeux.map((m) => m.meta)),
     });
+    // Aperçus dessinés dès que chaque jeu est chargé (l'accueil s'affiche sans les attendre)
+    for (const { module, partie } of jeux) {
+      const zone = apercus.get(module.meta.id);
+      if (zone === undefined) continue;
+      apercuDuJeu(module, partie)
+        .then(({ vue, affichage }) => {
+          if (j === jeton) vue.apercu(zone, affichage);
+        })
+        .catch((erreur: unknown) => console.error(`Aperçu de ${module.meta.id} impossible :`, erreur));
+    }
+  }
+
+  /** Ce que montre l'aperçu d'un jeu : la partie en cours (rejouée comme pour « Continuer »), sinon l'exemple. */
+  async function apercuDuJeu(
+    module: ModuleJeuQuelconque,
+    sauvegarde: PartieSauvegardee | null,
+  ): Promise<{ vue: VueJeu<Json, Json, Json>; affichage: { readonly donnees: Json; readonly etat: Json } }> {
+    const [contenu, logique, vue] = await Promise.all([module.chargerFiche(), module.chargerLogique(), module.chargerVue()]);
+    const relue = sauvegarde === null ? null : depuisSauvegarde(logique, sauvegarde, maintenant(), false);
+    return { vue, affichage: relue === null ? contenu.exemple : { donnees: relue.puzzle.donnees, etat: relue.etat } };
   }
 
   async function ouvrirFiche(id: string): Promise<void> {

@@ -78,7 +78,8 @@ button:disabled {
 /* ---------- Écran d'accueil ---------- */
 
 .accueil {
-  max-width: 52rem;
+  /* Assez large pour 3 colonnes de cartes en paysage sur tablette */
+  max-width: 76rem;
   margin: 0 auto;
   padding: max(var(--espace-3), env(safe-area-inset-top)) max(var(--espace-3), env(safe-area-inset-right))
     max(var(--espace-3), env(safe-area-inset-bottom)) max(var(--espace-3), env(safe-area-inset-left));
@@ -130,8 +131,12 @@ button:disabled {
   color: var(--couleur-texte-doux);
 }
 
+/* Grille de cartes : autant de colonnes de 19rem (au moins) que la largeur le permet — 3 en paysage
+   sur tablette, 2 en portrait, 1 sur un écran très étroit. Les cartes d'une rangée ont la même hauteur
+   (étirement par défaut des grilles CSS). */
 .accueil-jeux {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
   gap: var(--espace-3);
 }
 
@@ -159,14 +164,38 @@ button:disabled {
   color: var(--couleur-texte-doux);
 }
 
-/* Accueil : la carte entière est un bouton qui ouvre la fiche du jeu */
-.carte-jeu-bouton {
+/* Carte d'un jeu sur l'accueil : aperçu en haut, puis nom et description ; toute la carte se touche */
+.carte-accueil {
   position: relative;
-  width: 100%;
-  gap: 0.35rem;
-  padding-right: calc(var(--espace-3) + 1.5rem);
-  text-align: left;
-  font: inherit;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+/* Aperçu en lecture seule : la vue du jeu y prend le plus grand carré possible (container-type) */
+.carte-accueil-apercu {
+  height: 11rem;
+  margin-bottom: 0.25rem;
+  padding: 0.6rem;
+  display: grid;
+  place-items: center;
+  container-type: size;
+  border-radius: var(--rayon);
+  background: var(--couleur-fond);
+  pointer-events: none;
+}
+
+/* Bouton invisible qui couvre toute la carte (le contour de focus entoure la carte) */
+.carte-accueil-toucher {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.carte-accueil-toucher:active {
+  background: color-mix(in srgb, var(--couleur-accent) 8%, transparent);
 }
 
 .carte-jeu-entete {
@@ -176,8 +205,8 @@ button:disabled {
   gap: 0.4rem var(--espace-2);
 }
 
-.carte-jeu-bouton .carte-jeu-nom {
-  font-weight: 700;
+.carte-accueil .carte-jeu-nom {
+  font-size: 1.4rem;
 }
 
 /* Indicateur discret d'une partie en cours */
@@ -188,16 +217,6 @@ button:disabled {
   color: var(--couleur-accent);
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.carte-jeu-fleche {
-  position: absolute;
-  top: 50%;
-  right: var(--espace-3);
-  transform: translateY(-50%);
-  font-size: 2rem;
-  line-height: 1;
-  color: var(--couleur-texte-doux);
 }
 
 .carte-jeu-sous-titre,

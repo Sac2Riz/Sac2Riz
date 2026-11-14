@@ -112,7 +112,7 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 5 — PWA installable et 100 % hors ligne (service worker versionné automatiquement, bandeau de
   mise à jour), icônes provisoires (`npm run icones`), export/import validé, déploiement GitHub Pages
   automatique à chaque push sur `main`.
-- ✅ Étape 6a — Structure des écrans et des réglages : accueil = liste des jeux ; **fiche d'un jeu** (aperçu,
+- ✅ Étape 6a — Structure des écrans et des réglages : accueil = grille de cartes des jeux (aperçu, 3/2/1 colonnes) ; **fiche d'un jeu** (aperçu,
   Continuer, nouvelle partie, règles, statistiques) remplie par le module du jeu (`fiche.ts`, `vue.apercu`) ;
   niveaux affichés avec leur force (plus d'étoiles) ; réglages en trois sections (Application / Tous les jeux /
   Par jeu), réglages propres déclarés par chaque jeu (`MetaJeu.reglages`), migration des anciens réglages ;
