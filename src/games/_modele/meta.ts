@@ -10,4 +10,5 @@ export const META: MetaJeu = {
   description: 'Compléter une ligne avec les chiffres de 1 à 6, chacun une seule fois.',
   niveaux: NIVEAUX,
   versionFormat: 1,
+  generation: {},
 };

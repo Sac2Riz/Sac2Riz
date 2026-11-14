@@ -9,4 +9,5 @@ export const META: MetaJeu = {
   description: 'La grille classique 9 × 9 : chaque chiffre de 1 à 9 une seule fois par ligne, par colonne et par bloc.',
   niveaux: NIVEAUX,
   versionFormat: 1,
+  generation: {},
 };

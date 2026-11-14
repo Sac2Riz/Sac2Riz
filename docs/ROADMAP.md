@@ -113,11 +113,41 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Tests : indices (dont éliminations et notes du joueur), remplir les notes, nouvelles actions, réglages,
   statistiques et record, compteur d'indices, bilan de fin (326 tests) ; parcours vérifié dans Edge.
 
-## Étape 4 — Chiffres casés
-- Grille type mots croisés, liste de nombres à placer (barrés une fois placés).
-- Générateur avec solution unique garantie.
-- Difficulté : taille, nombres de même longueur, nombres pré-placés.
-- Pavé personnalisé (liste des nombres).
+## Étape 4 — Chiffres casés (découpée en deux sous-étapes, un commit chacune)
+
+Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.md, sans modifier le socle
+(toute modification du socle ou du contrat est d'abord expliquée à l'utilisateur).
+
+### ✅ Étape 4a — Logique pure
+- Module `src/games/chiffres-cases/` (non enregistré dans le registre avant la 4b) : modèle de grille
+  (emplacements déduits des cases noires, liste des nombres déduite de la solution), D/E/A, gardes.
+- Actions : `placer` (nombre entier dans un emplacement ; **décisions de l'utilisateur** : un nombre déjà
+  posé ailleurs est déplacé ; un nombre croisé contradictoire est retiré, avec un court signal visuel en 4b
+  fourni par `consequencesPlacement`) et `effacer`. Nombres utilisés (à barrer), erreurs, fin de partie.
+- Générateur : motif symétrique et connexe, chiffres au hasard, « marche » de petites modifications vers
+  les grilles dures, pré-placés selon le niveau ; solution unique prouvée par la résolution logique.
+- Solveur logique « humain » (une technique par fichier), notation (niveau + force), indices en deux temps
+  (toujours un placement : le joueur ne prend pas de notes).
+- Bench (`npm run bench -- --jeu=chiffres-cases`), tests (dont le contrat appliqué à la logique seule)
+  et test long de sûreté.
+- Calibrage validé par l'utilisateur : graduation des croisements par longueur des listes (Moyen ≤ 3,
+  Difficile ≤ 4, Expert sans limite), hypothèses en Diabolique avec **impasse bornée** (au plus 3 déductions
+  simples), Diabolique en 11 × 11, seuils de force (Débutant : groupe ≥ 9).
+- Packs de 200 grilles Expert et 200 Diabolique (format propre au jeu, `npm run packs -- --jeu=chiffres-cases`).
+- **Changement du socle validé par l'utilisateur** : `MetaJeu.generation` (niveau servi uniquement par son
+  pack ; budget de fond plus long, par jeu et par niveau), budget par demande dans le client du worker,
+  réserve qui en tient compte. Chiffres casés : Diabolique servi par son pack, Expert réalimenté avec 30 s.
+- `npm test` ramené sous 10 s : les niveaux Expert et Diabolique ne sont contrôlés que par `npm run test:long`.
+
+### Étape 4b — Interface et intégration
+- `vue.ts`, `style.css` : grille, sélection d'un emplacement, saisie d'un nombre entier par la liste,
+  liste des nombres groupés par longueur et barrés une fois utilisés, signal bref sur un nombre retiré,
+  marques des indices ; une ligne dans `src/games/registre.ts` ; vérification dans Edge.
+- **Changements du contrat acceptés sur le principe par l'utilisateur** (à condition de rester génériques,
+  compatibles avec le sudoku et documentés dans AJOUTER_UN_JEU.md) :
+  - la **zone du pavé confiée à la vue** quand elle choisit `{ type: 'personnalise' }` (aujourd'hui la vue
+    ne reçoit que la zone de la grille et la zone du pavé reste vide) ;
+  - une **option pour masquer des outils** du socle (ex. « Notes », sans objet aux chiffres casés).
 
 ## Étape 5 — PWA, sauvegarde externe, déploiement
 - Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.

@@ -65,6 +65,7 @@ type DemandeEnregistree = {
   readonly jeu: string;
   readonly niveau: Niveau;
   readonly priorite: Priorite;
+  readonly budgetMs: number | null;
   readonly resoudre: (resultat: ResultatDemande) => void;
   annulee: boolean;
   terminee: boolean;
@@ -81,7 +82,7 @@ export class FauxGenerateur {
     puzzle: puzzleFactice(jeu, niveau),
   });
 
-  generer(jeu: string, niveau: Niveau, priorite: Priorite): DemandeEnCours {
+  generer(jeu: string, niveau: Niveau, priorite: Priorite, budgetMs: number | null): DemandeEnCours {
     let resoudre: (resultat: ResultatDemande) => void = () => undefined;
     const resultat = new Promise<ResultatDemande>((r) => {
       resoudre = r;
@@ -90,6 +91,7 @@ export class FauxGenerateur {
       jeu,
       niveau,
       priorite,
+      budgetMs,
       annulee: false,
       terminee: false,
       resoudre: (r) => {

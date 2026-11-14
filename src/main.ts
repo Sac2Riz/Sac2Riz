@@ -47,7 +47,7 @@ async function demarrer(): Promise<void> {
     stockage,
     generateur: client,
     packs,
-    jeux: jeux.map((j) => ({ id: j.meta.id, niveaux: j.meta.niveaux })),
+    jeux: jeux.map((j) => ({ id: j.meta.id, niveaux: j.meta.niveaux, generation: j.meta.generation })),
   });
 
   demarrerApp({

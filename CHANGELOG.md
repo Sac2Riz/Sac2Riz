@@ -2,6 +2,43 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 4a] — Chiffres casés : logique pure — 2026-11-14
+
+### Ajouté
+- Module `src/games/chiffres-cases/` (pas encore dans le registre : la vue arrive à l'étape 4b) :
+  - modèle : emplacements d'au moins 2 cases déduits des cases noires, croisements, liste des nombres
+    déduite de la solution (triée par longueur puis valeur), structure mise en cache par grille ;
+  - règles du joueur : placer un nombre entier dans un emplacement (un nombre déjà posé ailleurs est
+    déplacé, les nombres croisés contradictoires sont retirés), effacer, nombres utilisés (à barrer),
+    erreurs, fin de partie ; `consequencesPlacement` indique à la vue d'où un nombre a été déplacé et
+    quels nombres ont été retirés (signal visuel de la 4b) ; un pré-placé n'est jamais modifié ;
+  - solveur logique : 10 techniques graduées, de « longueur unique » (Débutant) aux « hypothèses »
+    (Diabolique), une par fichier, chacune testée ; backtracking pour l'unicité ;
+  - générateur : motif symétrique et connexe, chiffres au hasard, marche aléatoire de petites
+    modifications vers les grilles du niveau, pré-placés selon le niveau ; budget de temps respecté ;
+  - notation (niveau + force, `VERSION_NOTATION_CASES` = 1), indices en deux temps (nombre faux d'abord,
+    puis chemin du solveur jusqu'au prochain placement), gardes de type ;
+  - packs : format propre au jeu (`packs.ts`), 200 grilles Expert et 200 Diabolique.
+- Contrat : `MetaJeu.generation`, réglage par niveau : `{ mode: 'pack' }` (servi uniquement par le pack,
+  jamais généré sur l'appareil) ou `{ mode: 'worker', budgetFondMs }` (budget de réalimentation plus long
+  que le budget urgent). Chiffres casés : Diabolique servi par son pack, Expert réalimenté avec 30 s.
+- Bench : `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]`. Packs : `npm run packs -- --jeu=<id>`
+  (scripts par jeu dans `scripts/packs/`).
+- Tests : `tests/games/chiffres-cases/` (modèle, règles, gardes, solveur, techniques, génération, indices,
+  packs) ; tests longs `surete.long.ts` et `packs.long.ts` ; `verifierLogique(logique, niveaux)` contrôle
+  la logique d'un jeu sans vue ; tests du socle pour les réglages de génération et le budget par demande.
+
+### Modifié
+- Client du worker : `generer(jeu, niveau, priorite, budgetMs)` (budget par demande, `null` = défaut) ; le
+  garde-fou suit le budget de la demande ; un budget invalide est refusé.
+- Réserve : un niveau « pack » n'est ni réalimenté ni généré en urgence (pack introuvable = erreur claire) ;
+  la réalimentation utilise le budget de fond du niveau. `main.ts` transmet `meta.generation`.
+- Sudoku et modèle : `generation: {}` (aucun changement de comportement).
+- `npm test` reste sous 10 s : le contrôle du contrat des chiffres casés ne génère que les niveaux rapides,
+  Expert et Diabolique passent dans `npm run test:long`.
+- Documentation : AJOUTER_UN_JEU.md (leçons d'un jeu hors de la famille sudoku, réglages de génération),
+  DIFFICULTE.md (difficulté des chiffres casés), ARCHITECTURE.md, ROADMAP (étape 4 découpée en 4a / 4b).
+
 ## [Étape 3c — retraits] — Pavé sans nombre restant, plus de « Remplir les notes » — 2026-11-13
 
 ### Retiré

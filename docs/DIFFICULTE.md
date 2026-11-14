@@ -161,6 +161,126 @@ compressés (gzip, comme servis par GitHub Pages).
 Ils utilisent **les mêmes 6 noms de niveaux** (interface cohérente) ; chaque module définit ses propres
 critères et les documente ici.
 
-### Chiffres casés (étape 4)
-Critères : taille de la grille, nombre de nombres de même longueur (ambiguïté), nombre de nombres
-pré-placés. Solution unique garantie. Barème à définir à l'étape 4.
+### Chiffres casés (étape 4a)
+
+Grille rectangulaire à cases noires ; chaque **emplacement** (suite d'au moins 2 cases blanches, horizontale
+ou verticale) reçoit un nombre de la liste, chacun exactement une fois. Solution unique garantie
+(backtracking), grille connexe et symétrique. Code : `src/games/chiffres-cases/` (solveur dans `solveur/`,
+notation dans `notation.ts`, `VERSION_NOTATION_CASES` = 1).
+
+#### Solveur logique « humain »
+
+État : pour chaque emplacement, les nombres encore possibles (de sa longueur). Placer un nombre le retire
+des autres emplacements de même longueur et filtre les emplacements croisés (chiffre commun imposé).
+Comme pour le sudoku : techniques essayées de la plus simple à la plus dure, retour à la plus simple après
+chaque progrès, étape renvoyée seulement si elle a un effet réel, grille rejetée si la logique bloque.
+
+La vraie difficulté pour un joueur est la **longueur des listes à comparer** : les croisements sont donc
+gradués selon le nombre de possibilités de l'emplacement de départ.
+
+| Niveau | Identifiant | Ce que fait la technique |
+|---|---|---|
+| Débutant | `longueur-unique` | Le dernier nombre d'une longueur va dans le dernier emplacement de cette longueur |
+| Débutant | `motif-unique` | Un emplacement n'a plus qu'un nombre possible (souvent grâce aux chiffres déjà écrits par les croisements) |
+| Facile | `place-unique` | Un nombre ne peut aller que dans un seul emplacement |
+| Moyen | `croisement` | Un emplacement qui n'a plus que 2 ou 3 nombres possibles impose ses chiffres à la case de croisement : on élimine les nombres de l'emplacement croisé qui n'y mettent pas un de ces chiffres |
+| Difficile | `groupe-nu` | k emplacements de même longueur (2 à 4) se partagent exactement k nombres : retirés des autres emplacements |
+| Difficile | `groupe-cache` | k nombres (2 à 4) ne vont que dans k emplacements : ces emplacements ne gardent qu'eux |
+| Difficile | `croisement-etendu` | Croisement depuis une liste de 4 nombres au plus |
+| Expert | `croisement-complet` | Croisement depuis une liste de n'importe quelle longueur |
+| Diabolique | `consequence` | Un emplacement à 2 possibilités : chacune est suivie avec les déductions simples (voir l'impasse bornée ci-dessous) |
+| Diabolique | `forcing` | « Hypothèses » : un emplacement à 2 ou 3 possibilités, ou un nombre à 2 ou 3 places ; dans chaque cas, toutes les techniques jusqu'à Expert ; ce qui est vrai dans tous les cas est retenu |
+
+#### Diabolique : l'impasse bornée (différence avec le sudoku)
+
+Au sudoku, `forcing-simple` n'utilise **jamais** le raisonnement par contradiction : une hypothèse qui
+aboutit à une impasse fait seulement passer à la case suivante, car « essayer jusqu'à tomber sur une
+impossibilité » revient à de l'essai-erreur.
+
+Aux chiffres casés, une possibilité qui mène à une impasse **est éliminée**, mais seulement si l'impasse
+apparaît après une propagation **courte et bornée** : au plus **3 déductions simples**
+(`IMPASSE_ETAPES_MAX`, techniques Débutant et Facile seulement : `TECHNIQUES_IMPASSE` dans
+`solveur/hypotheses.ts`). Exemple d'explication : « Le vertical en L1C4 ne peut recevoir que 345 ou 367.
+Mais si 367 y allait, on aboutirait immédiatement à une impasse (un emplacement sans nombre possible) :
+367 est donc impossible dans le vertical en L1C4. » Une impasse plus lointaine n'est jamais exploitée : le
+choix est abandonné (pas de conclusion tirée d'une branche longue).
+
+Pourquoi cette différence :
+- **Sans elle, ces techniques ne servent presque jamais** : le cas « toutes les possibilités mènent à la
+  même conclusion » est quasi inexistant dans ce jeu (mesure de l'étape 4a), et le niveau Diabolique serait
+  vide.
+- **C'est un raisonnement que le joueur fait de tête** : poser un nombre de 3 ou 4 chiffres écrit d'un coup
+  plusieurs chiffres dans les emplacements croisés, et l'impasse se voit souvent tout de suite (un
+  emplacement croisé ne peut plus recevoir aucun nombre). Au sudoku, une contradiction n'apparaît qu'au bout
+  de longues chaînes de singletons.
+- **La borne empêche l'essai-erreur déguisé** : jamais de résolution complète d'une branche pour trouver
+  une contradiction.
+
+Mesure (40 grilles Difficile résolues pas à pas : à chaque situation, la plus courte impasse disponible) :
+0 déduction (immédiate) dans 2 318 situations, 1 dans 31, 2 dans 8, 3 dans 6, et au-delà de 3 dans
+19 (5, 8 ou 20 déductions). La borne de 3 garde donc **98,8 %** des impasses. Sur la génération, son effet
+est nul : avec une borne de 0, 2, 3, 5 ou sans borne, les 10 premières graines Expert et Diabolique
+donnent les mêmes grilles avec le même nombre d'essais.
+
+#### Force (1 à 10)
+
+Même principe que le sudoku : Expert = 9, Diabolique = 10 ; pour les autres niveaux, valeur haute si la
+grille est « dure pour son niveau » (`SEUILS_FORCE_CASES`, figés à l'étape 4a après validation) :
+- **score** = étapes du niveau max + ½ × étapes du niveau juste en dessous (compté seulement s'il est au
+  moins Moyen) ;
+- **groupe** = taille du plus grand groupe de nombres de même longueur (plus il est grand, plus il y a
+  d'hésitation). En Débutant et Facile, le score ne distingue pas les grilles (il compte les étapes de
+  remplissage) : c'est le groupe qui joue.
+
+| Niveau | Force basse / haute | Force haute si | Part en force haute (200 grilles) |
+|---|---|---|---|
+| Débutant | 1 / 2 | plus grand groupe ≥ 9 | 36 % |
+| Facile | 3 / 4 | plus grand groupe ≥ 13 | 45 % |
+| Moyen | 5 / 6 | score ≥ 6 | 52 % |
+| Difficile | 7 / 8 | score ≥ 11 | 48 % |
+
+#### Génération par niveau
+
+`genererCases` (`generateur.ts`) : motif de cases noires par paires symétriques (densité selon le niveau,
+suites trop longues coupées, cases isolées noircies, grille connexe exigée), chiffres au hasard (sans 0 en
+tête, tous les nombres différents), puis une **marche** de petites modifications (changer quelques
+chiffres, « rapprocher » deux nombres de même longueur, ajouter ou retirer un pré-placé) qui garde la grille
+la plus proche du niveau visé. Au-delà de Difficile, le backtracking écarte les grilles ambiguës avant les
+techniques coûteuses. `doitArreter()` est consulté entre deux pas de la marche.
+
+| Niveau | Grille | Cases noires | Longueur max | Pré-placés |
+|---|---|---|---|---|
+| Débutant | 7 × 7 | 30 % | 5 | 2 à 3 |
+| Facile | 9 × 9 | 30 % | 6 | 1 à 2 |
+| Moyen | 9 × 9 | 28 % | 6 | 0 à 1 |
+| Difficile | 11 × 11 | 25 % | 7 | 0 à 1 |
+| Expert | 11 × 11 | 22 % | 7 | 0 à 1 |
+| Diabolique | 11 × 11 | 22 % | 7 | 0 à 1 |
+
+Mesures (`npm run bench -- --jeu=chiffres-cases`, PC, graines 1, 2, 3… : 100 grilles par niveau, 30 en
+Expert, 20 en Diabolique ; au plus 1000 essais ; **aucun échec**). Temps sur machine libre ; le bench refait
+après l'ajout de la borne d'impasse (pendant la génération des packs, machine chargée) donne les **mêmes
+grilles et les mêmes essais**, avec des temps environ doublés à tous les niveaux.
+
+| Niveau | Essais moy / max | Temps moy / méd / max | Nombres moy (min-max) | Plus grand groupe | Pré-placés | Cases non croisées |
+|---|---|---|---|---|---|---|
+| Débutant | 1,0 / 2 | 0 / 0 / 3 ms | 17,4 (12-23) | 8,3 (4-16) | 2,2 | 29 % |
+| Facile | 3,5 / 16 | 12 / 9 / 68 ms | 29,8 (24-36) | 13,0 (6-20) | 1,4 | 25 % |
+| Moyen | 1,0 / 3 | 1 / 1 / 7 ms | 28,9 (22-34) | 12,0 (6-20) | 0,4 | 25 % |
+| Difficile | 3,4 / 11 | 87 / 62 / 391 ms | 44,5 (36-53) | 16,0 (8-26) | 0,2 | 20 % |
+| Expert | 11,8 / 28 | 0,7 / 0,7 / 1,7 s | 45,5 (37-52) | 15,4 (10-22) | 0 | 19 % |
+| Diabolique | 27,8 / 110 | 5,5 / 3,3 / 23 s | 45,9 (41-52) | 16,6 (12-22) | 0,1 | 19 % |
+
+Techniques utilisées en Diabolique (part des grilles) : conséquences directes 95 %, hypothèses 20 %.
+
+#### Utilisation dans l'appli
+
+- Débutant à Difficile : générés dans le worker (budget de 4 s, largement suffisant).
+- **Expert** : pack de 200 grilles servi quand la réserve est vide ; la réserve est réalimentée en
+  arrière-plan avec un budget de **30 s** (`meta.generation`, `{ mode: 'worker', budgetFondMs: 30_000 }`) :
+  0,7 s en moyenne sur PC, soit 2 à 8 s sur tablette.
+- **Diabolique** : servi **uniquement** par son pack de 200 grilles (`{ mode: 'pack' }`) : jamais de
+  génération sur l'appareil, ni de fond ni urgente.
+- Packs (`src/games/chiffres-cases/packs/`) : `expert.json` et `diabolique.json`, **200 grilles chacun**
+  (graines 1, 2, 3…, aucune sautée), générés par `npm run packs -- --jeu=chiffres-cases` en ~4 min et
+  ~38 min sur PC. Taille : ~72 Ko chacun (~370 octets par grille), **~18 Ko** une fois compressés (gzip).

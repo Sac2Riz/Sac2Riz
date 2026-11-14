@@ -4,7 +4,13 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Priorite, ResultatDemande } from '../../src/socle/client-worker.ts';
 import { creerServicePacks, type ChargeurPack } from '../../src/socle/packs.ts';
-import { creerServiceReserve, ordreReapprovisionnement, type JeuReserve } from '../../src/socle/reserve.ts';
+import {
+  budgetFond,
+  creerServiceReserve,
+  estPackSeul,
+  ordreReapprovisionnement,
+  type JeuReserve,
+} from '../../src/socle/reserve.ts';
 import { creerStockageMemoire } from '../../src/socle/stockage/memoire.ts';
 import { prefixeReserve } from '../../src/socle/stockage/stockage.ts';
 import { NIVEAUX, type Niveau } from '../../src/types/niveaux.ts';
@@ -12,8 +18,8 @@ import { creerAlea } from '../../src/utils/alea.ts';
 import { FauxGenerateur, HorlogeFactice, laisserFiler, puzzleFactice } from './aide.ts';
 
 const JEUX: readonly JeuReserve[] = [
-  { id: 'jeu-a', niveaux: NIVEAUX },
-  { id: 'jeu-b', niveaux: ['moyen', 'facile'] },
+  { id: 'jeu-a', niveaux: NIVEAUX, generation: {} },
+  { id: 'jeu-b', niveaux: ['moyen', 'facile'], generation: {} },
 ];
 
 /** Packs : 10 grilles pour jeu-a en Expert et Diabolique, rien ailleurs. */
@@ -22,16 +28,23 @@ const chargerPacks: ChargeurPack = async (jeu, niveau) =>
     ? Array.from({ length: 10 }, () => puzzleFactice(jeu, niveau))
     : null;
 
-function preparer() {
+/** jeu-c : Expert avec un budget de fond de 30 s, Diabolique servi uniquement par son pack. */
+const JEU_C: JeuReserve = {
+  id: 'jeu-c',
+  niveaux: ['moyen', 'expert', 'diabolique'],
+  generation: { expert: { mode: 'worker', budgetFondMs: 30_000 }, diabolique: { mode: 'pack' } },
+};
+
+function preparer(jeux: readonly JeuReserve[] = JEUX, charger: ChargeurPack = chargerPacks) {
   const horloge = new HorlogeFactice();
   const stockage = creerStockageMemoire();
   const generateur = new FauxGenerateur();
-  const packs = creerServicePacks({ stockage, charger: chargerPacks, alea: creerAlea(1), journal: () => undefined });
+  const packs = creerServicePacks({ stockage, charger, alea: creerAlea(1), journal: () => undefined });
   const reserve = creerServiceReserve({
     stockage,
     generateur,
     packs,
-    jeux: JEUX,
+    jeux,
     programmer: horloge.programmer,
     maintenant: horloge.maintenant,
     journal: () => undefined,
@@ -63,6 +76,64 @@ describe('ordre de réalimentation', () => {
       'jeu-b/facile',
       'jeu-b/moyen',
     ]);
+  });
+});
+
+describe('réglages de génération par niveau (MetaJeu.generation)', () => {
+  const chargerJeuC: ChargeurPack = async (jeu, niveau) =>
+    jeu === 'jeu-c' && niveau === 'diabolique' ? Array.from({ length: 5 }, () => puzzleFactice(jeu, niveau)) : null;
+
+  test('estPackSeul et budgetFond lisent les réglages ; niveau absent = fonctionnement par défaut', () => {
+    const jeux = [...JEUX, JEU_C];
+    assert.equal(estPackSeul(jeux, { jeu: 'jeu-c', niveau: 'diabolique' }), true);
+    assert.equal(estPackSeul(jeux, { jeu: 'jeu-c', niveau: 'expert' }), false);
+    assert.equal(estPackSeul(jeux, { jeu: 'jeu-a', niveau: 'diabolique' }), false);
+    assert.equal(budgetFond(jeux, { jeu: 'jeu-c', niveau: 'expert' }), 30_000);
+    assert.equal(budgetFond(jeux, { jeu: 'jeu-c', niveau: 'moyen' }), null);
+    assert.equal(budgetFond(jeux, { jeu: 'jeu-c', niveau: 'diabolique' }), null);
+  });
+
+  test('un niveau « pack » est exclu de la réalimentation, même quand il est en cours', () => {
+    const ordre = ordreReapprovisionnement([JEU_C], { jeu: 'jeu-c', niveau: 'diabolique' }).map((c) => c.niveau);
+    assert.deepEqual(ordre, ['moyen', 'expert']);
+  });
+
+  test('réalimentation : jamais de niveau « pack », budget de fond propre au niveau sinon', async () => {
+    const { generateur, reserve, compter } = preparer([JEU_C], chargerJeuC);
+    reserve.reapprovisionner('jeu-c', 'diabolique');
+    await reserve.auRepos();
+    assert.equal(await compter('jeu-c', 'diabolique'), 0);
+    assert.ok(generateur.demandes.every((d) => d.niveau !== 'diabolique'));
+    const budgets = new Set(generateur.demandes.map((d) => `${d.niveau}:${String(d.budgetMs)}`));
+    assert.deepEqual([...budgets].sort(), ['expert:30000', 'moyen:null']);
+  });
+
+  test('niveau « pack » : servi par le pack, jamais par une génération urgente', async () => {
+    const { generateur, reserve } = preparer([JEU_C], chargerJeuC);
+    generateur.politique = () => null;
+    const r = await reserve.obtenirGrille('jeu-c', 'diabolique').resultat;
+    assert.ok(r.statut === 'ok');
+    assert.equal(r.origine, 'pack');
+    assert.ok(generateur.demandes.every((d) => d.niveau !== 'diabolique'));
+    reserve.arreter();
+  });
+
+  test('niveau « pack » sans pack lisible : erreur claire, aucune génération', async () => {
+    const { generateur, reserve } = preparer([JEU_C], async () => null);
+    generateur.politique = () => null;
+    const r = await reserve.obtenirGrille('jeu-c', 'diabolique').resultat;
+    assert.equal(r.statut, 'erreur');
+    assert.ok(generateur.demandes.every((d) => d.niveau !== 'diabolique'));
+    reserve.arreter();
+  });
+
+  test('génération urgente : budget par défaut (null), même si le niveau a un budget de fond', async () => {
+    const { generateur, reserve } = preparer([JEU_C], async () => null);
+    generateur.politique = politique((_j, _n, priorite) => (priorite === 'urgent' ? 'ok' : null));
+    const r = await reserve.obtenirGrille('jeu-c', 'expert').resultat;
+    assert.ok(r.statut === 'ok');
+    assert.equal(generateur.demandes.find((d) => d.priorite === 'urgent')?.budgetMs, null);
+    reserve.arreter();
   });
 });
 

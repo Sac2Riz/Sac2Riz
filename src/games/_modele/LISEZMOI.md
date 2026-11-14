@@ -8,7 +8,7 @@ Le nom commence par `_` : le dossier est **vérifié par les tests** mais **jama
 
 | Fichier | Rôle | DOM ? |
 |---|---|---|
-| `meta.ts` | id, nom, description, niveaux, versionFormat | non |
+| `meta.ts` | id, nom, description, niveaux, versionFormat, generation (`{}` par défaut) | non |
 | `types.ts` | types D (données), E (état), A (actions) | non |
 | `logique.ts` | `export const logique` : génération, notation, règles, gardes | non |
 | `vue.ts` | `export const vue` : affichage et saisie | oui |

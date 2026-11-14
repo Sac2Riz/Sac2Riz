@@ -7,6 +7,8 @@
 // - Annulation : une demande encore dans la file en est simplement retirée. Une demande en cours
 //   de calcul ne peut pas être interrompue par un message (le worker est occupé) : on ARRÊTE le
 //   worker et un nouveau sera créé pour la demande suivante.
+// - Budget : chaque demande peut avoir le sien (ex. génération de fond plus longue, voir
+//   GenerationNiveau dans types/jeu.ts) ; sinon le budget par défaut du client.
 // - Garde-fou : si le worker ne répond pas dans le budget + une marge, il est arrêté de même.
 // - La promesse renvoyée n'échoue jamais : le résultat dit ce qui s'est passé (ok, echec, erreur, annule).
 //
@@ -54,7 +56,8 @@ export type DemandeEnCours = {
 };
 
 export interface ClientWorker {
-  generer(jeu: string, niveau: Niveau, priorite: Priorite): DemandeEnCours;
+  /** budgetMs : budget de cette demande (null = budget par défaut du client). */
+  generer(jeu: string, niveau: Niveau, priorite: Priorite, budgetMs: number | null): DemandeEnCours;
   /** Vrai si le worker répond au « ping » dans le délai. */
   verifier(delaiMs: number): Promise<boolean>;
   /** Annule tout et arrête le worker. */
@@ -65,7 +68,7 @@ export type OptionsClient = {
   readonly fabrique: FabriqueCanal;
   readonly programmer: Programmer;
   readonly tirerGraine: () => number;
-  /** Budget de temps par grille (le worker abandonne au-delà). */
+  /** Budget de temps par défaut d'une grille (le worker abandonne au-delà). */
   readonly budgetMs: number;
   /** Délai supplémentaire avant de considérer le worker comme bloqué (chargement, appareil lent). */
   readonly margeMs: number;
@@ -81,6 +84,7 @@ type Tache = {
   readonly jeu: string;
   readonly niveau: Niveau;
   readonly priorite: Priorite;
+  readonly budgetMs: number;
   readonly resoudre: (resultat: ResultatDemande) => void;
   finie: boolean;
   annulerGardeFou: Annulation | null;
@@ -161,7 +165,7 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
       if (enCours !== tache) return;
       arreterCanal();
       terminer(tache, { statut: 'erreur', message: 'Le worker ne répond plus (arrêté et relancé).' });
-    }, budgetMs + margeMs);
+    }, tache.budgetMs + margeMs);
     try {
       obtenirCanal().envoyer({
         type: 'generer',
@@ -169,7 +173,7 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
         jeu: tache.jeu,
         niveau: tache.niveau,
         graine: tirerGraine() >>> 0,
-        budgetMs,
+        budgetMs: tache.budgetMs,
       });
     } catch (erreur) {
       arreterCanal();
@@ -222,7 +226,7 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
   }
 
   return {
-    generer(jeu, niveau, priorite) {
+    generer(jeu, niveau, priorite, budgetDemande) {
       let resoudre: (resultat: ResultatDemande) => void = () => undefined;
       const resultat = new Promise<ResultatDemande>((r) => {
         resoudre = r;
@@ -232,12 +236,15 @@ export function creerClientWorker(options: Partial<OptionsClient> & Pick<Options
         jeu,
         niveau,
         priorite,
+        budgetMs: budgetDemande ?? budgetMs,
         resoudre,
         finie: false,
         annulerGardeFou: null,
       };
       if (ferme) {
         terminer(tache, { statut: 'annule' });
+      } else if (!estEntierEntre(tache.budgetMs, 1, BUDGET_MAX_MS)) {
+        terminer(tache, { statut: 'erreur', message: `Budget invalide : ${tache.budgetMs}` });
       } else {
         attente.push(tache);
         lancerSuivante();

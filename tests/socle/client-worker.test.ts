@@ -31,7 +31,7 @@ function derniereGeneration(canal: FauxCanal | undefined): Extract<DemandeWorker
 describe('client du worker', () => {
   test('génération réussie : demande complète envoyée, puzzle renvoyé', async () => {
     const { canaux, client } = preparer();
-    const d = client.generer('jeu-a', 'moyen', 'fond');
+    const d = client.generer('jeu-a', 'moyen', 'fond', null);
     const envoi = derniereGeneration(canaux[0]);
     assert.deepEqual(
       { jeu: envoi.jeu, niveau: envoi.niveau, graine: envoi.graine, budgetMs: envoi.budgetMs },
@@ -44,9 +44,9 @@ describe('client du worker', () => {
 
   test('une demande à la fois ; « urgent » passe avant « fond »', async () => {
     const { canaux, client } = preparer();
-    const a = client.generer('jeu-a', 'facile', 'fond');
-    const b = client.generer('jeu-a', 'moyen', 'fond');
-    const c = client.generer('jeu-a', 'expert', 'urgent');
+    const a = client.generer('jeu-a', 'facile', 'fond', null);
+    const b = client.generer('jeu-a', 'moyen', 'fond', null);
+    const c = client.generer('jeu-a', 'expert', 'urgent', null);
     const canal = canaux[0];
     assert.equal(canal?.envoyes.length, 1, 'une seule demande envoyée au worker');
     canal?.recepteurs.message({ type: 'echec', requete: derniereGeneration(canal).requete, raison: 'budget' });
@@ -61,8 +61,8 @@ describe('client du worker', () => {
 
   test('annulation dans la file : jamais envoyée, les autres continuent', async () => {
     const { canaux, client } = preparer();
-    client.generer('jeu-a', 'facile', 'fond');
-    const b = client.generer('jeu-a', 'moyen', 'fond');
+    client.generer('jeu-a', 'facile', 'fond', null);
+    const b = client.generer('jeu-a', 'moyen', 'fond', null);
     b.annuler();
     assert.deepEqual(await b.resultat, { statut: 'annule' });
     const canal = canaux[0];
@@ -74,8 +74,8 @@ describe('client du worker', () => {
 
   test('annulation en cours de calcul : le worker est arrêté, un nouveau sert la suite', async () => {
     const { canaux, client } = preparer();
-    const a = client.generer('jeu-a', 'expert', 'fond');
-    const b = client.generer('jeu-a', 'moyen', 'fond');
+    const a = client.generer('jeu-a', 'expert', 'fond', null);
+    const b = client.generer('jeu-a', 'moyen', 'fond', null);
     a.annuler();
     assert.deepEqual(await a.resultat, { statut: 'annule' });
     assert.equal(canaux[0]?.arrete, true);
@@ -92,8 +92,8 @@ describe('client du worker', () => {
 
   test('garde-fou : worker muet au-delà du budget + marge → erreur, worker remplacé', async () => {
     const { horloge, canaux, client } = preparer(1000, 500);
-    const a = client.generer('jeu-a', 'expert', 'fond');
-    const b = client.generer('jeu-a', 'moyen', 'fond');
+    const a = client.generer('jeu-a', 'expert', 'fond', null);
+    const b = client.generer('jeu-a', 'moyen', 'fond', null);
     horloge.avancer(1499);
     assert.equal(canaux[0]?.arrete, false);
     horloge.avancer(1);
@@ -104,9 +104,27 @@ describe('client du worker', () => {
     b.annuler();
   });
 
+  test('budget propre à une demande : envoyé au worker, garde-fou réglé dessus', async () => {
+    const { horloge, canaux, client } = preparer(1000, 500);
+    const a = client.generer('jeu-a', 'expert', 'fond', 30_000);
+    assert.equal(derniereGeneration(canaux[0]).budgetMs, 30_000);
+    horloge.avancer(30_499);
+    assert.equal(canaux[0]?.arrete, false, 'pas d\'arrêt avant budget de la demande + marge');
+    horloge.avancer(1);
+    assert.equal((await a.resultat).statut, 'erreur');
+    assert.equal(canaux[0]?.arrete, true);
+  });
+
+  test('budget invalide : erreur immédiate, rien n\'est envoyé', async () => {
+    const { canaux, client } = preparer();
+    const r = await client.generer('jeu-a', 'moyen', 'fond', 0).resultat;
+    assert.equal(r.statut, 'erreur');
+    assert.equal(canaux.length, 0);
+  });
+
   test('le garde-fou est annulé quand la réponse arrive', async () => {
     const { horloge, canaux, client } = preparer();
-    const a = client.generer('jeu-a', 'moyen', 'fond');
+    const a = client.generer('jeu-a', 'moyen', 'fond', null);
     const canal = canaux[0];
     canal?.recepteurs.message({ type: 'echec', requete: derniereGeneration(canal).requete, raison: 'x' });
     await a.resultat;
@@ -115,14 +133,14 @@ describe('client du worker', () => {
 
   test('worker planté ; réponse invalide ; réponses périmées ignorées', async () => {
     const { canaux, client } = preparer();
-    const a = client.generer('jeu-a', 'moyen', 'fond');
+    const a = client.generer('jeu-a', 'moyen', 'fond', null);
     canaux[0]?.recepteurs.message({ type: 'genere', requete: 999, puzzle: puzzleFactice('jeu-a', 'moyen') });
     canaux[0]?.recepteurs.message('n\'importe quoi');
     canaux[0]?.recepteurs.erreur('fichier introuvable');
     assert.match(String((await a.resultat).statut), /erreur/);
     assert.equal(canaux[0]?.arrete, true);
 
-    const b = client.generer('jeu-a', 'moyen', 'fond');
+    const b = client.generer('jeu-a', 'moyen', 'fond', null);
     const canal = canaux[1];
     canal?.recepteurs.message({ type: 'genere', requete: derniereGeneration(canal).requete, puzzle: { faux: 1 } });
     assert.deepEqual(await b.resultat, { statut: 'erreur', message: 'Grille reçue invalide' });
@@ -141,13 +159,13 @@ describe('client du worker', () => {
 
   test('fermer : tout est annulé, le worker arrêté, les nouvelles demandes annulées', async () => {
     const { canaux, client } = preparer();
-    const a = client.generer('jeu-a', 'moyen', 'fond');
-    const b = client.generer('jeu-a', 'facile', 'urgent');
+    const a = client.generer('jeu-a', 'moyen', 'fond', null);
+    const b = client.generer('jeu-a', 'facile', 'urgent', null);
     client.fermer();
     assert.deepEqual(await a.resultat, { statut: 'annule' });
     assert.deepEqual(await b.resultat, { statut: 'annule' });
     assert.equal(canaux.every((c) => c.arrete), true);
-    assert.deepEqual(await client.generer('jeu-a', 'moyen', 'fond').resultat, { statut: 'annule' });
+    assert.deepEqual(await client.generer('jeu-a', 'moyen', 'fond', null).resultat, { statut: 'annule' });
   });
 
   test('intégration : client + traitement réel du worker sur le jeu modèle', async () => {
@@ -160,7 +178,7 @@ describe('client du worker', () => {
       arreter: () => undefined,
     });
     const client = creerClientWorker({ fabrique, tirerGraine: () => 42 });
-    const r = await client.generer('_modele', 'difficile', 'urgent').resultat;
+    const r = await client.generer('_modele', 'difficile', 'urgent', null).resultat;
     assert.equal(r.statut, 'ok');
     if (r.statut === 'ok') {
       assert.equal(r.puzzle.graine, 42);

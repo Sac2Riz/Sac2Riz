@@ -9,12 +9,16 @@
 //      introuvable ne réussira jamais).
 // Puis la réserve est réalimentée en arrière-plan.
 //
+// Réglages par niveau (MetaJeu.generation, voir types/jeu.ts) : un niveau « pack » n'est JAMAIS
+// généré (ni urgence, ni réalimentation : seul son pack le sert) ; un niveau « worker » peut avoir
+// un budget de fond plus long que le budget urgent.
+//
 // Réalimentation (reapprovisionner) : une grille à la fois, d'abord le jeu et le niveau en cours,
 // puis les autres niveaux de ce jeu du plus facile au plus difficile, puis les autres jeux.
 // Un couple jeu/niveau en échec est mis de côté 30 s, puis 2 min, puis 10 min (les autres
 // continuent). Une génération urgente interrompt la réalimentation, qui reprend ensuite.
 
-import type { Puzzle } from '../types/jeu.ts';
+import type { GenerationNiveau, Puzzle } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { NIVEAUX, type Niveau } from '../types/niveaux.ts';
 import type { EntreeReserve } from '../types/sauvegarde.ts';
@@ -24,7 +28,11 @@ import type { ServicePacks } from './packs.ts';
 import { cleJeuNiveau, prefixeReserve, type Stockage } from './stockage/stockage.ts';
 
 /** Ce que la réserve sait d'un jeu (extrait de MetaJeu). */
-export type JeuReserve = { readonly id: string; readonly niveaux: readonly Niveau[] };
+export type JeuReserve = {
+  readonly id: string;
+  readonly niveaux: readonly Niveau[];
+  readonly generation: Readonly<Partial<Record<Niveau, GenerationNiveau>>>;
+};
 
 export type Cible = { readonly jeu: string; readonly niveau: Niveau };
 
@@ -70,7 +78,21 @@ export type OptionsReserve = {
 export const TAILLE_RESERVE = 3;
 export const DELAIS_RELANCE_MS: readonly number[] = [30_000, 120_000, 600_000];
 
-/** Ordre de réalimentation : la cible en cours, ses autres niveaux (facile → difficile), les autres jeux. */
+/** Vrai si ce niveau est servi uniquement par son pack (jamais généré). */
+export function estPackSeul(jeux: readonly JeuReserve[], cible: Cible): boolean {
+  return jeux.find((j) => j.id === cible.jeu)?.generation[cible.niveau]?.mode === 'pack';
+}
+
+/** Budget des générations de fond pour ce niveau (null = budget par défaut du client). */
+export function budgetFond(jeux: readonly JeuReserve[], cible: Cible): number | null {
+  const reglage = jeux.find((j) => j.id === cible.jeu)?.generation[cible.niveau];
+  return reglage?.mode === 'worker' ? reglage.budgetFondMs : null;
+}
+
+/**
+ * Ordre de réalimentation : la cible en cours, ses autres niveaux (facile → difficile), les autres
+ * jeux. Les niveaux servis uniquement par leur pack en sont exclus.
+ */
 export function ordreReapprovisionnement(jeux: readonly JeuReserve[], courant: Cible): Cible[] {
   const trier = (niveaux: readonly Niveau[]): Niveau[] => NIVEAUX.filter((n) => niveaux.includes(n));
   const ordre: Cible[] = [courant];
@@ -84,7 +106,7 @@ export function ordreReapprovisionnement(jeux: readonly JeuReserve[], courant: C
     if (jeu.id === courant.jeu) continue;
     for (const niveau of trier(jeu.niveaux)) ordre.push({ jeu: jeu.id, niveau });
   }
-  return ordre;
+  return ordre.filter((cible) => !estPackSeul(jeux, cible));
 }
 
 type OptionsObligatoires = 'stockage' | 'generateur' | 'packs' | 'jeux';
@@ -151,7 +173,7 @@ export function creerServiceReserve(
     while (!arrete && urgences === 0) {
       const cible = await prochaineCible();
       if (cible === null || arrete || urgences > 0) return;
-      const demande = o.generateur.generer(cible.jeu, cible.niveau, 'fond');
+      const demande = o.generateur.generer(cible.jeu, cible.niveau, 'fond', budgetFond(o.jeux, cible));
       demandeFond = demande;
       const resultat = await demande.resultat;
       demandeFond = null;
@@ -208,7 +230,7 @@ export function creerServiceReserve(
     try {
       let erreurs = 0;
       while (!etat.annule && !arrete) {
-        const demande = o.generateur.generer(cible.jeu, cible.niveau, 'urgent');
+        const demande = o.generateur.generer(cible.jeu, cible.niveau, 'urgent', null);
         etat.demande = demande;
         const resultat = await demande.resultat;
         etat.demande = null;
@@ -253,6 +275,9 @@ export function creerServiceReserve(
     const dePack = await o.packs.tirer(cible.jeu, cible.niveau);
     if (dePack !== null) return etat.annule ? { statut: 'annule' } : { statut: 'ok', puzzle: dePack, origine: 'pack' };
     if (etat.annule) return { statut: 'annule' };
+    if (estPackSeul(o.jeux, cible)) {
+      return { statut: 'erreur', message: 'Aucune grille disponible : le pack de ce niveau est introuvable ou invalide.' };
+    }
     return genererUrgence(cible, etat);
   }
 

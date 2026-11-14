@@ -12,6 +12,18 @@ import type { Alea } from './alea.ts';
 import type { Json } from './json.ts';
 import type { Niveau, Notation } from './niveaux.ts';
 
+/**
+ * Comment le socle obtient les grilles d'un niveau (voir socle/reserve.ts) :
+ * - « pack » : servi UNIQUEMENT par le pack du jeu (aucune génération, ni de fond ni urgente),
+ *   pour un niveau dont la génération ne tient jamais dans le budget d'un appareil ;
+ * - « worker » : généré dans le worker ; budgetFondMs = budget de temps des générations de fond
+ *   (réalimentation de la réserve), qui peut dépasser le budget urgent (BUDGET_PAR_DEFAUT_MS).
+ * Un niveau absent de MetaJeu.generation est généré avec le budget par défaut, de fond comme urgent.
+ */
+export type GenerationNiveau =
+  | { readonly mode: 'pack' }
+  | { readonly mode: 'worker'; readonly budgetFondMs: number };
+
 /** Description d'un jeu (affichée sur l'écran d'accueil). */
 export type MetaJeu = {
   /** Identifiant unique en kebab-case, identique au nom du dossier dans src/games/. */
@@ -22,6 +34,8 @@ export type MetaJeu = {
   readonly niveaux: readonly Niveau[];
   /** Version du format de D/E/A ; à incrémenter si ce format change (voir migrer). */
   readonly versionFormat: number;
+  /** Réglages de génération des niveaux qui s'écartent du fonctionnement par défaut ({} sinon). */
+  readonly generation: Readonly<Partial<Record<Niveau, GenerationNiveau>>>;
 };
 
 /** Une grille à résoudre, entièrement sérialisable. */

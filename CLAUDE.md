@@ -35,9 +35,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 | `npm run build` | compilation complète dans `dist/` |
 | `npm run check` | vérification des types (4 configs) + tests. **À lancer à la fin de chaque étape et avant chaque commit ; tout doit passer.** |
 | `npm run typecheck` / `npm test` | les deux moitiés de `check` |
-| `npm run test:long` | test de sûreté long du solveur logique (fichiers `tests/**/*.long.ts`, ~30 s, 4100 grilles + couverture des techniques). Hors de `check` ; **à lancer quand on touche au solveur logique** |
-| `npm run bench` | mesures : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s) |
-| `npm run packs` | régénère les packs Expert/Diabolique du sudoku classique (~1 min). **À relancer si `VERSION_NOTATION` change** |
+| `npm run test:long` | tests longs (fichiers `tests/**/*.long.ts`, quelques minutes) : sûreté des solveurs logiques (sudoku : 4100 grilles ; chiffres casés : grilles de chaque niveau, contrat des niveaux lents), packs des chiffres casés. Hors de `check` ; **à lancer quand on touche à un solveur, un générateur ou des packs** |
+| `npm run bench` | mesures du sudoku : génération / unicité, répartition des niveaux, génération par niveau, force (~85 s ; `--rapide` ~17 s). `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]` : chiffres casés (~5 min) |
+| `npm run packs` | régénère les packs Expert/Diabolique de chaque jeu (`--jeu=<id>`, `--niveau=<id>`, `--n=`). Sudoku ~1 min ; chiffres casés ~40 min. **À relancer si la version de notation du jeu change** |
 
 ## Architecture (résumé → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))
 - `src/types/` : **tous** les types partagés. Contrat logique (`jeu.ts`, pur) et contrat d'affichage (`vue.ts`, DOM).
@@ -53,6 +53,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   `tests/tsconfig.json`, `scripts/tsconfig.json` (Node).
 - Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
+  Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
+- `MetaJeu.generation` : un niveau peut être servi uniquement par son pack (`{ mode: 'pack' }`) ou avoir un
+  budget de génération de fond plus long (`{ mode: 'worker', budgetFondMs }`).
 
 ## Conventions
 - Code et commentaires **en français**. Fichiers courts, une responsabilité par fichier.
@@ -92,4 +95,6 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 3c — Indices en deux temps (mise en évidence puis application) avec compteur, vérification des
   erreurs, réglages, statistiques par jeu et niveau, écran de fin de partie (une partie avec indices ne
   bat pas le record). Retirés ensuite : nombre restant sur les touches du pavé, bouton « Remplir les notes ».
-- ⏭️ Prochaine : **Étape 4** — Chiffres casés.
+- ✅ Étape 4a — Chiffres casés, logique pure : modèle, règles, générateur, solveur (10 techniques),
+  notation, indices, packs Expert/Diabolique ; `MetaJeu.generation` (niveau servi par son pack, budget de fond).
+- ⏭️ Prochaine : **Étape 4b** — Chiffres casés, interface et intégration au registre.

@@ -3,9 +3,12 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import type { LogiqueJeu } from '../../src/types/jeu.ts';
 import type { Json } from '../../src/types/json.ts';
-import { NIVEAUX } from '../../src/types/niveaux.ts';
+import { NIVEAUX, type Niveau } from '../../src/types/niveaux.ts';
 import type { ModuleJeuQuelconque } from '../../src/types/vue.ts';
+import { BUDGET_PAR_DEFAUT_MS } from '../../src/socle/client-worker.ts';
+import { BUDGET_MAX_MS } from '../../src/types/worker.ts';
 import { creerAlea } from '../../src/utils/alea.ts';
 
 /** Chemin d'un fichier du dossier src/games/<dossier>/. */
@@ -37,8 +40,33 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
 
   const logique = await jeu.chargerLogique();
   assert.equal(logique.meta, jeu.meta, 'logique.meta doit être l\'objet META du jeu');
+  verifierLogique(logique);
 
-  for (const niveau of jeu.meta.niveaux) {
+  // Le niveau doit faire partie des 6 niveaux communs
+  for (const niveau of jeu.meta.niveaux) assert.ok(NIVEAUX.includes(niveau));
+}
+
+/**
+ * Vérifications de la partie LOGIQUE seule (un jeu dont la vue n'existe pas encore peut déjà
+ * être contrôlé) : génération reproductible de chaque niveau, notation, aller-retour JSON, partie
+ * complète jouée par les indices sans mutation, gardes de type.
+ * « niveaux » : niveaux contrôlés (tous par défaut). Un jeu dont certains niveaux sont longs à
+ * générer ne contrôle que les niveaux rapides dans npm test et les autres dans npm run test:long.
+ */
+export function verifierLogique(
+  logique: LogiqueJeu<Json, Json, Json>,
+  niveaux: readonly Niveau[] = logique.meta.niveaux,
+): void {
+  // Réglages de génération : niveaux proposés par le jeu, budget de fond au moins égal au budget urgent
+  for (const [niveau, reglage] of Object.entries(logique.meta.generation)) {
+    assert.ok(logique.meta.niveaux.some((n) => n === niveau), `réglage de génération pour un niveau absent : ${niveau}`);
+    if (reglage.mode === 'worker') {
+      assert.ok(Number.isInteger(reglage.budgetFondMs), 'budget de fond entier');
+      assert.ok(reglage.budgetFondMs >= BUDGET_PAR_DEFAUT_MS && reglage.budgetFondMs <= BUDGET_MAX_MS, 'budget de fond hors limites');
+    }
+  }
+
+  for (const niveau of niveaux) {
     // Génération reproductible
     const sansLimite = { doitArreter: () => false };
     const r1 = logique.generer(niveau, creerAlea(99), sansLimite);
@@ -81,7 +109,4 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
     assert.equal(logique.estEtat(intrus), false);
     assert.equal(logique.estAction(intrus), false);
   }
-
-  // Le niveau doit faire partie des 6 niveaux communs
-  for (const niveau of jeu.meta.niveaux) assert.ok(NIVEAUX.includes(niveau));
 }

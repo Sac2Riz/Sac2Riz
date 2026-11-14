@@ -32,7 +32,8 @@ est compilé au même endroit (et à l'identique) par les deux. La config du wor
 si du code « pur » utilisait le DOM, elle échouerait.
 
 **Code pur** = `src/types/` (sauf `vue.ts`), `src/utils/`, `src/moteur/`, `games/*/meta.ts`, `types.ts`,
-`logique.ts` : ni DOM, ni Node, fonctions sans effet de bord.
+`logique.ts` et tout ce que `logique.ts` importe (ex. `chiffres-cases/solveur/`) : ni DOM, ni Node,
+fonctions sans effet de bord.
 
 ## Compilation et fichiers
 
@@ -167,12 +168,13 @@ src/socle/
 - **Bouton retour d'Android** : entrer dans une partie ajoute une entrée à l'historique du navigateur ;
   « retour » ramène à l'accueil (après sauvegarde) au lieu de quitter l'appli.
 
-- **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond')` renvoie
+- **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond', budgetMs)` renvoie
   `{ resultat, annuler }` ; le résultat (`ok` + puzzle, `echec`, `erreur`, `annule`) ne rejette jamais.
   Une seule demande à la fois chez le worker ; les urgentes passent devant. Annuler une demande en attente
   la retire de la file ; annuler celle en cours **arrête le worker** (un calcul synchrone ne lit pas ses
-  messages) et un nouveau est créé pour la suivante. Garde-fou : pas de réponse après budget + marge
-  (4 s + 10 s) → worker arrêté, résultat `erreur`. Les réponses d'un ancien worker sont ignorées ; la grille
+  messages) et un nouveau est créé pour la suivante. `budgetMs` : budget de cette demande, ou `null` pour
+  le budget par défaut (4 s). Garde-fou : pas de réponse après budget de la demande + marge
+  (par défaut 4 s + 10 s) → worker arrêté, résultat `erreur`. Les réponses d'un ancien worker sont ignorées ; la grille
   reçue est vérifiée (`estPuzzle`).
 - **Stockage** : interface `Stockage` (`lire`, `ecrire`, `supprimer`, `lister(prefixe)`, `compter(prefixe)`,
   `prendrePremier(prefixe)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
@@ -191,6 +193,10 @@ src/socle/
   puis réalimentation. `reapprovisionner(jeu, niveau)` : une grille à la fois, ordre = jeu et niveau en
   cours, puis ses autres niveaux du plus facile au plus difficile, puis les autres jeux ; couple en échec mis
   de côté 30 s, 2 min puis 10 min (les autres continuent) ; une urgence annule la demande de fond en cours.
+  Réglages par niveau (`MetaJeu.generation`, transmis par `main.ts`) : un niveau `{ mode: 'pack' }` n'est
+  **jamais** généré (exclu de la réalimentation, pas de génération urgente : pack introuvable = erreur
+  claire) ; un niveau `{ mode: 'worker', budgetFondMs }` est réalimenté avec ce budget (les générations
+  urgentes gardent le budget par défaut).
 - **Chrono** : `{ cumulMs, depuis, pauseManuelle, masque, termine }` ; tourne seulement sans pause manuelle,
   appli visible et partie non terminée. Les deux pauses sont indépendantes.
 
@@ -204,7 +210,7 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 
 | Membre | Rôle |
 |---|---|
-| `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat` |
+| `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat`, `generation` (réglages de génération par niveau : `{ mode: 'pack' }` ou `{ mode: 'worker', budgetFondMs }` ; `{}` = fonctionnement par défaut) |
 | `generer(niveau, alea, { doitArreter })` | `{ ok: true, donnees, notation }` ou `{ ok: false, raison }` (exécuté dans le worker) |
 | `noter(donnees)` | `Notation` (niveau, force, technique max, détails) ou `null` si l'essai-erreur est nécessaire |
 | `etatInitial(donnees)` | état E en début de partie |
@@ -258,6 +264,34 @@ Messages typés dans `src/types/worker.ts`. Le worker charge `../games/<id>/logi
 **budget de temps** `budgetMs` : le worker passe au jeu `doitArreter = () => maintenant() >= échéance`, que
 `generer` consulte entre deux essais (réponse `echec` si le budget est épuisé). Le traitement est dans
 `src/worker/traitement.ts` (testable sous Node) ; `generation.ts` ne fait que brancher `postMessage`.
+
+## Chiffres casés (étape 4a) — `src/games/chiffres-cases/`
+
+Premier jeu hors de la famille sudoku : il n'utilise pas `src/moteur/` (pas de régions ni de candidats par
+case) et apporte son modèle, son solveur et sa notation dans son dossier. Vue et intégration au registre :
+étape 4b.
+
+```
+src/games/chiffres-cases/
+├─ meta.ts, types.ts     D = { largeur, hauteur, solution (-1 = noire), preplaces } ; E = { places } ;
+│                        A = placer un nombre entier dans un emplacement | effacer un emplacement
+├─ grille.ts             emplacements (≥ 2 cases) déduits des noires, croisements, connexité, symétrie, noms
+├─ probleme.ts           liste des nombres (triée par longueur puis valeur) ; structureDe(D) en cache (WeakMap)
+├─ regles.ts             règles du joueur : déplacement d'un nombre déjà posé, retrait des nombres croisés
+│                        contradictoires (consequencesPlacement : signal visuel de la 4b), nombres utilisés,
+│                        erreurs, fin de partie ; un pré-placé n'est jamais modifié
+├─ solveur/              état { affectes, candidats } ; une technique par fichier (techniques/) ; familles/
+│                        croisement (partagée par les 3 croisements) ; hypotheses.ts (Diabolique, impasse bornée)
+├─ backtracking.ts       compte les solutions (unicité)
+├─ motif.ts, remplissage.ts, generateur.ts   motif symétrique connexe, chiffres, marche aléatoire par niveau
+├─ notation.ts           niveau + force (VERSION_NOTATION_CASES)
+├─ indice.ts             indices en deux temps (nombre faux d'abord, puis chemin du solveur)
+├─ gardes.ts, logique.ts, packs.ts, packs/
+```
+
+Tests : `tests/games/chiffres-cases/` (une technique par fichier dans `techniques/`) ; tests longs
+`surete.long.ts` (sûreté du solveur, contrat des niveaux lents) et `packs.long.ts`. Bench :
+`npm run bench -- --jeu=chiffres-cases [--niveau=<id>]`. Détail de la difficulté : docs/DIFFICULTE.md.
 
 ## Moteur de contraintes (famille sudoku, étapes 1-2)
 
@@ -379,14 +413,26 @@ Références PC : voir docs/DIFFICULTE.md (étape 2b) ; moteur seul ~1,3 ms par 
 
 ## Packs de grilles
 
-`src/games/<id>/packs/<niveau>.json` : `PackSudoku` (`src/types/pack.ts`) =
+Chaque jeu a son format de pack (le socle ne voit que des `Puzzle`, fournis par `chargerPack`).
+`npm run packs` (`scripts/generer-packs.ts`, options `--jeu=<id>`, `--niveau=<id>`, `--n=<nombre>`)
+appelle le script de chaque jeu (`scripts/packs/<id>.ts`) ; le fichier écrit doit d'abord passer la garde
+utilisée à l'exécution.
+
+**Sudoku** — `src/games/<id>/packs/<niveau>.json` : `PackSudoku` (`src/types/pack.ts`) =
 `{ version, versionNotation, jeu, niveau, grilles: [{ graine, enonce, solution, notation }] }`, grilles en
 texte (81 chiffres, 0 = vide), une grille par ligne. Générés par `npm run packs`
-(`scripts/generer-packs.ts`, graines 1, 2, 3…, une graine en échec est sautée). La garde `estPackSudoku`
+(`scripts/packs/sudoku-classique.ts`, graines 1, 2, 3…, une graine en échec est sautée). La garde `estPackSudoku`
 (`src/moteur/pack.ts`) vérifie forme, cohérence énoncé/solution, notation compatible avec le niveau et
 **`versionNotation` = `VERSION_NOTATION`** ; les tests vérifient en plus l'unicité, la notation recalculée
 et la reproductibilité depuis la graine. **Si `VERSION_NOTATION` change, relancer `npm run packs`.**
 Copiés dans `dist/` à côté du module ; chargés par `fetch(new URL('./packs/expert.json', import.meta.url))`.
+
+**Chiffres casés** — `PackCases` (`src/games/chiffres-cases/packs.ts`) =
+`{ version, versionNotation, jeu, niveau, grilles: [{ graine, grille, preplaces, notation }] }`, `grille` =
+solution ligne par ligne (`#` = noire, lignes séparées par `/`). Garde `estPackCases` (forme, données
+valides, notation compatible, `versionNotation` = `VERSION_NOTATION_CASES`) ; unicité, notation recalculée
+et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`. **Si
+`VERSION_NOTATION_CASES` change, relancer `npm run packs -- --jeu=chiffres-cases`** (~40 min).
 
 ## PWA (étape 5)
 
