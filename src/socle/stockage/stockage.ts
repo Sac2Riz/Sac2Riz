@@ -6,6 +6,7 @@
 // type de contenu. Les clés sont du texte ; « lister » et « prendrePremier » travaillent sur
 // les clés qui commencent par un préfixe, dans l'ordre croissant des clés.
 
+import { estNouveautesVues, type NouveautesVues } from '../../types/nouveautes.ts';
 import type { Niveau } from '../../types/niveaux.ts';
 import type {
   DonneesExportees,
@@ -35,14 +36,20 @@ export type ContenuMagasins = {
   readonly stats: StatsJeu;
   /** Réglages (une seule clé : CLE_REGLAGES). Une ancienne forme est complétée à la lecture (socle/reglages.ts). */
   readonly reglages: ReglagesEnregistres;
+  /**
+   * Informations propres à l'appli (schéma n° 2) : nouveautés déjà vues (clé CLE_NOUVEAUTES_VUES).
+   * Ni exportées ni remplacées par un import : ce ne sont pas des données de jeu.
+   */
+  readonly appli: NouveautesVues;
 };
 
 export type NomMagasin = keyof ContenuMagasins;
 
 /** Liste des magasins du schéma actuel (doit correspondre au résultat des migrations). */
-export const NOMS_MAGASINS: readonly NomMagasin[] = ['parties', 'reserve', 'packsJoues', 'stats', 'reglages'];
+export const NOMS_MAGASINS: readonly NomMagasin[] = ['parties', 'reserve', 'packsJoues', 'stats', 'reglages', 'appli'];
 
 export const CLE_REGLAGES = 'reglages';
+export const CLE_NOUVEAUTES_VUES = 'nouveautes-vues';
 
 /** Garde de type de chaque magasin : une donnée relue qui ne la passe pas est ignorée. */
 export const GARDES: { readonly [M in NomMagasin]: (valeur: unknown) => valeur is ContenuMagasins[M] } = {
@@ -51,6 +58,7 @@ export const GARDES: { readonly [M in NomMagasin]: (valeur: unknown) => valeur i
   packsJoues: estEtatPack,
   stats: estStatsJeu,
   reglages: estReglagesEnregistres,
+  appli: estNouveautesVues,
 };
 
 /** Clé d'un couple jeu/niveau (magasin packsJoues). Les ids de jeu sont en kebab-case : pas de « / ». */
@@ -81,6 +89,11 @@ export function ecrituresDonnees(donnees: DonneesExportees): readonly EcritureMa
 export type Entree<M extends NomMagasin> = { readonly cle: string; readonly valeur: ContenuMagasins[M] };
 
 export interface Stockage {
+  /**
+   * Vrai si la base n'existait pas avant cette ouverture : tout premier lancement de l'appli sur
+   * l'appareil (ou données effacées). Faux si une version précédente l'avait déjà créée.
+   */
+  readonly baseNeuve: boolean;
   /** Valeur de la clé, ou null si elle est absente ou invalide. */
   lire<M extends NomMagasin>(magasin: M, cle: string): Promise<ContenuMagasins[M] | null>;
   /** Crée ou remplace la valeur de la clé. */

@@ -20,6 +20,22 @@ export type FichierNouveautes = {
   readonly versions: readonly GroupeNouveautes[];
 };
 
+/**
+ * Nouveautés déjà vues par le joueur (magasin « appli », clé CLE_NOUVEAUTES_VUES) : identifiants des
+ * groupes déjà montrés, ou présents au tout premier lancement. La fenêtre « Sac2Riz a été mis à jour »
+ * ne montre que les groupes absents de cette liste.
+ */
+export type NouveautesVues = {
+  readonly vues: readonly string[];
+};
+
+/** Garde de type des nouveautés vues (relues du stockage). */
+export function estNouveautesVues(v: unknown): v is NouveautesVues {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
+  const vues: unknown = 'vues' in v ? v.vues : undefined;
+  return Array.isArray(vues) && vues.every((id) => typeof id === 'string');
+}
+
 /** Nom du fichier, à la racine de dist/. */
 export const FICHIER_NOUVEAUTES = 'nouveautes.json';
 

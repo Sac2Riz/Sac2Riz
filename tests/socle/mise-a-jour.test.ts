@@ -138,16 +138,52 @@ describe('mises à jour de l\'appli', () => {
     assert.deepEqual(sw.messages, [{ type: 'activer' }]);
   });
 
-  test('vérifications espacées d\'au moins une heure', async () => {
+  test('recherche demandée dès l\'enregistrement, puis au plus une fois par minute', async () => {
     const t = preparer();
     const suivi = await suivreMisesAJour(t.options);
     assert.ok(suivi !== null);
-    suivi.verifier();
-    assert.equal(t.conteneur.enregistrement.verifications, 0);
+    assert.equal(t.conteneur.enregistrement.verifications, 1, 'tout de suite, sans attendre le navigateur');
+    assert.equal(INTERVALLE_VERIFICATION_MS, 60_000);
+    suivi.verifier(); // retour au premier plan juste après le lancement
+    assert.equal(t.conteneur.enregistrement.verifications, 1);
     t.avancer(INTERVALLE_VERIFICATION_MS);
     suivi.verifier();
     suivi.verifier();
-    assert.equal(t.conteneur.enregistrement.verifications, 1);
+    assert.equal(t.conteneur.enregistrement.verifications, 2);
+  });
+
+  test('version EN COURS D\'INSTALLATION au démarrage (trouvée avant que l\'on écoute) : signalée une fois installée', async () => {
+    const conteneur = new FauxConteneur();
+    conteneur.controller = {};
+    const sw = new FauxTravailleur();
+    conteneur.enregistrement.installing = sw; // « updatefound » est déjà passé
+    const t = preparer(conteneur);
+    await suivreMisesAJour(t.options);
+    assert.equal(t.signalements.length, 0, 'pas encore installée');
+    sw.passerA('installed');
+    assert.equal(t.signalements.length, 1);
+    assert.deepEqual(t.evenements, [], 'aucun rechargement sans le feu vert');
+  });
+
+  test('version déjà installée mais encore référencée comme « installing » au démarrage : signalée', async () => {
+    const conteneur = new FauxConteneur();
+    conteneur.controller = {};
+    const sw = new FauxTravailleur();
+    sw.state = 'installed';
+    conteneur.enregistrement.installing = sw;
+    const t = preparer(conteneur);
+    await suivreMisesAJour(t.options);
+    assert.equal(t.signalements.length, 1);
+  });
+
+  test('toute première installation en cours au démarrage : rien à signaler', async () => {
+    const conteneur = new FauxConteneur();
+    const sw = new FauxTravailleur();
+    conteneur.enregistrement.installing = sw;
+    const t = preparer(conteneur);
+    await suivreMisesAJour(t.options);
+    sw.passerA('installed');
+    assert.equal(t.signalements.length, 0);
   });
 
   test('enregistrement impossible : journalisé, l\'appli continue sans hors ligne', async () => {

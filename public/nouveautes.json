@@ -1,6 +1,15 @@
 {
   "versions": [
     {
+      "id": "2026-11-14-apres-mise-a-jour",
+      "date": "2026-11-14",
+      "titre": "Des nouveautés toujours présentées",
+      "nouveautes": [
+        "Si l'appli s'est mise à jour pendant qu'elle était fermée, ses nouveautés vous sont présentées au lancement suivant.",
+        "Une nouvelle version est repérée plus vite, même quand l'appli est simplement reprise après une pause."
+      ]
+    },
+    {
       "id": "2026-11-14-mise-a-jour",
       "date": "2026-11-14",
       "titre": "Des mises à jour plus claires",

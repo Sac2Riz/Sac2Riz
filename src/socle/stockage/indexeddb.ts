@@ -61,18 +61,21 @@ function plage(prefixe: string): IDBKeyRange {
 /** Ouvre (ou crée, ou met à jour) la base, puis demande le stockage persistant. */
 export async function ouvrirStockageIndexedDB(options: Partial<OptionsIndexedDB> = {}): Promise<Stockage> {
   const { nom, fabrique, gestionnaire, journal } = { ...optionsParDefaut(), ...options };
-  const db = await ouvrirBase(fabrique, nom, journal);
+  const { db, baseNeuve } = await ouvrirBase(fabrique, nom, journal);
   // Pas d'attente : l'appli n'a pas besoin du résultat pour fonctionner
   void demanderStockagePersistant(gestionnaire, journal);
-  return creerStockage(db);
+  return creerStockage(db, baseNeuve);
 }
 
-function ouvrirBase(fabrique: IDBFactory, nom: string, journal: Journal): Promise<IDBDatabase> {
+/** Ouvre la base ; baseNeuve : elle n'existait pas avant (version précédente du schéma = 0). */
+function ouvrirBase(fabrique: IDBFactory, nom: string, journal: Journal): Promise<{ db: IDBDatabase; baseNeuve: boolean }> {
   return new Promise((resoudre, rejeter) => {
+    let baseNeuve = false;
     const requete = fabrique.open(nom, VERSION_SCHEMA);
     // Base neuve ou plus ancienne que le code : on applique les migrations manquantes
     requete.onupgradeneeded = (evenement) => {
       const db = requete.result;
+      baseNeuve = evenement.oldVersion === 0;
       const atteinte = migrer(
         {
           creerMagasin: (magasin) => db.createObjectStore(magasin),
@@ -88,7 +91,7 @@ function ouvrirBase(fabrique: IDBFactory, nom: string, journal: Journal): Promis
       const db = requete.result;
       // Un autre onglet (plus récent) veut mettre la base à jour : on la libère
       db.onversionchange = () => db.close();
-      resoudre(db);
+      resoudre({ db, baseNeuve });
     };
     requete.onerror = () => {
       const erreur = requete.error;
@@ -101,7 +104,7 @@ function ouvrirBase(fabrique: IDBFactory, nom: string, journal: Journal): Promis
   });
 }
 
-function creerStockage(db: IDBDatabase): Stockage {
+function creerStockage(db: IDBDatabase, baseNeuve: boolean): Stockage {
   function magasin(nom: NomMagasin, mode: IDBTransactionMode): { store: IDBObjectStore; fin: Promise<void> } {
     const transaction = db.transaction(nom, mode);
     const fin = finTransaction(transaction);
@@ -123,6 +126,7 @@ function creerStockage(db: IDBDatabase): Stockage {
   }
 
   return {
+    baseNeuve,
     async lire<M extends NomMagasin>(nom: M, cle: string): Promise<ContenuMagasins[M] | null> {
       const { store, fin } = magasin(nom, 'readonly');
       const valeur: unknown = await attendre(store.get(cle));

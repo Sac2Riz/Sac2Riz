@@ -1,11 +1,14 @@
-// FENÊTRE DE MISE À JOUR, ouverte par le bouton « Mettre à jour » : explique avant de mettre à jour
+// FENÊTRES DE MISE À JOUR. 1) Ouverte par le bouton « Mettre à jour » : explique avant de mettre à jour
 // (versions installée et nouvelle, nouveautés, ce qui va se passer, ce qui est conservé, ce qui est
 // supprimé) ; « Mettre à jour » lance appliquer() (sauvegarde de la partie, puis redémarrage),
 // « Annuler » (ou Échap, ou le bouton retour d'Android) ne change rien.
+// 2) « Sac2Riz a été mis à jour » (afficherMiseAJourFaite) : au lancement qui suit une mise à jour
+// installée par le navigateur à la fermeture de l'appli, avec la date et les nouveautés pas encore vues.
 
 import { bouton, creer } from '../dom.ts';
 import type { InfosMiseAJour } from './infos-mise-a-jour.ts';
 import { formaterDateBuild } from './version.ts';
+import type { GroupeNouveautes } from '../../types/nouveautes.ts';
 import type { InfosVersion } from '../../types/service-worker.ts';
 
 /** « 14/11/2026 17:30 », ou « inconnue ». */
@@ -25,6 +28,20 @@ function rubrique(titre: string, ...contenu: HTMLElement[]): HTMLElement {
   return section;
 }
 
+/** Rubrique « Nouveautés » : un titre daté et une liste par groupe (du plus récent au plus ancien). */
+function rubriqueNouveautes(groupes: readonly GroupeNouveautes[]): HTMLElement {
+  return rubrique(
+    'Nouveautés',
+    ...groupes.map((g) => {
+      const bloc = creer('div', 'maj-groupe');
+      const liste = creer('ul', 'maj-liste');
+      for (const n of g.nouveautes) liste.append(creer('li', '', n));
+      bloc.append(creer('h4', 'maj-groupe-titre', `${g.titre} — ${dateCourte(g.date)}`), liste);
+      return bloc;
+    }),
+  );
+}
+
 function contenu(infos: InfosMiseAJour): HTMLElement[] {
   const versions = creer('dl', 'maj-versions');
   for (const [libelle, valeur] of [
@@ -37,16 +54,7 @@ function contenu(infos: InfosMiseAJour): HTMLElement[] {
   }
   const elements: HTMLElement[] = [versions];
 
-  if (infos.nouveautes.length > 0) {
-    const groupes = infos.nouveautes.map((g) => {
-      const bloc = creer('div', 'maj-groupe');
-      const liste = creer('ul', 'maj-liste');
-      for (const n of g.nouveautes) liste.append(creer('li', '', n));
-      bloc.append(creer('h4', 'maj-groupe-titre', `${g.titre} — ${dateCourte(g.date)}`), liste);
-      return bloc;
-    });
-    elements.push(rubrique('Nouveautés', ...groupes));
-  }
+  if (infos.nouveautes.length > 0) elements.push(rubriqueNouveautes(infos.nouveautes));
 
   elements.push(
     rubrique(
@@ -67,7 +75,12 @@ function contenu(infos: InfosMiseAJour): HTMLElement[] {
  * version). Se résout à la fermeture (Annuler), ou ne se ferme pas si la mise à jour est lancée
  * (l'appli redémarre).
  */
-export function ouvrirFenetreMiseAJour(infos: Promise<InfosMiseAJour>, appliquer: () => Promise<void>): Promise<void> {
+export function ouvrirFenetreMiseAJour(
+  infos: Promise<InfosMiseAJour>,
+  appliquer: () => Promise<void>,
+  /** Enregistre les nouveautés montrées comme vues (appelé juste avant appliquer). */
+  noterVues: (groupes: readonly GroupeNouveautes[]) => Promise<void>,
+): Promise<void> {
   const dialogue = creer('dialog', 'dialogue dialogue-maj');
   const corps = creer('div', 'dialogue-contenu');
   const titre = creer('h2', 'dialogue-titre', 'Mettre à jour Sac2Riz ?');
@@ -80,11 +93,16 @@ export function ouvrirFenetreMiseAJour(infos: Promise<InfosMiseAJour>, appliquer
     valider.disabled = true;
     annuler.disabled = true;
     etat.textContent = 'Sauvegarde et redémarrage…';
-    appliquer().catch((erreur: unknown) => {
-      console.error('Mise à jour impossible :', erreur);
-      etat.textContent = 'La mise à jour n\'a pas pu se faire pour le moment. Réessayez plus tard.';
-      annuler.disabled = false;
-    });
+    // Les nouveautés montrées ici sont notées comme vues : pas de fenêtre « a été mis à jour » ensuite
+    infos
+      .then((lues) => noterVues(lues.nouveautes))
+      .catch((erreur: unknown) => console.error('Nouveautés vues non enregistrées :', erreur))
+      .then(appliquer)
+      .catch((erreur: unknown) => {
+        console.error('Mise à jour impossible :', erreur);
+        etat.textContent = 'La mise à jour n\'a pas pu se faire pour le moment. Réessayez plus tard.';
+        annuler.disabled = false;
+      });
   });
   const boutons = creer('div', 'dialogue-boutons');
   boutons.append(annuler, valider);
@@ -106,6 +124,36 @@ export function ouvrirFenetreMiseAJour(infos: Promise<InfosMiseAJour>, appliquer
     });
     dialogue.showModal();
     valider.focus({ preventScroll: true });
+    dialogue.scrollTop = 0;
+  });
+}
+
+/**
+ * Fenêtre « Sac2Riz a été mis à jour », au lancement qui suit une mise à jour faite sans passer par
+ * le bouton (appli fermée complètement : le navigateur a installé la version en attente). Montre la
+ * date de la version et les nouveautés pas encore vues (voir apres-mise-a-jour.ts) ; un seul bouton.
+ */
+export function afficherMiseAJourFaite(version: InfosVersion | null, groupes: readonly GroupeNouveautes[]): Promise<void> {
+  const dialogue = creer('dialog', 'dialogue dialogue-maj');
+  const corps = creer('div', 'dialogue-contenu');
+  const ok = bouton('bouton bouton-principal', 'OK', () => dialogue.close());
+  const boutons = creer('div', 'dialogue-boutons');
+  boutons.append(ok);
+  const zone = creer('div', 'maj-contenu');
+  zone.append(
+    creer('p', 'maj-texte', `Vous utilisez maintenant la version du ${dateVersion(version)}. Vos parties, statistiques et réglages sont conservés.`),
+    rubriqueNouveautes(groupes),
+  );
+  corps.append(creer('h2', 'dialogue-titre', 'Sac2Riz a été mis à jour'), zone, boutons);
+  dialogue.append(corps);
+  document.body.append(dialogue);
+  return new Promise((resoudre) => {
+    dialogue.addEventListener('close', () => {
+      dialogue.remove();
+      resoudre();
+    });
+    dialogue.showModal();
+    ok.focus({ preventScroll: true });
     dialogue.scrollTop = 0;
   });
 }

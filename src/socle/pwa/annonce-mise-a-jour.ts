@@ -7,6 +7,7 @@
 import { bouton, creer } from '../dom.ts';
 import { ouvrirFenetreMiseAJour } from './fenetre-mise-a-jour.ts';
 import type { InfosMiseAJour } from './infos-mise-a-jour.ts';
+import type { GroupeNouveautes } from '../../types/nouveautes.ts';
 
 export type AnnonceMiseAJour = {
   /** Une nouvelle version est prête ; appliquer() passe à elle (après sauvegarde). */
@@ -15,7 +16,11 @@ export type AnnonceMiseAJour = {
   readonly bouton: () => HTMLButtonElement;
 };
 
-export function creerAnnonceMiseAJour(lireInfos: () => Promise<InfosMiseAJour>): AnnonceMiseAJour {
+export function creerAnnonceMiseAJour(
+  lireInfos: () => Promise<InfosMiseAJour>,
+  /** Enregistre comme vues les nouveautés montrées dans la fenêtre, avant de mettre à jour. */
+  noterVues: (groupes: readonly GroupeNouveautes[]) => Promise<void>,
+): AnnonceMiseAJour {
   let appliquer: (() => Promise<void>) | null = null;
   /**
    * Boutons créés, en références faibles : un bouton d'un écran quitté est libéré par le navigateur
@@ -28,7 +33,7 @@ export function creerAnnonceMiseAJour(lireInfos: () => Promise<InfosMiseAJour>):
     if (appliquer === null || fenetreOuverte) return;
     fenetreOuverte = true;
     try {
-      await ouvrirFenetreMiseAJour(lireInfos(), appliquer);
+      await ouvrirFenetreMiseAJour(lireInfos(), appliquer, noterVues);
     } finally {
       fenetreOuverte = false;
     }

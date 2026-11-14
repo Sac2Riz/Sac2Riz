@@ -235,7 +235,9 @@ src/socle/
 - **Stockage** : interface `Stockage` (`lire`, `ecrire`, `supprimer`, `lister(prefixe)`, `compter(prefixe)`,
   `prendrePremier(prefixe)`, `remplacerDonnees(donnees)`, `fermer`). Magasins : `parties` (une partie en cours **par jeu**, clé = id du jeu),
   `reserve` (clé `<jeu>/<niveau>/<horodatage>-<compteur>`), `packsJoues` (clé `<jeu>/<niveau>`), `stats`
-  (clé = id du jeu), `reglages` (clé unique). Toute valeur relue passe par la garde de son magasin
+  (clé = id du jeu), `reglages` (clé unique), `appli` (schéma n° 2 : informations propres à l'appli, clé
+  `nouveautes-vues`). `Stockage.baseNeuve` : vrai si la base n'existait pas avant l'ouverture (tout premier
+  lancement). Toute valeur relue passe par la garde de son magasin
   (`src/utils/gardes-sauvegarde.ts`) : une entrée invalide est ignorée. **`prendrePremier` est atomique**
   (lecture + suppression dans une seule transaction IndexedDB) : une grille n'est jamais servie deux fois,
   même avec deux onglets. À l'ouverture, IndexedDB applique les **migrations** manquantes
@@ -547,9 +549,15 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
   sources modifiées non commitées : leur date de modification la plus récente ; sans Git : heure du build.
   Elle entre dans l'empreinte de version : deux builds au contenu identique gardent **la même version** (pas
   de fausse mise à jour). La GitHub Action récupère tout l'historique (`fetch-depth: 0`) pour cela.
-- **Côté page** (`socle/pwa/mise-a-jour.ts`, testé avec de faux objets) : nouvelle version signalée si elle
-  attend au démarrage ou quand elle passe à « installed » alors qu'une version contrôle la page (jamais à
-  la première installation) → **bouton « Mettre à jour »** (`annonce-mise-a-jour.ts`) : chaque écran en crée
+- **Côté page** (`socle/pwa/mise-a-jour.ts`, testé avec de faux objets), suivi lancé **juste après
+  l'ouverture du stockage** (`main.ts`) : nouvelle version signalée si elle attend au démarrage, si elle est
+  **déjà en cours d'installation** au démarrage (le navigateur cherche la mise à jour tout seul à
+  l'ouverture, en parallèle : il peut l'avoir trouvée avant que l'on écoute `updatefound`), ou quand elle
+  passe à « installed » alors qu'une version contrôle la page (jamais à la première installation).
+  Recherche (`registration.update()`) demandée dès l'enregistrement, puis à chaque retour au premier plan,
+  au plus **une fois par minute** (`INTERVALLE_VERIFICATION_MS` : une appli Android est souvent reprise sans
+  être relancée, et le navigateur ne cherche alors rien). Le cache HTTP de GitHub Pages (10 min) ne gêne pas :
+  `updateViaCache` par défaut, le script du service worker est toujours relu sur le serveur. Signalement → **bouton « Mettre à jour »** (`annonce-mise-a-jour.ts`) : chaque écran en crée
   un à côté de son bouton Réglages (accueil, fiche d'un jeu, partie ; libellé masqué dans la barre étroite de
   la partie en paysage), masqué tant qu'aucune version n'est prête, affiché partout dès qu'elle l'est (petit
   point d'accent, pas de clignotement). Plus de bandeau ni de « Plus tard ». Le toucher ouvre une **fenêtre de
@@ -566,6 +574,17 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
   fichier de la version installée (`nouveautesDepuis`) : plusieurs versions publiées depuis → toutes leurs
   nouveautés ; aucune nouveauté visible → pas de rubrique. Ce code est celui de la version INSTALLÉE : il
   sert à partir de la mise à jour suivant celle qui l'apporte.
+- **Mise à jour installée à la fermeture** : une version en attente prend la main dès qu'aucune page de
+  l'ancienne version n'est ouverte (fonctionnement normal du navigateur, impossible à empêcher simplement :
+  constaté à l'étape 6a). Au lancement suivant, la fenêtre **« Sac2Riz a été mis à jour »**
+  (`afficherMiseAJourFaite`) montre la date de la version et les nouveautés pas encore vues. Décision pure
+  et testée (`socle/pwa/apres-mise-a-jour.ts`) : jamais au tout premier lancement (`Stockage.baseNeuve` :
+  la base IndexedDB n'existait pas avant l'ouverture) ; une seule fois (groupes notés comme vus) ; rien si
+  aucune nouveauté visible ; sinon toutes les nouveautés depuis la dernière vue. Mémoire : magasin `appli`
+  (migration de schéma n° 2), clé `nouveautes-vues` = `{ vues: [ids] }` — ni exportée ni remplacée par un
+  import. Une mise à jour acceptée par le bouton note ses nouveautés comme vues avant le redémarrage (pas de
+  seconde fenêtre). Base existante sans mémoire (mise à jour depuis une version sans cette fonction) : toutes
+  les nouveautés du fichier sont montrées.
   `verifier()` relance la recherche au retour au premier plan, au plus une fois par heure.
 - **Test local** : `npm run apercu` (build + serveur) ; localhost est un contexte sécurisé, le service
   worker y fonctionne. Sur le réseau local (`http://192.168…`), non : le test sur tablette se fait en ligne.

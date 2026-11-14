@@ -2,6 +2,29 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6a, correction] — Détection des mises à jour, fenêtre « Sac2Riz a été mis à jour » — 2026-11-14
+
+### Corrigé (diagnostic : la tablette était passée à la nouvelle version sans rien annoncer)
+- **Version trouvée avant que la page écoute** : au démarrage, une version déjà EN COURS D'INSTALLATION
+  (trouvée par le navigateur, en parallèle du démarrage, avant l'écoute de `updatefound`) n'était pas suivie :
+  elle l'est désormais (`mise-a-jour.ts`) ; le suivi démarre juste après l'ouverture du stockage, et une
+  recherche est demandée tout de suite.
+- **Recherche au retour au premier plan** : au plus une fois par MINUTE au lieu d'une fois par heure depuis
+  le lancement (une appli reprise depuis l'arrière-plan ne cherchait rien pendant une heure).
+
+### Ajouté
+- **Fenêtre « Sac2Riz a été mis à jour »** : quand le navigateur a installé la nouvelle version à la fermeture
+  complète de l'appli (fonctionnement normal, impossible à empêcher simplement), ses nouveautés sont montrées
+  au lancement suivant — jamais au tout premier lancement, une seule fois, rien sans nouveauté visible, toutes
+  les nouveautés depuis la dernière vue (`socle/pwa/apres-mise-a-jour.ts`, pur).
+- Stockage : magasin `appli` (migration n° 2) pour les nouveautés vues (ni exporté ni remplacé par un
+  import) ; `Stockage.baseNeuve`.
+- Nouveautés pour le joueur : groupe « Des nouveautés toujours présentées ».
+- Tests : version en cours d'installation au démarrage, recherche immédiate et toutes les minutes, décision
+  de la fenêtre, magasin `appli`, migration n° 2 (552 tests). Vérifié dans Edge : premier lancement sans
+  fenêtre, mise à jour installée par la fermeture puis fenêtre une seule fois, mise à jour par le bouton sans
+  fenêtre ensuite.
+
 ## [Étape 6a, complément] — Bouton « Mettre à jour » et nouveautés — 2026-11-14
 
 ### Ajouté

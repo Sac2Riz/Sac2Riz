@@ -30,6 +30,11 @@ export const MIGRATIONS: readonly Migration[] = [
       for (const nom of ['parties', 'reserve', 'packsJoues', 'stats', 'reglages']) base.creerMagasin(nom);
     },
   },
+  {
+    version: 2,
+    description: 'Magasin « appli » : informations propres à l\'appli (nouveautés déjà vues)',
+    appliquer: (base) => base.creerMagasin('appli'),
+  },
 ];
 
 /** Version actuelle du schéma = version de la dernière migration. */

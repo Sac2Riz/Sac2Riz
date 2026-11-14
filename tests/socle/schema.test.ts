@@ -52,6 +52,12 @@ describe('schéma de stockage', () => {
     assert.deepEqual(base.journal, ['+b', '-a']);
   });
 
+  test('migration n° 2 : une base de l\'étape 3a reçoit seulement le magasin « appli »', () => {
+    const base = baseFactice(['parties', 'reserve', 'packsJoues', 'stats', 'reglages']);
+    assert.equal(migrer(base, 1), 2);
+    assert.deepEqual(base.journal, ['+appli']);
+  });
+
   test('liste mal numérotée refusée', () => {
     const migrations: Migration[] = [{ version: 2, description: 'x', appliquer: () => undefined }];
     assert.throws(() => migrer(baseFactice(), 0, migrations), /mal numérotée/);

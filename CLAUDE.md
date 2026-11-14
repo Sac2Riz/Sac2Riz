@@ -127,6 +127,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   partie → fiche → accueil (`socle/navigation.ts`).
 - ✅ Mises à jour : bouton « Mettre à jour » à côté de Réglages et fenêtre de confirmation (versions,
   nouveautés lues dans la nouvelle version, ce qui est conservé / supprimé) ; nouveautés pour le joueur dans
-  `public/nouveautes.json`.
+  `public/nouveautes.json`. Détection corrigée (version en cours d'installation au démarrage, recherche
+  toutes les minutes) ; fenêtre « Sac2Riz a été mis à jour » quand le navigateur a installé la version à la
+  fermeture de l'appli (magasin IndexedDB `appli`, schéma n° 2).
 - ⏭️ Prochaine : étape 6b (7 directions de design proposées comme thèmes), puis 6c (finalisation), puis
   variantes et nouveaux jeux.

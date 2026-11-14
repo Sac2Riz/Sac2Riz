@@ -19,8 +19,11 @@ export type DonneesBrutes = Map<string, Map<string, unknown>>;
 
 export type StockageMemoire = Stockage & { readonly brut: DonneesBrutes; readonly version: number };
 
-/** Crée un stockage vide, au schéma actuel (toutes les migrations appliquées depuis 0). */
-export function creerStockageMemoire(): StockageMemoire {
+/**
+ * Crée un stockage vide, au schéma actuel (toutes les migrations appliquées depuis 0).
+ * baseNeuve : ce que le stockage annonce (faux pour simuler une base créée par une version précédente).
+ */
+export function creerStockageMemoire(baseNeuve = true): StockageMemoire {
   const brut: DonneesBrutes = new Map();
   const version = migrer(
     {
@@ -61,6 +64,7 @@ export function creerStockageMemoire(): StockageMemoire {
   }
 
   return {
+    baseNeuve,
     brut,
     version,
     async lire<M extends NomMagasin>(nom: M, cle: string): Promise<ContenuMagasins[M] | null> {

@@ -234,6 +234,11 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   bandeau, fenêtre de confirmation (versions, nouveautés, ce qui est conservé / supprimé) ; nouveautés pour le
   joueur dans `public/nouveautes.json`, lues dans la nouvelle version déjà téléchargée (hors ligne).
 
+- **Correction des mises à jour** (diagnostic de l'utilisateur : rien d'annoncé, tablette déjà à jour) :
+  version en cours d'installation au démarrage suivie, recherche toutes les minutes au retour au premier
+  plan ; fenêtre « Sac2Riz a été mis à jour » quand le navigateur a installé la version à la fermeture
+  (décision de l'utilisateur : option A ; jamais au premier lancement, une fois, rien sans nouveauté).
+
 ### Étape 6b — Directions de design
 - 7 directions de design proposées comme **thèmes** sur la vraie appli, pour que l'utilisateur choisisse.
 

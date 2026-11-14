@@ -4,11 +4,16 @@
 // Une nouvelle version est « en attente » quand son service worker est installé (fichiers en
 // cache) alors qu'une version contrôle déjà la page. On la signale (bouton « Mettre à jour » à côté
 // de Réglages, annonce-mise-a-jour.ts, puis fenêtre de confirmation) :
-//  - au démarrage, si elle attendait déjà (registration.waiting) ;
+//  - au démarrage, si elle attendait déjà (registration.waiting), ou si elle est EN COURS
+//    D'INSTALLATION (registration.installing) : le navigateur cherche la mise à jour tout seul à
+//    l'ouverture, en parallèle du démarrage de l'appli, et peut l'avoir trouvée avant que ce code
+//    écoute « updatefound » (cause d'un bandeau jamais affiché, diagnostiquée à l'étape 6a) ;
 //  - plus tard, quand le navigateur la découvre (updatefound → état « installed »).
-// Le navigateur vérifie les mises à jour à chaque ouverture ; verifier() le lui redemande quand
-// l'appli revient au premier plan (au plus une fois par heure) : une appli restée ouverte des
-// jours sur la tablette voit quand même la nouvelle version.
+// Une recherche est demandée dès l'enregistrement, puis à chaque retour au premier plan (verifier(),
+// au plus une fois par minute) : une appli Android est souvent reprise sans être relancée, et le
+// navigateur ne cherche alors rien de lui-même.
+// Si l'appli est fermée complètement pendant qu'une version attend, le navigateur l'installe tout
+// seul : la fenêtre « Sac2Riz a été mis à jour » le dit au lancement suivant (apres-mise-a-jour.ts).
 // Appliquer (clic du joueur) : sauvegarde, message « activer » au service worker en attente, puis
 // rechargement quand il a pris la main (controllerchange). Le tout premier contrôle de la page
 // (première installation) déclenche aussi controllerchange : sans clic, il ne recharge rien.
@@ -53,7 +58,8 @@ export type SuiviMiseAJour = {
   readonly verifier: () => void;
 };
 
-export const INTERVALLE_VERIFICATION_MS = 60 * 60 * 1000;
+/** Écart minimal entre deux recherches demandées au retour au premier plan (un petit fichier à relire). */
+export const INTERVALLE_VERIFICATION_MS = 60 * 1000;
 
 /** Enregistre le service worker et suit ses mises à jour ; null si l'enregistrement échoue. */
 export async function suivreMisesAJour(o: OptionsMiseAJour): Promise<SuiviMiseAJour | null> {
@@ -83,25 +89,37 @@ export async function suivreMisesAJour(o: OptionsMiseAJour): Promise<SuiviMiseAJ
     });
   }
 
-  // Déjà en attente au démarrage (installée pendant une session précédente)
-  if (enregistrement.waiting !== null && o.conteneur.controller !== null) proposer(enregistrement.waiting);
-
-  enregistrement.addEventListener('updatefound', () => {
-    const travailleur = enregistrement.installing;
-    if (travailleur === null) return;
-    travailleur.addEventListener('statechange', () => {
+  /** Version en cours d'installation : proposée dès qu'elle est installée (sauf toute première installation). */
+  function suivre(travailleur: TravailleurSw): void {
+    const verifierEtat = (): void => {
       // Sans contrôleur, c'est la toute première installation : rien à proposer
       if (travailleur.state === 'installed' && o.conteneur.controller !== null) proposer(travailleur);
-    });
+    };
+    travailleur.addEventListener('statechange', verifierEtat);
+    verifierEtat();
+  }
+
+  // Déjà en attente au démarrage (installée pendant une session précédente, ou pendant le démarrage)
+  if (enregistrement.waiting !== null && o.conteneur.controller !== null) proposer(enregistrement.waiting);
+  // Déjà en cours d'installation : le navigateur l'a trouvée avant que l'on écoute « updatefound »
+  if (enregistrement.installing !== null) suivre(enregistrement.installing);
+
+  enregistrement.addEventListener('updatefound', () => {
+    if (enregistrement.installing !== null) suivre(enregistrement.installing);
   });
 
+  const chercher = (): void => {
+    enregistrement.update().catch((erreur: unknown) => o.journal(`Recherche de mise à jour impossible : ${String(erreur)}`));
+  };
+  // Recherche tout de suite, sans attendre celle du navigateur
   let derniere = o.maintenant();
+  chercher();
   return {
     verifier: () => {
       const instant = o.maintenant();
       if (instant - derniere < INTERVALLE_VERIFICATION_MS) return;
       derniere = instant;
-      enregistrement.update().catch((erreur: unknown) => o.journal(`Recherche de mise à jour impossible : ${String(erreur)}`));
+      chercher();
     },
   };
 }
