@@ -6,7 +6,11 @@ Sac2Riz est une application web installable (PWA) pensée pour jouer tranquillem
 une fois installée, elle fonctionne sans connexion, ne collecte aucune donnée et n'affiche aucune
 publicité. Les parties sont sauvegardées automatiquement sur l'appareil.
 
-▶️ **Jouer : [sac2riz.github.io/Sac2Riz](https://sac2riz.github.io/Sac2Riz/)** — *bientôt disponible*
+▶️ **Jouer : [sac2riz.github.io/Sac2Riz](https://sac2riz.github.io/Sac2Riz/)**
+
+Sur Android, ouvrez le lien dans Chrome puis choisissez « Installer l'application » (ou « Ajouter à
+l'écran d'accueil ») : Sac2Riz s'ouvre alors comme une appli et fonctionne même en mode avion. Vos données
+peuvent être exportées dans un fichier depuis les réglages.
 
 ## Les jeux
 
@@ -34,7 +38,7 @@ nécessaires pour la résoudre. Aucune grille n'exige de tâtonner au hasard.
 | Diabolique | ★★★★★ | chaînes logiques |
 
 Une note de force de 1 à 10 précise la difficulté à l'intérieur de chaque niveau.
-Et aussi : notes (avec remplissage automatique), annuler et rétablir sans limite, indices expliqués pas à
+Et aussi : notes, annuler et rétablir sans limite, indices expliqués pas à
 pas, vérification des erreurs au choix, chronomètre, statistiques par niveau, thème clair ou sombre.
 
 ## Sous le capot
@@ -51,6 +55,7 @@ Prérequis : [Node.js](https://nodejs.org/) ≥ 22.18.
 npm install      # installe TypeScript (outil de développement uniquement)
 npm run dev      # compile en continu et sert l'appli sur http://localhost:8080
 npm run check    # vérification des types + tests
+npm run apercu   # version de production (hors ligne compris) sur http://localhost:8080
 ```
 
 Documentation : [architecture](docs/ARCHITECTURE.md) · [difficulté](docs/DIFFICULTE.md) ·
