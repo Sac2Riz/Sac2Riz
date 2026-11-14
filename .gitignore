@@ -4,6 +4,9 @@ node_modules/
 # Résultat de la compilation (reconstruit par « npm run build », publié par la GitHub Action)
 dist/
 
+# Captures d'écran de comparaison (étape 6b : directions de design), produites en local
+captures/
+
 # Fichiers d'export de sauvegarde de l'appli (données personnelles de jeu)
 sac2riz-sauvegarde*.json
 

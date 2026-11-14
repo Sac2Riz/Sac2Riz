@@ -1,0 +1,15 @@
+/* Icônes de l'interface (étape 6b) : dessin de chaque nom (src/socle/icones.ts) pour la direction
+   « Ardoise ». Chaque direction remplace ces dessins dans sa feuille (src/styles/directions/<id>.css).
+   Fichiers : public/design/<direction>/icones/<nom>.svg, utilisés comme masque (couleur = texte). */
+
+.icone[data-icone="retour"] { -webkit-mask-image: url("../design/ardoise/icones/retour.svg"); mask-image: url("../design/ardoise/icones/retour.svg"); }
+.icone[data-icone="reglages"] { -webkit-mask-image: url("../design/ardoise/icones/reglages.svg"); mask-image: url("../design/ardoise/icones/reglages.svg"); }
+.icone[data-icone="statistiques"] { -webkit-mask-image: url("../design/ardoise/icones/statistiques.svg"); mask-image: url("../design/ardoise/icones/statistiques.svg"); }
+.icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../design/ardoise/icones/mise-a-jour.svg"); mask-image: url("../design/ardoise/icones/mise-a-jour.svg"); }
+.icone[data-icone="pause"] { -webkit-mask-image: url("../design/ardoise/icones/pause.svg"); mask-image: url("../design/ardoise/icones/pause.svg"); }
+.icone[data-icone="reprendre"] { -webkit-mask-image: url("../design/ardoise/icones/reprendre.svg"); mask-image: url("../design/ardoise/icones/reprendre.svg"); }
+.icone[data-icone="notes"] { -webkit-mask-image: url("../design/ardoise/icones/notes.svg"); mask-image: url("../design/ardoise/icones/notes.svg"); }
+.icone[data-icone="effacer"] { -webkit-mask-image: url("../design/ardoise/icones/effacer.svg"); mask-image: url("../design/ardoise/icones/effacer.svg"); }
+.icone[data-icone="annuler"] { -webkit-mask-image: url("../design/ardoise/icones/annuler.svg"); mask-image: url("../design/ardoise/icones/annuler.svg"); }
+.icone[data-icone="retablir"] { -webkit-mask-image: url("../design/ardoise/icones/retablir.svg"); mask-image: url("../design/ardoise/icones/retablir.svg"); }
+.icone[data-icone="indice"] { -webkit-mask-image: url("../design/ardoise/icones/indice.svg"); mask-image: url("../design/ardoise/icones/indice.svg"); }

@@ -1,5 +1,6 @@
 /* Styles des chiffres casés (classes préfixées « chiffres-cases- »).
-   Couleurs : variables de thème (src/styles/theme.css), direction « Ardoise ».
+   Couleurs, polices et formes : variables de thème (src/styles/theme.css), redéfinies par la direction
+   de design choisie (aucune règle de direction ne vise ces classes).
    Grille : le socle la place dans un conteneur dimensionné (container-type: size) ; elle y prend
    la plus grande taille possible en gardant ses proportions (--l colonnes, --h lignes).
    Cases noires : couleur du fond de l'appli (--couleur-case-noire), elles se fondent dans la page ;
@@ -19,6 +20,7 @@
   gap: 1px;
   padding: 1px;
   background: var(--couleur-case-noire);
+  font-family: var(--police-chiffres);
 }
 
 .chiffres-cases-noire {
@@ -37,8 +39,8 @@
   background: var(--couleur-case);
   box-shadow: 0 0 0 1px var(--couleur-trait-epais);
   color: var(--couleur-saisie);
-  font-size: calc(62cqi / var(--l));
-  font-weight: 400;
+  font-size: calc(62cqi / var(--l) * var(--echelle-chiffres));
+  font-weight: var(--graisse-saisie);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   -webkit-tap-highlight-color: transparent;
@@ -47,7 +49,7 @@
 /* Chiffres des emplacements pré-placés : couleur du texte, en gras (comme les chiffres donnés du sudoku) */
 .chiffres-cases-case.est-fixe {
   color: var(--couleur-texte);
-  font-weight: 700;
+  font-weight: max(700, var(--graisse-donnee));
 }
 
 /* Mises en évidence, de la plus faible à la plus forte (l'ordre compte) */
@@ -169,8 +171,9 @@
   border-radius: calc(var(--rayon) * 0.8);
   background: var(--couleur-case);
   color: var(--couleur-texte);
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-family: var(--police-notes);
+  font-size: calc(1.2rem * var(--echelle-notes));
+  font-weight: var(--graisse-note);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   -webkit-tap-highlight-color: transparent;

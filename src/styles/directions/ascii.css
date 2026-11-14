@@ -1,0 +1,132 @@
+/* Direction de design à l'essai n° 2 — ASCII (étape 6b, temporaire).
+   Tout est fait de caractères : rien de plein ni de coloré, une page de texte tapée.
+   Clair : feuille de machine à écrire (papier, encre noire, ruban rouge pour les erreurs, bleu stylo
+   pour les saisies). Sombre : fichier texte .NFO (gris clair sur noir).
+   Police : Courier Prime (tout) — SIL OFL 1.1, public/polices/. Aucune animation. */
+
+@font-face { font-family: "Courier Prime"; src: url("../../polices/courier-prime-400.woff2") format("woff2"); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: "Courier Prime"; src: url("../../polices/courier-prime-700.woff2") format("woff2"); font-weight: 600 900; font-display: swap; }
+
+:root[data-direction="ascii"] {
+  --couleur-fond: light-dark(#f4f0e6, #0d0d0d);
+  --couleur-surface: light-dark(#f4f0e6, #0d0d0d);
+  --couleur-case: light-dark(#f4f0e6, #0d0d0d);
+  --couleur-texte: light-dark(#1c1b19, #d7d7d7);
+  --couleur-texte-doux: light-dark(#5a554c, #9a9a9a);
+  --couleur-saisie: light-dark(#2d4f9e, #f0d58c);
+  --couleur-accent: light-dark(#1c1b19, #f2f2f2);
+  --couleur-sur-accent: light-dark(#f4f0e6, #0d0d0d);
+  --couleur-bordure: light-dark(#1c1b19, #8a8a8a);
+  --couleur-trait-fin: light-dark(#b9b2a3, #3a3a3a);
+  --couleur-trait-epais: light-dark(#1c1b19, #bdbdbd);
+  --couleur-zone: light-dark(#ebe5d6, #1a1a1a);
+  --couleur-meme: light-dark(#e0d8c4, #262626);
+  --couleur-selection: light-dark(#d6cdb4, #333333);
+  --couleur-note: light-dark(#4f4a42, #a8a8a8);
+  --couleur-erreur: light-dark(#b0201c, #ff7b72);
+  --couleur-erreur-fond: light-dark(#f3dcd6, #2a1414);
+  --couleur-indice: light-dark(#7a4f00, #e6c069);
+  --couleur-indice-fond: light-dark(#efe3c2, #2a2410);
+  --couleur-place: light-dark(#1f6b35, #8fdc9f);
+  --couleur-voile: light-dark(rgb(28 27 25 / 40%), rgb(0 0 0 / 70%));
+  --couleur-decor-1: light-dark(#8c8576, #6a6a6a);
+  --couleur-decor-2: var(--couleur-decor-1);
+  --couleur-decor-3: var(--couleur-decor-1);
+
+  --police: "Courier Prime", "Courier New", monospace;
+  --police-titre: var(--police);
+  --police-chiffres: var(--police);
+  --police-notes: var(--police);
+  --echelle-chiffres: 1.05;
+  --echelle-notes: 1.05;
+  --graisse-donnee: 700;
+  --graisse-saisie: 400;
+  --graisse-note: 700;
+
+  --rayon: 0;
+  --grille-rayon: 0;
+  --grille-cadre: 2px;
+  --grille-trait-bloc: 2px;
+  --grille-trait-case: 1px;
+  --carte-bordure: 2px;
+  --carte-ombre: none;
+  /* Coins « + » des cadres : deux petits traits croisés dans chaque coin (couleur du thème) */
+  --ascii-trait: linear-gradient(var(--couleur-bordure) 0 0);
+}
+
+/* ---------- Cadres en caractères : bords « - - - » et « ¦ », coins « + » ---------- */
+:root[data-direction="ascii"] :is(.carte-jeu, .dialogue, .fin-carte) {
+  border-style: dashed;
+  background-color: var(--couleur-surface);
+  background-image: var(--ascii-trait), var(--ascii-trait), var(--ascii-trait), var(--ascii-trait),
+    var(--ascii-trait), var(--ascii-trait), var(--ascii-trait), var(--ascii-trait);
+  background-origin: border-box;
+  background-repeat: no-repeat;
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px;
+  background-position: -5px 0, 0 -5px, calc(100% + 5px) 0, 100% -5px,
+    -5px 100%, 0 calc(100% + 5px), calc(100% + 5px) 100%, 100% calc(100% + 5px);
+}
+
+:root[data-direction="ascii"] :is(.bouton, .bouton-icone, .outil, .touche) {
+  border-style: dashed;
+  border-color: var(--couleur-bordure);
+  background: transparent;
+}
+
+:root[data-direction="ascii"] :is(.bouton-principal, .choix-theme-bouton[aria-checked="true"], .outil.est-actif) {
+  background: var(--couleur-accent);
+  border-style: solid;
+}
+
+/* Nom du jeu entre crochets, sous-titres soulignés de tirets */
+:root[data-direction="ascii"] .carte-jeu-nom::before { content: "[ "; color: var(--couleur-texte-doux); }
+:root[data-direction="ascii"] .carte-jeu-nom::after { content: " ]"; color: var(--couleur-texte-doux); }
+:root[data-direction="ascii"] :is(.fiche-sous-titre, .reglages-section-titre)::before { content: "== "; }
+:root[data-direction="ascii"] .pastille-en-cours {
+  border-radius: 0;
+  background: transparent;
+  color: var(--couleur-texte);
+}
+:root[data-direction="ascii"] .pastille-en-cours::before { content: "<"; }
+:root[data-direction="ascii"] .pastille-en-cours::after { content: ">"; }
+
+/* ---------- Accueil : titre en art ASCII, frise de densité ---------- */
+:root[data-direction="ascii"] .accueil-titre {
+  font-size: 0; /* le texte « Sac2Riz » reste lu par les lecteurs d'écran */
+  line-height: 1.15;
+}
+
+:root[data-direction="ascii"] .accueil-titre::before {
+  content: " ___    _     ___  ___  ___  ___  ____\A / __|  /_\\   / __||_  )| _ \\|_ _||_  /\A \\__ \\ / _ \\ | (__  / / |   / | |  / / \A |___//_/ \\_\\ \\___|/___||_|_\\|___|/___|";
+  display: inline-block;
+  white-space: pre;
+  text-align: left;
+  font-size: clamp(0.7rem, 2.6vw, 1.15rem);
+  font-weight: 700;
+  color: var(--couleur-texte);
+}
+
+:root[data-direction="ascii"] .accueil-entete::after {
+  content: " .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:.  .:-=+*#%@%#*+=-:. ";
+  display: block;
+  margin-top: var(--espace-2);
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--couleur-decor-1);
+}
+
+:root[data-direction="ascii"] .accueil-sous-titre::before { content: "-- "; }
+:root[data-direction="ascii"] .accueil-sous-titre::after { content: " --"; }
+
+/* ---------- Icônes ---------- */
+:root[data-direction="ascii"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii/icones/retour.svg"); mask-image: url("../../design/ascii/icones/retour.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii/icones/reglages.svg"); mask-image: url("../../design/ascii/icones/reglages.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii/icones/statistiques.svg"); mask-image: url("../../design/ascii/icones/statistiques.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii/icones/mise-a-jour.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii/icones/pause.svg"); mask-image: url("../../design/ascii/icones/pause.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii/icones/reprendre.svg"); mask-image: url("../../design/ascii/icones/reprendre.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii/icones/notes.svg"); mask-image: url("../../design/ascii/icones/notes.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii/icones/effacer.svg"); mask-image: url("../../design/ascii/icones/effacer.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii/icones/annuler.svg"); mask-image: url("../../design/ascii/icones/annuler.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii/icones/retablir.svg"); mask-image: url("../../design/ascii/icones/retablir.svg"); }
+:root[data-direction="ascii"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii/icones/indice.svg"); mask-image: url("../../design/ascii/icones/indice.svg"); }

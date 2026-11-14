@@ -1,6 +1,7 @@
 // ÉCRAN DES RÉGLAGES : fenêtre (<dialog>) ouverte depuis l'accueil, la fiche d'un jeu ou une partie.
 // Trois sections clairement séparées (étape 6a) :
-//   1. Application : thème, sauvegarde (export / import), version de l'appli ;
+//   1. Application : thème, [direction de design à l'essai — étape 6b, retirée en 6c], sauvegarde
+//      (export / import), version de l'appli ;
 //   2. Tous les jeux : vérification des erreurs, mise en évidence ;
 //   3. Par jeu : une sous-section par jeu avec SES réglages, déclarés par le jeu (MetaJeu.reglages)
 //      et affichés automatiquement ; pendant une partie, seulement le jeu en cours.
@@ -13,6 +14,8 @@ import type { MetaJeu, ReglageJeu } from '../types/jeu.ts';
 import type { Reglages, Theme } from '../types/sauvegarde.ts';
 import { estActif } from '../utils/reglages-jeu.ts';
 import { bouton, creer } from './dom.ts';
+import { changerDirection, directionCourante } from './design/appliquer.ts';
+import { DIRECTIONS, type Direction } from './design/directions.ts';
 import { changerReglageJeu, reglagesDuJeu } from './reglages.ts';
 import { NOMS_THEMES, ORDRE_THEMES } from './theme.ts';
 
@@ -73,6 +76,37 @@ function choixTheme(lire: Lire, changer: Changer): HTMLElement {
   }
   marquer();
   groupe.append(titre, choix);
+  return groupe;
+}
+
+/**
+ * Étape 6b, TEMPORAIRE (retiré à l'étape 6c) : « Direction de design (essai) ». S'applique tout de
+ * suite et se combine avec le thème ; enregistré à part (design/directions.ts).
+ */
+function choixDirection(): HTMLElement {
+  const groupe = creer('div', 'reglage reglage-direction');
+  const textes = creer('span', 'reglage-textes');
+  const titre = creer('span', 'reglage-titre', 'Direction de design (essai)');
+  titre.id = 'reglage-direction-titre';
+  textes.append(titre, creer('span', 'reglage-detail', 'Pour comparer les styles proposés : ce choix disparaîtra quand l’un d’eux sera retenu.'));
+  const choix = creer('div', 'choix-direction');
+  choix.setAttribute('role', 'radiogroup');
+  choix.setAttribute('aria-labelledby', titre.id);
+  const boutons = new Map<Direction, HTMLButtonElement>();
+  const marquer = (): void => {
+    for (const [direction, b] of boutons) b.setAttribute('aria-checked', String(directionCourante() === direction));
+  };
+  for (const { id, nom } of DIRECTIONS) {
+    const b = bouton('bouton choix-theme-bouton', nom, () => {
+      changerDirection(id);
+      marquer();
+    });
+    b.setAttribute('role', 'radio');
+    boutons.set(id, b);
+    choix.append(b);
+  }
+  marquer();
+  groupe.append(textes, choix);
   return groupe;
 }
 
@@ -182,7 +216,14 @@ export function ouvrirReglages(lire: Lire, changer: Changer, o: OptionsReglages)
   boutons.append(fermer);
   contenu.append(
     creer('h2', 'dialogue-titre', 'Réglages'),
-    section('application', 'Application', choixTheme(lire, changer), sauvegarde(o.sauvegarde), version(o.version)),
+    section(
+      'application',
+      'Application',
+      choixTheme(lire, changer),
+      choixDirection(),
+      sauvegarde(o.sauvegarde),
+      version(o.version),
+    ),
     section(
       'communs',
       'Tous les jeux',

@@ -17,7 +17,8 @@ import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX } from '../types/niveaux.ts';
 import type { ContexteVue, ReglagesVue, VueJeu } from '../types/vue.ts';
 import type { BilanFin } from './bilan-fin.ts';
-import { boutonIcone, bouton, creer } from './dom.ts';
+import { boutonIcone, bouton, changerIcone, creer, icone } from './dom.ts';
+import type { NomIcone } from './icones.ts';
 import { formaterTemps, libelleForce } from './format.ts';
 import { outilsAffiches, type Outil } from './outils.ts';
 import {
@@ -80,15 +81,15 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const ecran = creer('div', 'partie');
 
   const barre = creer('header', 'partie-barre');
-  const retour = boutonIcone('bouton-icone', '←', 'Retour à la fiche du jeu', () => o.retour());
+  const retour = boutonIcone('bouton-icone', 'retour', 'Retour à la fiche du jeu', () => o.retour());
   const titre = creer('div', 'partie-titre');
   // « Moyen · Force 6 » : sur une ligne en portrait, sur deux (sans le point) dans la colonne étroite du paysage
   titre.setAttribute('aria-label', libelleForce(niveau, force));
   titre.append(creer('span', 'partie-niveau', INFOS_NIVEAUX[niveau].nom), creer('span', 'partie-force', `Force ${force}`));
   const chrono = creer('span', 'partie-chrono');
   chrono.setAttribute('role', 'timer');
-  const reglages = boutonIcone('bouton-icone', '⚙', 'Réglages', () => void ouvrirReglages());
-  const pause = boutonIcone('bouton-icone', '❙❙', 'Mettre en pause', () => basculerPause());
+  const reglages = boutonIcone('bouton-icone', 'reglages', 'Réglages', () => void ouvrirReglages());
+  const pause = boutonIcone('bouton-icone', 'pause', 'Mettre en pause', () => basculerPause());
   barre.append(retour, titre, chrono, o.boutonMiseAJour(), reglages, pause);
 
   const zoneGrille = creer('div', 'partie-grille');
@@ -96,14 +97,14 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   voilePause.append(creer('p', 'partie-pause-texte', 'Pause'), bouton('bouton bouton-principal', 'Reprendre', () => basculerPause()));
 
   const outils = creer('div', 'partie-outils');
-  const outilNotes = outil('✎', 'Notes', () => {
+  const outilNotes = outil('notes', 'Notes', () => {
     modeNotes = !modeNotes;
     dessiner();
   });
-  const outilEffacer = outil('⌫', 'Effacer', () => instance.effacer());
-  const outilAnnuler = outil('↶', 'Annuler', () => changer(annuler(logique, partie)));
-  const outilRetablir = outil('↷', 'Rétablir', () => changer(retablir(logique, partie)));
-  const outilIndice = outil('💡', 'Indice', () => montrerIndice());
+  const outilEffacer = outil('effacer', 'Effacer', () => instance.effacer());
+  const outilAnnuler = outil('annuler', 'Annuler', () => changer(annuler(logique, partie)));
+  const outilRetablir = outil('retablir', 'Rétablir', () => changer(retablir(logique, partie)));
+  const outilIndice = outil('indice', 'Indice', () => montrerIndice());
   const compteurIndices = creer('small', 'outil-compteur');
   outilIndice.append(compteurIndices);
   const boutonsOutils: Readonly<Record<Outil, HTMLButtonElement>> = {
@@ -158,9 +159,9 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const instance = vue.monter({ grille: zoneGrille, pave: pavePersonnalise ? pave : null }, contexte);
   zoneGrille.append(voilePause);
 
-  function outil(icone: string, libelle: string, action: () => void): HTMLButtonElement {
+  function outil(nom: NomIcone, libelle: string, action: () => void): HTMLButtonElement {
     const b = bouton('outil', '', action);
-    b.append(creer('span', 'icone', icone), creer('span', 'outil-libelle', libelle));
+    b.append(icone(nom), creer('span', 'outil-libelle', libelle));
     return b;
   }
 
@@ -176,7 +177,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   function dessinerIndice(): void {
     ecran.classList.toggle('avec-indice', indice !== null);
     if (indice === null) return;
-    bandeauTitre.textContent = `💡 ${indice.titre}`;
+    bandeauTitre.replaceChildren(icone('indice'), ` ${indice.titre}`);
     bandeauTexte.textContent = indice.explication;
     appliquer.textContent = indice.libelleAction;
   }
@@ -212,8 +213,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     pause.disabled = partie.terminee;
     pause.setAttribute('aria-label', enPause() ? 'Reprendre' : 'Mettre en pause');
     pause.title = pause.getAttribute('aria-label') ?? '';
-    const iconePause = pause.querySelector('.icone');
-    if (iconePause !== null) iconePause.textContent = enPause() ? '▶' : '❙❙';
+    changerIcone(pause.querySelector('.icone'), enPause() ? 'reprendre' : 'pause');
     ecran.classList.toggle('est-en-pause', enPause());
     ecran.classList.toggle('mode-notes', modeNotes);
     dessinerIndice();

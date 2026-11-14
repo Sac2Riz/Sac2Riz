@@ -1,0 +1,142 @@
+/* Direction de design à l'essai n° 5 — RÉTRO, années 60-70 (étape 6b, temporaire).
+   Chaleureux et arrondi : affiche et électroménager vintage, orange brûlé, moutarde, olive, brun.
+   Clair : papier crème. Sombre : brun teck, texte crème.
+   Polices : Fraunces (titres), Karla (texte, chiffres, notes) — SIL OFL 1.1, public/polices/.
+   Décors fixes (arc-en-ciel 70s, soleil rayonnant, grain de papier) : aucune animation. */
+
+@font-face { font-family: "Fraunces"; src: url("../../polices/fraunces-700.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "Karla"; src: url("../../polices/karla-400.woff2") format("woff2"); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: "Karla"; src: url("../../polices/karla-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Karla"; src: url("../../polices/karla-700.woff2") format("woff2"); font-weight: 700 900; font-display: swap; }
+
+:root[data-direction="retro"] {
+  --couleur-fond: light-dark(#f3e9d2, #2a1d14);
+  --couleur-surface: light-dark(#fbf5e6, #3a2a1e);
+  --couleur-case: light-dark(#fffaf0, #33251b);
+  --couleur-texte: light-dark(#3a2a1a, #f3e6cc);
+  --couleur-texte-doux: light-dark(#6b5440, #cdb48f);
+  --couleur-saisie: light-dark(#1a4d69, #8fd0c0);
+  --couleur-accent: light-dark(#a8410f, #f0a04b);
+  --couleur-sur-accent: light-dark(#fffaf0, #2a1d14);
+  --couleur-bordure: light-dark(#d8c6a2, #5a4330);
+  --couleur-trait-fin: light-dark(#dccaa6, #4a3727);
+  --couleur-trait-epais: light-dark(#5a3d22, #d9b77e);
+  --couleur-zone: light-dark(#f6e7c4, #3f2e20);
+  --couleur-meme: light-dark(#f0d79a, #574026);
+  --couleur-selection: light-dark(#eac46a, #5e4220);
+  --couleur-note: light-dark(#5e4a38, #d0b994);
+  --couleur-erreur: light-dark(#a3221a, #ff8f7a);
+  --couleur-erreur-fond: light-dark(#f6d6c8, #4a2018);
+  --couleur-indice: light-dark(#6e4300, #f5c45a);
+  --couleur-indice-fond: light-dark(#e3eccd, #3d3a1e);
+  --couleur-place: light-dark(#3f6b1f, #a8d878);
+  --couleur-voile: light-dark(rgb(58 42 26 / 40%), rgb(10 6 2 / 65%));
+  --couleur-decor-1: light-dark(#c4511b, #d9692a);
+  --couleur-decor-2: light-dark(#e0a526, #e0a526);
+  --couleur-decor-3: light-dark(#7a8b3a, #8e9d48);
+  --retro-ombre: light-dark(rgb(90 61 34 / 18%), rgb(0 0 0 / 40%));
+  --retro-rayons: light-dark(rgb(224 165 38 / 16%), rgb(224 165 38 / 10%));
+
+  --police: "Karla", system-ui, sans-serif;
+  --police-titre: "Fraunces", Georgia, serif;
+  --police-chiffres: "Karla", system-ui, sans-serif;
+  --police-notes: "Karla", system-ui, sans-serif;
+  --echelle-chiffres: 1.05;
+  --echelle-notes: 1.05;
+  --graisse-donnee: 700;
+  --graisse-saisie: 500;
+  --graisse-note: 600;
+
+  --rayon: 1.1rem;
+  --grille-rayon: 18px;
+  --grille-cadre: 6px;
+  --grille-trait-bloc: 3px;
+  --grille-trait-case: 1px;
+  --carte-bordure: 0;
+  --carte-ombre: 0 6px 18px var(--retro-ombre);
+}
+
+/* ---------- Grain de papier (fixe, très léger) sur l'accueil et la fiche ---------- */
+:root[data-direction="retro"] :is(.accueil, .ecran-fiche) {
+  position: relative;
+  isolation: isolate;
+}
+
+:root[data-direction="retro"] :is(.accueil, .ecran-fiche)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Accueil : soleil rayonnant et arc-en-ciel 70s derrière le titre ---------- */
+:root[data-direction="retro"] .accueil-entete {
+  isolation: isolate;
+  padding-top: 1rem;
+}
+
+:root[data-direction="retro"] .accueil-entete .decor {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: -1.5rem;
+  width: min(34rem, 100%);
+  height: 9rem;
+  translate: -50% 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 100%, transparent 0 46%, var(--couleur-decor-3) 46% 56%, var(--couleur-decor-2) 56% 66%, var(--couleur-decor-1) 66% 76%, transparent 76%),
+    repeating-conic-gradient(from -90deg at 50% 100%, var(--retro-rayons) 0 6deg, transparent 6deg 12deg);
+  -webkit-mask-image: linear-gradient(#000 60%, transparent);
+  mask-image: linear-gradient(#000 60%, transparent);
+  opacity: 0.55;
+}
+
+:root[data-direction="retro"] .accueil-titre {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: var(--couleur-accent);
+}
+
+/* ---------- Cartes : étiquette arrondie avec bande tricolore ---------- */
+:root[data-direction="retro"] .carte-jeu {
+  overflow: hidden;
+}
+
+:root[data-direction="retro"] .carte-accueil::before {
+  content: "";
+  height: 10px;
+  margin: calc(-1 * var(--espace-3)) calc(-1 * var(--espace-3)) 0.4rem;
+  background: linear-gradient(to bottom, var(--couleur-decor-1) 0 33%, var(--couleur-decor-2) 33% 66%, var(--couleur-decor-3) 66%);
+}
+
+:root[data-direction="retro"] .pastille-en-cours {
+  background: var(--couleur-decor-2);
+  color: #3a2a1a;
+}
+
+:root[data-direction="retro"] :is(.bouton, .bouton-icone, .outil, .touche) {
+  border-width: 2px;
+  border-radius: 999px;
+}
+
+:root[data-direction="retro"] :is(.touche, .outil) {
+  border-radius: var(--rayon);
+}
+
+/* ---------- Icônes ---------- */
+:root[data-direction="retro"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/retro/icones/retour.svg"); mask-image: url("../../design/retro/icones/retour.svg"); }
+:root[data-direction="retro"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/retro/icones/reglages.svg"); mask-image: url("../../design/retro/icones/reglages.svg"); }
+:root[data-direction="retro"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/retro/icones/statistiques.svg"); mask-image: url("../../design/retro/icones/statistiques.svg"); }
+:root[data-direction="retro"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/retro/icones/mise-a-jour.svg"); mask-image: url("../../design/retro/icones/mise-a-jour.svg"); }
+:root[data-direction="retro"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/retro/icones/pause.svg"); mask-image: url("../../design/retro/icones/pause.svg"); }
+:root[data-direction="retro"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/retro/icones/reprendre.svg"); mask-image: url("../../design/retro/icones/reprendre.svg"); }
+:root[data-direction="retro"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/retro/icones/notes.svg"); mask-image: url("../../design/retro/icones/notes.svg"); }
+:root[data-direction="retro"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/retro/icones/effacer.svg"); mask-image: url("../../design/retro/icones/effacer.svg"); }
+:root[data-direction="retro"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/retro/icones/annuler.svg"); mask-image: url("../../design/retro/icones/annuler.svg"); }
+:root[data-direction="retro"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/retro/icones/retablir.svg"); mask-image: url("../../design/retro/icones/retablir.svg"); }
+:root[data-direction="retro"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/retro/icones/indice.svg"); mask-image: url("../../design/retro/icones/indice.svg"); }

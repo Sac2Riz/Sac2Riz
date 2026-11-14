@@ -1,0 +1,145 @@
+/* Direction de design à l'essai n° 6 — ASCII GÉNÉRATIF (étape 6b, temporaire).
+   Art génératif contemporain fait de caractères : des champs de caractères dont la densité dessine des
+   ondes, en dégradés de couleur (l'ASCII n° 2, lui, est statique et artisanal).
+   Clair : blanc cassé, indigo, magenta. Sombre : nuit, violet, rose, cyan.
+   Police : Space Mono (tout) — SIL OFL 1.1, public/polices/.
+   Décors : champ ANIMÉ dans l'en-tête de l'accueil et le haut de la fiche, motif figé au fond des cartes
+   (src/socle/design/decors.ts : ~8 images/s, arrêté en arrière-plan, figé si « réduire les
+   animations »). Rien pendant une partie. */
+
+@font-face { font-family: "Space Mono"; src: url("../../polices/space-mono-400.woff2") format("woff2"); font-weight: 400 500; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("../../polices/space-mono-700.woff2") format("woff2"); font-weight: 600 900; font-display: swap; }
+
+:root[data-direction="ascii-generatif"] {
+  --couleur-fond: light-dark(#fafaf7, #0b0b12);
+  --couleur-surface: light-dark(#ffffff, #14141f);
+  --couleur-case: light-dark(#ffffff, #12121c);
+  --couleur-texte: light-dark(#16161d, #ebe9f5);
+  --couleur-texte-doux: light-dark(#55556a, #a3a1b8);
+  --couleur-saisie: light-dark(#a8174a, #ff7aa2);
+  --couleur-accent: light-dark(#5b3df5, #9d8cff);
+  --couleur-sur-accent: light-dark(#ffffff, #0b0b12);
+  --couleur-bordure: light-dark(#d9d9e3, #2b2b40);
+  --couleur-trait-fin: light-dark(#e2e2ea, #23233a);
+  --couleur-trait-epais: light-dark(#5b3df5, #9d8cff);
+  --couleur-zone: light-dark(#f1efff, #1b1830);
+  --couleur-meme: light-dark(#e2dcff, #272048);
+  --couleur-selection: light-dark(#d9d2ff, #2e245e);
+  --couleur-note: light-dark(#4a4a5e, #b0aec4);
+  --couleur-erreur: light-dark(#c40d0d, #ff6b6b);
+  --couleur-erreur-fond: light-dark(#ffe1e1, #3a1420);
+  --couleur-indice: light-dark(#7a4f00, #ffd166);
+  --couleur-indice-fond: light-dark(#fff1cc, #2e2a14);
+  --couleur-place: light-dark(#0b7a43, #5ee6a0);
+  --couleur-voile: light-dark(rgb(22 22 29 / 40%), rgb(0 0 0 / 70%));
+  --couleur-decor-1: light-dark(#5b3df5, #22d3ee);
+  --couleur-decor-2: light-dark(#e8466e, #9d8cff);
+  --couleur-decor-3: light-dark(#f5a524, #ff7aa2);
+
+  --police: "Space Mono", ui-monospace, monospace;
+  --police-titre: var(--police);
+  --police-chiffres: var(--police);
+  --police-notes: var(--police);
+  --graisse-donnee: 700;
+  --graisse-saisie: 400;
+  --graisse-note: 400;
+
+  --rayon: 0.2rem;
+  --grille-rayon: 2px;
+  --grille-cadre: 2px;
+  --grille-trait-bloc: 2px;
+  --grille-trait-case: 1px;
+  --carte-bordure: 1px;
+  --carte-ombre: none;
+}
+
+:root[data-direction="ascii-generatif"] :is(h1, h2) {
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Champ animé : en-tête de l'accueil, haut de la fiche ---------- */
+:root[data-direction="ascii-generatif"] :is(.accueil-entete, .ecran-fiche) {
+  position: relative;
+  isolation: isolate;
+}
+
+:root[data-direction="ascii-generatif"] .accueil-entete {
+  padding: 2rem 0 1rem;
+}
+
+:root[data-direction="ascii-generatif"] .decor {
+  display: block;
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.55;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+
+:root[data-direction="ascii-generatif"] .accueil-entete .decor {
+  inset: -1.5rem -1.5rem 0;
+}
+
+:root[data-direction="ascii-generatif"] .ecran-fiche .decor {
+  inset: 0 0 auto;
+  height: 5rem;
+}
+
+/* Le canvas lit ses trois couleurs résolues (clair ou sombre) dans son propre style */
+:root[data-direction="ascii-generatif"] :is(.decor-genere, .decor-carte) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--couleur-decor-1);
+  border: 0 solid var(--couleur-decor-2);
+  outline: 0 solid var(--couleur-decor-3);
+}
+
+/* ---------- Cartes : motif figé estompé au fond ---------- */
+:root[data-direction="ascii-generatif"] .carte-accueil {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+:root[data-direction="ascii-generatif"] .decor-carte {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+:root[data-direction="ascii-generatif"] .accueil-titre {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--couleur-texte);
+}
+
+:root[data-direction="ascii-generatif"] .accueil-titre::after {
+  content: "_";
+  color: var(--couleur-accent);
+}
+
+:root[data-direction="ascii-generatif"] .carte-accueil .carte-jeu-nom {
+  font-size: 1.6rem;
+}
+
+:root[data-direction="ascii-generatif"] .pastille-en-cours {
+  border-radius: 0;
+  background: var(--couleur-accent);
+  color: var(--couleur-sur-accent);
+}
+
+/* ---------- Icônes ---------- */
+:root[data-direction="ascii-generatif"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retour.svg"); mask-image: url("../../design/ascii-generatif/icones/retour.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); mask-image: url("../../design/ascii-generatif/icones/reglages.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); mask-image: url("../../design/ascii-generatif/icones/statistiques.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); mask-image: url("../../design/ascii-generatif/icones/mise-a-jour.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/pause.svg"); mask-image: url("../../design/ascii-generatif/icones/pause.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); mask-image: url("../../design/ascii-generatif/icones/reprendre.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/notes.svg"); mask-image: url("../../design/ascii-generatif/icones/notes.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); mask-image: url("../../design/ascii-generatif/icones/effacer.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); mask-image: url("../../design/ascii-generatif/icones/annuler.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); mask-image: url("../../design/ascii-generatif/icones/retablir.svg"); }
+:root[data-direction="ascii-generatif"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/ascii-generatif/icones/indice.svg"); mask-image: url("../../design/ascii-generatif/icones/indice.svg"); }

@@ -1,103 +1,87 @@
-/* Variables de thème (couleurs, espacements, tailles) — direction visuelle « Ardoise » :
+/* Variables de thème (couleurs, polices, formes) — direction visuelle « Ardoise » (par défaut) :
    gris bleutés, accent bleu encre, police du système (Roboto sur Android).
-   Par défaut : suit le système (prefers-color-scheme).
-   Réglage manuel : <html data-theme="clair"> ou <html data-theme="sombre"> (src/socle/theme.ts).
-   Les jeux n'utilisent que ces variables : un changement ici s'applique partout. */
+   Clair / sombre : chaque couleur est écrite light-dark(<clair>, <sombre>) ; le navigateur prend
+   l'une ou l'autre selon color-scheme, fixé ci-dessous : suit le système (prefers-color-scheme), ou
+   forcé par <html data-theme="clair|sombre"> (src/socle/theme.ts).
+   Étape 6b : les directions de design à l'essai (src/styles/directions/<id>.css, attribut
+   <html data-direction="<id>">) redéfinissent ces mêmes variables. Les jeux n'utilisent que ces
+   variables : un changement ici s'applique partout. */
 
 :root {
-  /* Thème clair */
-  --couleur-fond: #eef1f4;
-  --couleur-surface: #ffffff;
-  --couleur-case: #ffffff;
-  --couleur-texte: #1d2530;
-  --couleur-texte-doux: #5b6576;
-  --couleur-saisie: #2459a6;
-  --couleur-accent: #2459a6;
+  /* ---------- Couleurs ---------- */
+  --couleur-fond: light-dark(#eef1f4, #151a21);
+  --couleur-surface: light-dark(#ffffff, #1d242d);
+  --couleur-case: light-dark(#ffffff, #1d242d);
+  --couleur-texte: light-dark(#1d2530, #e4e9f0);
+  --couleur-texte-doux: light-dark(#5b6576, #9aa5b5);
+  --couleur-saisie: light-dark(#2459a6, #82b2f6);
+  --couleur-accent: light-dark(#2459a6, #82b2f6);
   /* Texte posé sur la couleur d'accent (bouton actif) */
-  --couleur-sur-accent: #ffffff;
-  --couleur-bordure: #cdd4de;
-  --couleur-trait-fin: #c9d0da;
-  --couleur-trait-epais: #3b4656;
-  /* Cases noires (grilles à cases noires : chiffres casés…) */
+  --couleur-sur-accent: light-dark(#ffffff, #0e1520);
+  --couleur-bordure: light-dark(#cdd4de, #313b49);
+  --couleur-trait-fin: light-dark(#c9d0da, #2c3542);
+  --couleur-trait-epais: light-dark(#3b4656, #8896aa);
   /* Cases noires des chiffres casés : le fond de l'appli (la grille se lit par les cases blanches) */
   --couleur-case-noire: var(--couleur-fond);
   /* Mises en évidence de la grille : zone (ligne, colonne, bloc), chiffres identiques, case choisie */
-  --couleur-zone: #e6ecf4;
-  --couleur-meme: #cddcf1;
-  --couleur-selection: #b6cff0;
-  --couleur-note: #6b7686;
-  --couleur-erreur: #b3261e;
-  --couleur-erreur-fond: #f8e1df;
+  --couleur-zone: light-dark(#e6ecf4, #222c39);
+  --couleur-meme: light-dark(#cddcf1, #283a54);
+  --couleur-selection: light-dark(#c4d8f2, #28406a);
+  --couleur-note: light-dark(#4f5968, #a3aebd);
+  --couleur-erreur: light-dark(#b3261e, #f2867d);
+  --couleur-erreur-fond: light-dark(#f8e1df, #3d2326);
   /* Indices : cases du motif (fond ambré), candidats du motif, chiffre à placer */
-  --couleur-indice: #8a5a00;
-  --couleur-indice-fond: #fbeec4;
-  --couleur-place: #1d7a3c;
+  --couleur-indice: light-dark(#8a5a00, #f2c75c);
+  --couleur-indice-fond: light-dark(#fbeec4, #43391b);
+  --couleur-place: light-dark(#1d7a3c, #7fd49b);
   /* Voile derrière les fenêtres (confirmation, chargement, pause) */
-  --couleur-voile: rgb(29 37 48 / 45%);
+  --couleur-voile: light-dark(rgb(29 37 48 / 45%), rgb(5 8 12 / 65%));
+  /* Décors des directions (motifs, ombres dures, halos) : rien pour Ardoise */
+  --couleur-decor-1: var(--couleur-accent);
+  --couleur-decor-2: var(--couleur-accent);
+  --couleur-decor-3: var(--couleur-accent);
+  --couleur-halo: transparent;
 
+  /* ---------- Polices ---------- */
+  /* Interface ; titres ; chiffres de la grille ; petits chiffres (notes du sudoku, liste des chiffres casés) */
   --police: system-ui, Roboto, "Segoe UI", -apple-system, sans-serif;
+  --police-titre: var(--police);
+  --police-chiffres: var(--police);
+  --police-notes: var(--police);
+  /* Facteurs de taille (une police bitmap paraît plus petite ou plus grande à taille égale) */
+  --echelle-chiffres: 1;
+  --echelle-notes: 1;
+  --graisse-donnee: 500;
+  --graisse-saisie: 400;
+  --graisse-note: 500;
 
-  /* Dimensions communes */
+  /* ---------- Formes ---------- */
   --espace-1: 0.5rem;
   --espace-2: 1rem;
   --espace-3: 1.5rem;
   --rayon: 0.6rem;
+  /* Grille : rayon du cadre, épaisseur du cadre, traits entre blocs et entre cases */
+  --grille-rayon: 6px;
+  --grille-cadre: 2px;
+  --grille-trait-bloc: 2px;
+  --grille-trait-case: 1px;
+  /* Cartes et fenêtres : épaisseur de bordure, ombre */
+  --carte-bordure: 1px;
+  --carte-ombre: none;
   /* Zone tactile minimale recommandée (doigt sur tablette) */
   --cible-tactile: 3.25rem;
 
   color-scheme: light;
 }
 
-/* Thème sombre : mêmes variables, valeurs de nuit. Écrites deux fois (automatique et forcé)
-   car le CSS ne permet pas de partager un bloc entre une @media et un sélecteur. */
+/* Thème sombre : seul color-scheme change (les light-dark() font le reste). Écrit deux fois
+   (automatique et forcé) car le CSS ne permet pas de partager un bloc entre une @media et un sélecteur. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="clair"]) {
-    --couleur-fond: #151a21;
-    --couleur-surface: #1d242d;
-    --couleur-case: #1d242d;
-    --couleur-texte: #e4e9f0;
-    --couleur-texte-doux: #9aa5b5;
-    --couleur-saisie: #82b2f6;
-    --couleur-accent: #82b2f6;
-    --couleur-sur-accent: #0e1520;
-    --couleur-bordure: #313b49;
-    --couleur-trait-fin: #2c3542;
-    --couleur-trait-epais: #8896aa;
-    --couleur-zone: #222c39;
-    --couleur-meme: #283a54;
-    --couleur-selection: #2f4b73;
-    --couleur-note: #8c98a9;
-    --couleur-erreur: #f2867d;
-    --couleur-erreur-fond: #3d2326;
-    --couleur-indice: #f2c75c;
-    --couleur-indice-fond: #43391b;
-    --couleur-place: #7fd49b;
-    --couleur-voile: rgb(5 8 12 / 65%);
     color-scheme: dark;
   }
 }
 
 :root[data-theme="sombre"] {
-  --couleur-fond: #151a21;
-  --couleur-surface: #1d242d;
-  --couleur-case: #1d242d;
-  --couleur-texte: #e4e9f0;
-  --couleur-texte-doux: #9aa5b5;
-  --couleur-saisie: #82b2f6;
-  --couleur-accent: #82b2f6;
-  --couleur-sur-accent: #0e1520;
-  --couleur-bordure: #313b49;
-  --couleur-trait-fin: #2c3542;
-  --couleur-trait-epais: #8896aa;
-  --couleur-zone: #222c39;
-  --couleur-meme: #283a54;
-  --couleur-selection: #2f4b73;
-  --couleur-note: #8c98a9;
-  --couleur-erreur: #f2867d;
-  --couleur-erreur-fond: #3d2326;
-  --couleur-indice: #f2c75c;
-  --couleur-indice-fond: #43391b;
-  --couleur-place: #7fd49b;
-  --couleur-voile: rgb(5 8 12 / 65%);
   color-scheme: dark;
 }

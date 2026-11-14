@@ -11,7 +11,7 @@ import type { FicheJeu, MetaJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX, type Force, type Niveau } from '../types/niveaux.ts';
 import type { VueJeu } from '../types/vue.ts';
-import { bouton, boutonIcone, creer } from './dom.ts';
+import { bouton, boutonIcone, creer, icone } from './dom.ts';
 import { formaterTemps, libelleForce, plageForce } from './format.ts';
 
 /** Partie en cours, telle que la fiche la présente. */
@@ -99,17 +99,20 @@ export function afficherFiche(conteneur: HTMLElement, o: OptionsFiche, actions: 
   const barre = creer('header', 'ecran-barre');
   const titre = creer('h1', 'ecran-titre', o.meta.nom);
   const outils = creer('div', 'ecran-barre-outils');
-  outils.append(actions.boutonMiseAJour(), boutonIcone('bouton-icone', '⚙', 'Réglages', actions.reglages));
-  barre.append(boutonIcone('bouton-icone', '←', 'Retour à l\'accueil', actions.retour), titre, outils);
+  outils.append(actions.boutonMiseAJour(), boutonIcone('bouton-icone', 'reglages', 'Réglages', actions.reglages));
+  barre.append(boutonIcone('bouton-icone', 'retour', 'Retour à l\'accueil', actions.retour), titre, outils);
 
   const presentation = creer('div', 'fiche-presentation');
   presentation.append(creer('p', 'fiche-description', o.meta.description), sectionJouer(o, actions));
 
   const stats = bouton('bouton bouton-menu fiche-stats', '', actions.statistiques);
-  stats.append(creer('span', 'icone', '📊'), creer('span', '', `Statistiques — ${o.meta.nom}`));
+  stats.append(icone('statistiques'), creer('span', '', `Statistiques — ${o.meta.nom}`));
 
   const corps = creer('div', 'fiche-corps');
   corps.append(apercu(o), presentation);
-  ecran.append(barre, corps, sectionRegles(o), stats);
+  // Décor de la direction de design (vide, rempli seulement par certaines directions : design/decors.ts)
+  const decor = creer('div', 'decor');
+  decor.setAttribute('aria-hidden', 'true');
+  ecran.append(decor, barre, corps, sectionRegles(o), stats);
   conteneur.replaceChildren(ecran);
 }

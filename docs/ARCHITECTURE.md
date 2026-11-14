@@ -85,7 +85,14 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   résumé, `Stockage.remplacerDonnees` (**atomique**) et redémarrage de l'appli.
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
   Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
-  suit le thème choisi (`src/socle/theme.ts`).
+  est celle du fond affiché (lue sur `<body>`, `src/socle/theme.ts`). Chaque couleur s'écrit
+  `light-dark(<clair>, <sombre>)` ; seul `color-scheme` dépend du thème (`src/styles/theme.css`).
+- **Directions de design à l'essai** (étape 6b, **temporaire**, retiré en 6c) : `<html data-direction>`
+  et une feuille par direction (`src/styles/directions/`), choix dans Réglages → Application, gardé dans le
+  stockage local du navigateur (`src/socle/design/`). Détail, polices et licences : docs/DESIGN.md.
+- **Icônes** (étape 6b) : SVG dessinés par direction (`public/design/<direction>/icones/`) ; le code pose
+  un nom (`icone(nom)`, `boutonIcone(classe, nom, …)` dans `dom.ts`, noms dans `socle/icones.ts`), le
+  CSS choisit le dessin (`mask-image`, couleur = celle du texte). Plus aucun emoji ni symbole.
 - **Réglages** (étape 6a) : fenêtre (`<dialog>`, `ecran-reglages.ts`) ouverte depuis l'accueil, la fiche ou la
   partie ; chaque changement s'applique tout de suite. **Trois sections** :
   1. **Application** : thème (Automatique / Clair / Sombre), sauvegarde (export / import), version
@@ -187,7 +194,11 @@ src/socle/
 ├─ reglages.ts        normaliserReglages (migration), réglages d'un jeu, réglages vus par la vue (pur)
 ├─ dialogue.ts        confirmer / informer (élément <dialog>)
 ├─ chargement.ts      indicateur de chargement (visible après 0,25 s) avec Annuler
-└─ dom.ts             petits utilitaires DOM (creer, bouton, boutonIcone)
+├─ dom.ts             petits utilitaires DOM (creer, bouton, icone, boutonIcone)
+├─ icones.ts          noms des icônes de l'interface (étape 6b, pur)
+└─ design/            directions de design à l'essai (étape 6b, temporaire) : directions.ts (liste,
+                      choix enregistré, pur), appliquer.ts (attribut data-direction), decors.ts
+                      (champ de caractères animé de l'ASCII génératif)
 ```
 
 - **Partie** (`Partie`, pur) : une action **sans effet** (état identique) n'est pas enregistrée, pour
@@ -218,8 +229,9 @@ src/socle/
   (`.partie.pave-personnalise`) : zone défilable, de hauteur bornée sous la grille en portrait, colonne de
   droite plus large en paysage. La grille est placée dans un
   conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
-- **Thème** : direction visuelle « Ardoise » (gris bleutés, accent bleu encre, police du système), toutes
-  les couleurs dans `src/styles/theme.css` (clair et sombre).
+- **Thème** : direction visuelle « Ardoise » par défaut (gris bleutés, accent bleu encre, police du
+  système) ; couleurs, polices et formes en variables dans `src/styles/theme.css`, redéfinies par la
+  direction à l'essai (étape 6b, docs/DESIGN.md). Les jeux n'utilisent que ces variables.
 - **Bouton retour d'Android** : partie → fiche du jeu → accueil (voir Navigation), sans quitter l'appli.
 
 - **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond', budgetMs)` renvoie

@@ -1,0 +1,181 @@
+/* Direction de design à l'essai n° 1 — ANNÉES 80-90 (étape 6b, temporaire).
+   Clair : « Memphis » (crème, confettis géométriques, contours noirs, ombres dures décalées).
+   Sombre : « néon synthwave » (nuit violette, rose et cyan néon, soleil rayé et grille en perspective).
+   Polices : Bungee (titres), Rubik (texte, chiffres, notes) — SIL OFL 1.1, public/polices/.
+   Effets : aucune animation ; décors seulement sur l'accueil et la fiche d'un jeu. */
+
+@font-face { font-family: "Bungee"; src: url("../../polices/bungee-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("../../polices/rubik-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("../../polices/rubik-500.woff2") format("woff2"); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("../../polices/rubik-700.woff2") format("woff2"); font-weight: 700 900; font-display: swap; }
+
+:root[data-direction="annees-80-90"] {
+  --couleur-fond: light-dark(#fdf6ec, #160c28);
+  --couleur-surface: light-dark(#ffffff, #221338);
+  --couleur-case: light-dark(#ffffff, #1d1030);
+  --couleur-texte: light-dark(#1a1a2e, #f4eaff);
+  --couleur-texte-doux: light-dark(#4f4a63, #c3b0e0);
+  --couleur-saisie: light-dark(#1b5fa8, #4fe0ff);
+  --couleur-accent: light-dark(#c81d6a, #ff4fa3);
+  --couleur-sur-accent: light-dark(#ffffff, #1a0626);
+  --couleur-bordure: light-dark(#1a1a2e, #b56cff);
+  --couleur-trait-fin: light-dark(#cfc6dc, #3b2660);
+  --couleur-trait-epais: light-dark(#1a1a2e, #b56cff);
+  --couleur-zone: light-dark(#fff1c2, #2c1748);
+  --couleur-meme: light-dark(#ffe08a, #3d1f66);
+  --couleur-selection: light-dark(#ffdc6b, #4a2a80);
+  --couleur-note: light-dark(#4f4a63, #c3b0e0);
+  --couleur-erreur: light-dark(#c0141b, #ff6b6b);
+  --couleur-erreur-fond: light-dark(#ffe0e0, #3f1530);
+  --couleur-indice: light-dark(#8a4b00, #ffd23f);
+  --couleur-indice-fond: light-dark(#d9f5f1, #123a3a);
+  --couleur-place: light-dark(#0f7a50, #5dffb0);
+  --couleur-voile: light-dark(rgb(26 26 46 / 45%), rgb(5 0 15 / 70%));
+  --couleur-decor-1: light-dark(#e8327c, #ff4fa3);
+  --couleur-decor-2: light-dark(#1fb5a8, #4fe0ff);
+  --couleur-decor-3: light-dark(#ffd23f, #ffb347);
+  --couleur-halo: light-dark(transparent, rgb(255 79 163 / 55%));
+  /* Propres à la direction : ombre dure (clair) / halo (sombre) */
+  --a8-ombre-dure: light-dark(#1a1a2e, transparent);
+  --a8-ombre-titre: light-dark(#1fb5a8, transparent);
+  /* Soleil et grille de l'en-tête : seulement en sombre */
+  --a8-soleil-haut: light-dark(transparent, #ffd23f);
+  --a8-soleil-bas: light-dark(transparent, #ff4fa3);
+  --a8-grille: light-dark(transparent, rgb(255 79 163 / 55%));
+
+  --police: "Rubik", system-ui, sans-serif;
+  --police-titre: "Bungee", "Rubik", sans-serif;
+  --police-chiffres: "Rubik", system-ui, sans-serif;
+  --police-notes: "Rubik", system-ui, sans-serif;
+  --graisse-donnee: 700;
+  --graisse-saisie: 500;
+  --graisse-note: 500;
+
+  --rayon: 0.8rem;
+  --grille-rayon: 12px;
+  --grille-cadre: 4px;
+  --grille-trait-bloc: 3px;
+  --grille-trait-case: 1px;
+  --carte-bordure: 3px;
+  --carte-ombre: 6px 6px 0 var(--a8-ombre-dure), 0 0 18px var(--couleur-halo);
+}
+
+/* ---------- Titres ---------- */
+:root[data-direction="annees-80-90"] :is(.accueil-titre, .ecran-titre, .fin-titre) {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-shadow: 3px 3px 0 var(--a8-ombre-titre), 0 0 12px var(--couleur-halo);
+}
+
+:root[data-direction="annees-80-90"] .accueil-titre {
+  font-size: 3rem;
+}
+
+/* ---------- Boutons : contour franc, ombre dure ---------- */
+:root[data-direction="annees-80-90"] :is(.bouton, .bouton-icone, .outil, .touche) {
+  border-width: 2px;
+  border-color: var(--couleur-bordure);
+  box-shadow: 3px 3px 0 var(--a8-ombre-dure), 0 0 8px var(--couleur-halo);
+}
+
+:root[data-direction="annees-80-90"] .bouton-menu {
+  box-shadow: none;
+}
+
+/* ---------- Cartes : ombre de couleur différente selon la carte ---------- */
+:root[data-direction="annees-80-90"] .carte-accueil:nth-child(3n + 1) { --a8-ombre-dure: light-dark(#e8327c, transparent); }
+:root[data-direction="annees-80-90"] .carte-accueil:nth-child(3n + 2) { --a8-ombre-dure: light-dark(#1fb5a8, transparent); }
+:root[data-direction="annees-80-90"] .carte-accueil:nth-child(3n + 3) { --a8-ombre-dure: light-dark(#ffb000, transparent); }
+
+/* ---------- Décors : confettis Memphis (accueil, fiche) ---------- */
+:root[data-direction="annees-80-90"] :is(.accueil, .ecran-fiche) {
+  position: relative;
+  isolation: isolate;
+}
+
+:root[data-direction="annees-80-90"] :is(.accueil, .ecran-fiche)::before,
+:root[data-direction="annees-80-90"] :is(.accueil, .ecran-fiche)::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* Triangles et zigzags (rose), pois et gribouillis (turquoise) : motifs en masque, couleurs du thème */
+:root[data-direction="annees-80-90"] :is(.accueil, .ecran-fiche)::before {
+  background: light-dark(rgb(232 50 124 / 55%), rgb(255 79 163 / 35%));
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cpath d='M20 40l16-28 16 28z M150 30l10 10 10-10 10 10 10-10' fill='none' stroke='%23000' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M120 170l14-24 14 24z'/%3E%3Cpath d='M30 160l8 8 8-8 8 8 8-8' fill='none' stroke='%23000' stroke-width='4'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cpath d='M20 40l16-28 16 28z M150 30l10 10 10-10 10 10 10-10' fill='none' stroke='%23000' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M120 170l14-24 14 24z'/%3E%3Cpath d='M30 160l8 8 8-8 8 8 8-8' fill='none' stroke='%23000' stroke-width='4'/%3E%3C/svg%3E");
+}
+
+:root[data-direction="annees-80-90"] :is(.accueil, .ecran-fiche)::after {
+  background: light-dark(rgb(31 181 168 / 50%), rgb(79 224 255 / 30%));
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='90' cy='60' r='6'/%3E%3Ccircle cx='190' cy='120' r='4'/%3E%3Ccircle cx='60' cy='110' r='3'/%3E%3Cpath d='M160 190c8-12 16 12 24 0s16 12 24 0' fill='none' stroke='%23000' stroke-width='4' stroke-linecap='round'/%3E%3Crect x='80' y='120' width='18' height='18' transform='rotate(20 89 129)' fill='none' stroke='%23000' stroke-width='4'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='90' cy='60' r='6'/%3E%3Ccircle cx='190' cy='120' r='4'/%3E%3Ccircle cx='60' cy='110' r='3'/%3E%3Cpath d='M160 190c8-12 16 12 24 0s16 12 24 0' fill='none' stroke='%23000' stroke-width='4' stroke-linecap='round'/%3E%3Crect x='80' y='120' width='18' height='18' transform='rotate(20 89 129)' fill='none' stroke='%23000' stroke-width='4'/%3E%3C/svg%3E");
+}
+
+/* Sombre : soleil couchant rayé et grille en perspective derrière le titre de l'accueil */
+:root[data-direction="annees-80-90"] .accueil-entete .decor {
+  display: block;
+  position: absolute;
+  inset: -1.5rem -1.5rem auto;
+  height: 8.5rem;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:root[data-direction="annees-80-90"] .accueil-entete .decor::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 44%;
+  width: 10rem;
+  height: 5rem;
+  translate: -50% 0;
+  border-radius: 11rem 11rem 0 0;
+  background: linear-gradient(var(--a8-soleil-haut), var(--a8-soleil-bas) 75%);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 9px, transparent 9px 13px);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 9px, transparent 9px 13px);
+  opacity: 0.55;
+}
+
+:root[data-direction="annees-80-90"] .accueil-entete .decor::after {
+  content: "";
+  position: absolute;
+  inset: auto -30% 0;
+  height: 46%;
+  background:
+    repeating-linear-gradient(to right, var(--a8-grille) 0 2px, transparent 2px 46px),
+    repeating-linear-gradient(to bottom, var(--a8-grille) 0 2px, transparent 2px 16px);
+  transform: perspective(220px) rotateX(58deg);
+  transform-origin: bottom;
+  -webkit-mask-image: linear-gradient(transparent, #000 60%);
+  mask-image: linear-gradient(transparent, #000 60%);
+}
+
+:root[data-direction="annees-80-90"] .accueil-entete {
+  isolation: isolate;
+}
+
+:root[data-direction="annees-80-90"] .pastille-en-cours {
+  background: var(--couleur-decor-3);
+  color: #1a1a2e;
+  border: 2px solid #1a1a2e;
+}
+
+/* ---------- Icônes ---------- */
+:root[data-direction="annees-80-90"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/annees-80-90/icones/retour.svg"); mask-image: url("../../design/annees-80-90/icones/retour.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/annees-80-90/icones/reglages.svg"); mask-image: url("../../design/annees-80-90/icones/reglages.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/annees-80-90/icones/statistiques.svg"); mask-image: url("../../design/annees-80-90/icones/statistiques.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/annees-80-90/icones/mise-a-jour.svg"); mask-image: url("../../design/annees-80-90/icones/mise-a-jour.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/annees-80-90/icones/pause.svg"); mask-image: url("../../design/annees-80-90/icones/pause.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/annees-80-90/icones/reprendre.svg"); mask-image: url("../../design/annees-80-90/icones/reprendre.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/annees-80-90/icones/notes.svg"); mask-image: url("../../design/annees-80-90/icones/notes.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/annees-80-90/icones/effacer.svg"); mask-image: url("../../design/annees-80-90/icones/effacer.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/annees-80-90/icones/annuler.svg"); mask-image: url("../../design/annees-80-90/icones/annuler.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/annees-80-90/icones/retablir.svg"); mask-image: url("../../design/annees-80-90/icones/retablir.svg"); }
+:root[data-direction="annees-80-90"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/annees-80-90/icones/indice.svg"); mask-image: url("../../design/annees-80-90/icones/indice.svg"); }

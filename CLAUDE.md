@@ -58,6 +58,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - Difficulté : 6 niveaux + force 1-10 → [docs/DIFFICULTE.md](docs/DIFFICULTE.md). Notation dans
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
+- Design : variables de `src/styles/theme.css` (couleurs `light-dark(clair, sombre)`, polices, formes),
+  icônes SVG nommées (`icone(nom)`, aucun emoji) → [docs/DESIGN.md](docs/DESIGN.md).
 - PWA : `src/service-worker.ts` (racine de `dist/`) ; liste des fichiers et version **écrites automatiquement**
   par `npm run build` (`scripts/manifeste-precache.ts`). Mise à jour proposée par un bouton « Mettre à jour »
   (à côté de Réglages) et une fenêtre de confirmation avec les nouveautés (`public/nouveautes.json`), **jamais
@@ -130,5 +132,10 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   `public/nouveautes.json`. Détection corrigée (version en cours d'installation au démarrage, recherche
   toutes les minutes) ; fenêtre « Sac2Riz a été mis à jour » quand le navigateur a installé la version à la
   fermeture de l'appli (magasin IndexedDB `appli`, schéma n° 2).
-- ⏭️ Prochaine : étape 6b (7 directions de design proposées comme thèmes), puis 6c (finalisation), puis
-  variantes et nouveaux jeux.
+- ✅ Étape 6b — 7 directions de design à l'essai (clair + sombre) : sélecteur **temporaire** « Direction de
+  design (essai) » dans Réglages → Application (stockage local, à retirer en 6c), `data-direction` + une
+  feuille par direction (`src/styles/directions/`), couleurs en `light-dark()`, icônes SVG par direction
+  (plus d'emoji), polices intégrées (OFL / CC BY-SA, licences dans `public/polices/licences/`), contrastes
+  testés → [docs/DESIGN.md](docs/DESIGN.md).
+- ⏭️ Prochaine : choix de la direction par l'utilisateur, puis étape 6c (finalisation, retrait du
+  sélecteur), puis variantes et nouveaux jeux.

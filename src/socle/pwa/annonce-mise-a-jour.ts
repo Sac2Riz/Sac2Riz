@@ -4,7 +4,7 @@
 // compris sur l'écran déjà affiché. Le toucher ouvre la fenêtre de confirmation
 // (fenetre-mise-a-jour.ts) : rien ne change sans le feu vert du joueur.
 
-import { bouton, creer } from '../dom.ts';
+import { bouton, creer, icone } from '../dom.ts';
 import { ouvrirFenetreMiseAJour } from './fenetre-mise-a-jour.ts';
 import type { InfosMiseAJour } from './infos-mise-a-jour.ts';
 import type { GroupeNouveautes } from '../../types/nouveautes.ts';
@@ -50,7 +50,7 @@ export function creerAnnonceMiseAJour(
     },
     bouton() {
       const b = bouton('bouton bouton-menu bouton-maj', '', () => void ouvrir());
-      b.append(creer('span', 'bouton-maj-point'), creer('span', 'icone', '⟳'), creer('span', 'bouton-maj-libelle', 'Mettre à jour'));
+      b.append(creer('span', 'bouton-maj-point'), icone('mise-a-jour'), creer('span', 'bouton-maj-libelle', 'Mettre à jour'));
       b.title = 'Une nouvelle version est prête : mettre à jour';
       b.setAttribute('aria-label', 'Mettre à jour : une nouvelle version est prête');
       b.hidden = appliquer === null;

@@ -64,7 +64,7 @@ export type OptionsStats = {
 export function afficherStats(conteneur: HTMLElement, jeux: readonly StatsAffichees[], o: OptionsStats): void {
   const ecran = creer('div', 'ecran-stats');
   const barre = creer('header', 'ecran-barre');
-  barre.append(boutonIcone('bouton-icone', '←', o.libelleRetour, o.retour), creer('h1', 'ecran-titre', o.titre));
+  barre.append(boutonIcone('bouton-icone', 'retour', o.libelleRetour, o.retour), creer('h1', 'ecran-titre', o.titre));
   ecran.append(barre, ...jeux.map(tableau));
   ecran.append(
     creer(

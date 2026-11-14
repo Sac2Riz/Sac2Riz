@@ -1,0 +1,139 @@
+/* Direction de design à l'essai n° 4 — BBS ANSI (étape 6b, temporaire).
+   La scène ANSI des serveurs BBS : de l'art en blocs colorés, dégradés ░▒▓█, logo en blocs, couleurs
+   CGA vives (la direction MS-DOS est une application sobre ; celle-ci est une affiche).
+   Sombre : noir, magenta, cyan, jaune. Clair (réinterprétation) : ANSI imprimé dans un fanzine (papier,
+   couleurs CGA assombries, blocs pastel).
+   Polices : Px437 IBM BIOS (titres), Px437 IBM EGA 8x14 (texte, chiffres) — CC BY-SA 4.0, VileR
+   (int10h.org) ; Fira Mono (notes, liste des chiffres casés) — SIL OFL 1.1. Aucune animation. */
+
+@font-face { font-family: "Px437 IBM BIOS"; src: url("../../polices/px437-ibm-bios.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "Px437 IBM EGA 8x14"; src: url("../../polices/px437-ibm-ega-8x14.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "Fira Mono"; src: url("../../polices/fira-mono-500.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+
+:root[data-direction="bbs-ansi"] {
+  --couleur-fond: light-dark(#fbfaf5, #000000);
+  --couleur-surface: light-dark(#ffffff, #0a0a12);
+  --couleur-case: light-dark(#ffffff, #0a0a0a);
+  --couleur-texte: light-dark(#1a1a1a, #c0c0c0);
+  --couleur-texte-doux: light-dark(#555555, #8a8a8a);
+  --couleur-saisie: light-dark(#005a80, #55ffff);
+  --couleur-accent: light-dark(#a0009a, #ff55ff);
+  --couleur-sur-accent: light-dark(#ffffff, #000000);
+  --couleur-bordure: light-dark(#0000aa, #5555ff);
+  --couleur-trait-fin: light-dark(#b8b8e0, #2a2a5a);
+  --couleur-trait-epais: light-dark(#0000aa, #5555ff);
+  --couleur-zone: light-dark(#eef0ff, #10103a);
+  --couleur-meme: light-dark(#dcdcff, #3a0a4a);
+  --couleur-selection: light-dark(#f6cdf2, #55005a);
+  --couleur-note: light-dark(#4a4a4a, #9a9a9a);
+  --couleur-erreur: light-dark(#b00000, #ff5555);
+  --couleur-erreur-fond: light-dark(#ffe0e0, #3a0000);
+  --couleur-indice: light-dark(#7a5a00, #ffff55);
+  --couleur-indice-fond: light-dark(#fff6c0, #3a3a00);
+  --couleur-place: light-dark(#007a00, #55ff55);
+  --couleur-voile: light-dark(rgb(26 26 26 / 40%), rgb(0 0 0 / 75%));
+  --couleur-decor-1: light-dark(#e9a6e6, #aa00aa);
+  --couleur-decor-2: light-dark(#9fd8e8, #00aaaa);
+  --couleur-decor-3: light-dark(#f0e08a, #aa5500);
+  /* Titres en blocs : couleurs des « couches » du logo */
+  --bbs-couche-1: light-dark(#e9a6e6, #aa00aa);
+  --bbs-couche-2: light-dark(#a6a6f0, #0000aa);
+
+  --police: "Px437 IBM EGA 8x14", "Courier New", monospace;
+  --police-titre: "Px437 IBM BIOS", var(--police);
+  --police-chiffres: var(--police);
+  --police-notes: "Fira Mono", monospace;
+  --echelle-chiffres: 1.15;
+  --echelle-notes: 1;
+  --graisse-donnee: 400;
+  --graisse-saisie: 400;
+  --graisse-note: 500;
+
+  --rayon: 0;
+  --grille-rayon: 0;
+  --grille-cadre: 4px;
+  --grille-trait-bloc: 2px;
+  --grille-trait-case: 1px;
+  --carte-bordure: 0;
+  --carte-ombre: none;
+}
+
+:root[data-direction="bbs-ansi"] body { font-synthesis: none; }
+:root[data-direction="bbs-ansi"] :is(h1, h2, h3, h4, strong, b) { font-weight: 400; }
+
+/* ---------- Bandes de dégradé en blocs ---------- */
+:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::before,
+:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
+  content: "░░░░▒▒▒▒▓▓▓▓████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▓▓▓▓▒▒▒▒░░░░";
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 0.9rem;
+  color: var(--couleur-decor-1);
+  text-align: center;
+}
+
+:root[data-direction="bbs-ansi"] :is(.accueil, .ecran-fiche)::after {
+  color: var(--couleur-decor-2);
+}
+
+/* ---------- Logo en blocs : couches décalées ---------- */
+:root[data-direction="bbs-ansi"] .accueil-titre {
+  font-size: 3.2rem;
+  color: var(--couleur-accent);
+  text-shadow: 4px 4px 0 var(--bbs-couche-1), 8px 8px 0 var(--bbs-couche-2);
+  letter-spacing: 0.05em;
+}
+
+:root[data-direction="bbs-ansi"] :is(.ecran-titre, .fin-titre, .dialogue-titre) {
+  color: var(--couleur-accent);
+  text-shadow: 3px 3px 0 var(--bbs-couche-2);
+}
+
+/* ---------- Cartes : cadre de demi-blocs, couleur différente par carte ---------- */
+:root[data-direction="bbs-ansi"] .carte-jeu {
+  --bbs-cadre: var(--couleur-decor-2);
+  border: 0;
+  box-shadow: inset 0 0 0 6px var(--bbs-cadre), inset 0 0 0 8px var(--couleur-fond), inset 0 0 0 10px var(--bbs-cadre);
+}
+
+:root[data-direction="bbs-ansi"] .carte-accueil:nth-child(3n + 2) { --bbs-cadre: var(--couleur-decor-1); }
+:root[data-direction="bbs-ansi"] .carte-accueil:nth-child(3n + 3) { --bbs-cadre: var(--couleur-decor-3); }
+
+:root[data-direction="bbs-ansi"] .carte-jeu-nom {
+  color: var(--couleur-accent);
+}
+
+:root[data-direction="bbs-ansi"] .carte-jeu-nom::before {
+  content: "▓▒░ ";
+  color: var(--bbs-cadre);
+}
+
+:root[data-direction="bbs-ansi"] .pastille-en-cours {
+  border-radius: 0;
+  background: var(--couleur-indice-fond);
+  color: var(--couleur-indice);
+}
+
+:root[data-direction="bbs-ansi"] :is(.bouton, .bouton-icone, .outil, .touche, .dialogue) {
+  border-width: 2px;
+  border-color: var(--couleur-bordure);
+}
+
+:root[data-direction="bbs-ansi"] .dialogue {
+  box-shadow: 0 0 0 4px var(--couleur-decor-1);
+}
+
+/* ---------- Icônes ---------- */
+:root[data-direction="bbs-ansi"] .icone[data-icone="retour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retour.svg"); mask-image: url("../../design/bbs-ansi/icones/retour.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="reglages"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); mask-image: url("../../design/bbs-ansi/icones/reglages.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="statistiques"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); mask-image: url("../../design/bbs-ansi/icones/statistiques.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="mise-a-jour"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); mask-image: url("../../design/bbs-ansi/icones/mise-a-jour.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="pause"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/pause.svg"); mask-image: url("../../design/bbs-ansi/icones/pause.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="reprendre"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); mask-image: url("../../design/bbs-ansi/icones/reprendre.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="notes"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/notes.svg"); mask-image: url("../../design/bbs-ansi/icones/notes.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="effacer"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); mask-image: url("../../design/bbs-ansi/icones/effacer.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="annuler"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); mask-image: url("../../design/bbs-ansi/icones/annuler.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="retablir"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); mask-image: url("../../design/bbs-ansi/icones/retablir.svg"); }
+:root[data-direction="bbs-ansi"] .icone[data-icone="indice"] { -webkit-mask-image: url("../../design/bbs-ansi/icones/indice.svg"); mask-image: url("../../design/bbs-ansi/icones/indice.svg"); }

@@ -9,7 +9,8 @@
 
 import type { PartieSauvegardee } from '../types/sauvegarde.ts';
 import type { ModuleJeuQuelconque } from '../types/vue.ts';
-import { bouton, creer } from './dom.ts';
+import { bouton, creer, icone } from './dom.ts';
+import type { NomIcone } from './icones.ts';
 
 export type JeuAccueil = {
   readonly module: ModuleJeuQuelconque;
@@ -29,12 +30,12 @@ export type ActionsAccueil = {
 function menu(actions: ActionsAccueil): HTMLElement {
   const nav = creer('nav', 'accueil-menu');
   nav.setAttribute('aria-label', 'Menu');
-  const lien = (icone: string, libelle: string, action: () => void): HTMLButtonElement => {
+  const lien = (nom: NomIcone, libelle: string, action: () => void): HTMLButtonElement => {
     const b = bouton('bouton bouton-menu', '', action);
-    b.append(creer('span', 'icone', icone), creer('span', '', libelle));
+    b.append(icone(nom), creer('span', '', libelle));
     return b;
   };
-  nav.append(lien('📊', 'Statistiques', actions.statistiques), actions.boutonMiseAJour(), lien('⚙', 'Réglages', actions.reglages));
+  nav.append(lien('statistiques', 'Statistiques', actions.statistiques), actions.boutonMiseAJour(), lien('reglages', 'Réglages', actions.reglages));
   return nav;
 }
 
@@ -72,7 +73,11 @@ export function afficherAccueil(
 ): ReadonlyMap<string, HTMLElement> {
   const accueil = creer('div', 'accueil');
   const entete = creer('header', 'accueil-entete');
+  // Décor de la direction de design (vide, rempli seulement par certaines directions : design/decors.ts)
+  const decor = creer('div', 'decor');
+  decor.setAttribute('aria-hidden', 'true');
   entete.append(
+    decor,
     creer('h1', 'accueil-titre', 'Sac2Riz'),
     creer('p', 'accueil-sous-titre', 'Jeux de logique à chiffres'),
     menu(actions),

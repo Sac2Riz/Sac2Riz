@@ -239,11 +239,32 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   plan ; fenêtre « Sac2Riz a été mis à jour » quand le navigateur a installé la version à la fermeture
   (décision de l'utilisateur : option A ; jamais au premier lancement, une fois, rien sans nouveauté).
 
-### Étape 6b — Directions de design
-- 7 directions de design proposées comme **thèmes** sur la vraie appli, pour que l'utilisateur choisisse.
+### ✅ Étape 6b — Directions de design
+- 7 directions proposées comme **thèmes** sur la vraie appli, chacune en clair et en sombre (descriptions
+  validées par l'utilisateur avant le code) : Années 80-90 (Memphis / néon), ASCII (machine à écrire /
+  .NFO), MS-DOS (LCD de portable / bleu VGA), BBS ANSI (fanzine / noir CGA), Rétro 60-70, ASCII génératif
+  (champ de caractères animé), Terminal (papier listing / phosphore vert). Détail : docs/DESIGN.md.
+- **Sélecteur TEMPORAIRE « Direction de design (essai) »** dans Réglages → Application : s'applique tout
+  de suite, se combine avec Automatique / Clair / Sombre, gardé dans le stockage local du navigateur (hors
+  des réglages enregistrés). **À retirer à l'étape 6c** (procédure dans docs/DESIGN.md).
+- Couche visuelle seulement : variables de thème en `light-dark()` (+ polices, échelles, formes de la
+  grille et des cartes), une feuille par direction, aucune règle de direction sur une classe de jeu.
+- Tous les emojis et symboles de l'interface remplacés par des **icônes SVG** dessinées, un jeu de 11 par
+  direction (Ardoise compris).
+- 18 fichiers de polices intégrés (SIL OFL 1.1 ; Px437 en CC BY-SA 4.0), licences dans
+  `public/polices/licences/` et docs/DESIGN.md ; hors ligne grâce au précache.
+- Effets seulement sur l'accueil et la fiche, jamais pendant une partie, coupés si « réduire les
+  animations ».
+- Tests : variables complètes, **contrastes WCAG calculés** dans les 16 variantes (≥ 4,5:1 pour texte,
+  chiffres, notes ; Ardoise ajusté : sélection et notes plus contrastées), icônes, polices et licences,
+  choix enregistré.
+- 80 captures dans Edge (tablette simulée 1280 × 800, paysage) : accueil, fiche, sudoku avec notes,
+  chiffres casés, réglages, pour chaque direction en clair et en sombre (`captures/6b/`, non versionné).
 
 ### Étape 6c — Finalisation du design choisi
 - Finalisation de la direction retenue (et des icônes).
+- **Retirer le sélecteur temporaire « Direction de design (essai) »** de l'étape 6b, les autres
+  directions, leurs icônes et leurs polices (procédure dans docs/DESIGN.md).
 
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.

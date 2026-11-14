@@ -14,8 +14,18 @@ export const NOMS_THEMES: Readonly<Record<Theme, string>> = {
   sombre: 'Sombre',
 };
 
-/** Couleur de la barre d'état d'Android (= --couleur-fond de theme.css). */
-const COULEUR_BARRE = { clair: '#eef1f4', sombre: '#151a21' } as const;
+/**
+ * Couleur de la barre d'état d'Android = fond de l'appli tel qu'il est affiché (il dépend du thème ET
+ * de la direction de design) : lu sur <body>, déjà calculé par le navigateur. Les deux balises
+ * theme-color d'index.html (une par thème du système) prennent la couleur affichée.
+ */
+export function mettreAJourCouleurBarre(): void {
+  const couleur = getComputedStyle(document.body).backgroundColor;
+  if (couleur === '') return;
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = couleur;
+}
+
+let suiviSysteme = false;
 
 export function appliquerTheme(theme: Theme): void {
   const racine = document.documentElement;
@@ -24,10 +34,10 @@ export function appliquerTheme(theme: Theme): void {
   } else {
     racine.dataset['theme'] = theme;
   }
-  // index.html déclare une couleur de barre par thème du système (attribut media) : si le thème
-  // est forcé, les deux prennent sa couleur, sinon chacune retrouve la sienne.
-  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    const pourSombre = meta.media.includes('dark');
-    meta.content = theme === 'systeme' ? COULEUR_BARRE[pourSombre ? 'sombre' : 'clair'] : COULEUR_BARRE[theme];
+  mettreAJourCouleurBarre();
+  // En automatique, le fond change quand la tablette passe en clair ou en sombre
+  if (!suiviSysteme) {
+    suiviSysteme = true;
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', mettreAJourCouleurBarre);
   }
 }

@@ -1,6 +1,16 @@
 {
   "versions": [
     {
+      "id": "2026-11-14-styles-a-essayer",
+      "date": "2026-11-14",
+      "titre": "Sept styles à essayer",
+      "nouveautes": [
+        "À l'essai : dans Réglages, « Direction de design (essai) » propose sept styles pour l'appli (Années 80-90, ASCII, MS-DOS, BBS ANSI, Rétro, ASCII génératif, Terminal), en clair comme en sombre. Le style retenu remplacera ce choix.",
+        "Les symboles des boutons sont remplacés par des icônes dessinées, propres à chaque style.",
+        "Les petits chiffres des notes et la case choisie sont plus contrastés."
+      ]
+    },
+    {
       "id": "2026-11-14-apres-mise-a-jour",
       "date": "2026-11-14",
       "titre": "Des nouveautés toujours présentées",

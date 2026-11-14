@@ -35,7 +35,7 @@ export const fiche: FicheJeu<DonneesSudoku, EtatSudoku> = {
     'Remplir la grille avec les chiffres de 1 à 9.',
     'Chaque ligne, chaque colonne et chaque bloc de 3 × 3 cases contient chaque chiffre une seule fois.',
     'Les chiffres donnés au départ ne bougent pas. Il n\'y a qu\'une solution, qui se trouve par la logique, sans deviner.',
-    'Les notes (bouton ✎) gardent la trace des chiffres encore possibles dans une case.',
+    'Les notes (bouton « Notes ») gardent la trace des chiffres encore possibles dans une case.',
   ],
   exemple: { donnees: DONNEES, etat: etatExemple() },
 };

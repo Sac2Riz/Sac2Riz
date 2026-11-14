@@ -2,6 +2,39 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6b] — 7 directions de design à l'essai — 2026-11-14
+
+### Ajouté
+- **Directions de design** (clair + sombre) : Années 80-90, ASCII, MS-DOS, BBS ANSI, Rétro, ASCII génératif,
+  Terminal ; Ardoise reste la référence. `<html data-direction>` + `src/styles/directions/<id>.css`.
+- **Sélecteur temporaire** « Direction de design (essai) » (Réglages → Application, `ecran-reglages.ts`),
+  choix dans le stockage local (`src/socle/design/directions.ts`, `appliquer.ts`) ; à retirer en 6c.
+- **Icônes SVG** : `src/socle/icones.ts` (11 noms), `icone()` / `changerIcone()` dans `dom.ts`,
+  `boutonIcone` prend un nom ; dessins par direction dans `public/design/<direction>/icones/`, reliés par
+  `src/styles/icones.css` (Ardoise) et chaque feuille de direction (`mask-image`). Fin des emojis et
+  symboles (réglages, statistiques, notes, effacer, annuler, rétablir, indice, mise à jour, retour, pause).
+- **Polices** intégrées (`public/polices/`, licences dans `licences/`) : Bungee, Rubik, Courier Prime,
+  Fraunces, Karla, Space Mono, VT323, IBM Plex Mono, Fira Mono, JetBrains Mono (SIL OFL 1.1), Px437 IBM VGA
+  8x16 / EGA 8x14 / BIOS (CC BY-SA 4.0, VileR).
+- **Décor génératif** (`src/socle/design/decors.ts`) : champ de caractères animé (~8 images/s, arrêté en
+  arrière-plan, figé si animations réduites) dans les zones `.decor` de l'accueil et de la fiche, motif figé
+  au fond des cartes ; uniquement pour l'ASCII génératif.
+- Variables de thème : `--couleur-decor-1/2/3`, `--couleur-halo`, `--police-titre/-chiffres/-notes`,
+  `--echelle-chiffres/-notes`, `--graisse-donnee/-saisie/-note`, `--grille-rayon/-cadre/-trait-bloc/-trait-case`,
+  `--carte-bordure`, `--carte-ombre` ; utilisées par le socle et les `style.css` des jeux.
+- docs/DESIGN.md (directions, fonctionnement, retrait en 6c, polices et licences).
+- Tests (`tests/socle/design/`) : choix enregistré, variables complètes, contrastes WCAG calculés depuis le
+  CSS (16 variantes), icônes et polices présentes, licences.
+
+### Modifié
+- `theme.css` : couleurs écrites `light-dark(<clair>, <sombre>)`, le thème ne change plus que
+  `color-scheme`. Ardoise : sélection et notes plus contrastées (notes sur la case choisie < 4,5:1 avant).
+- `theme.ts` : couleur de la barre d'Android lue sur le fond affiché (`mettreAJourCouleurBarre`), suit le
+  thème du système en automatique.
+- Voile des fenêtres : `--couleur-voile` au lieu d'un noir fixe.
+- Règle du sudoku : « (bouton « Notes ») » au lieu du symbole du crayon.
+- `.gitignore` : `captures/`.
+
 ## [Étape 6a, correction] — Détection des mises à jour, fenêtre « Sac2Riz a été mis à jour » — 2026-11-14
 
 ### Corrigé (diagnostic : la tablette était passée à la nouvelle version sans rien annoncer)
@@ -48,6 +81,39 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une
 - Plus de bandeau « Nouvelle version disponible » ni de bouton « Plus tard » (`bandeau-mise-a-jour.ts` retiré).
   Le mécanisme ne change pas : jamais de rechargement sans le feu vert du joueur.
 - Accueil : le menu passe sous le titre en dessous de 60rem de large (il recouvrait le titre avec trois boutons).
+
+## [Étape 6b] — 7 directions de design à l'essai — 2026-11-14
+
+### Ajouté
+- **Directions de design** (clair + sombre) : Années 80-90, ASCII, MS-DOS, BBS ANSI, Rétro, ASCII génératif,
+  Terminal ; Ardoise reste la référence. `<html data-direction>` + `src/styles/directions/<id>.css`.
+- **Sélecteur temporaire** « Direction de design (essai) » (Réglages → Application, `ecran-reglages.ts`),
+  choix dans le stockage local (`src/socle/design/directions.ts`, `appliquer.ts`) ; à retirer en 6c.
+- **Icônes SVG** : `src/socle/icones.ts` (11 noms), `icone()` / `changerIcone()` dans `dom.ts`,
+  `boutonIcone` prend un nom ; dessins par direction dans `public/design/<direction>/icones/`, reliés par
+  `src/styles/icones.css` (Ardoise) et chaque feuille de direction (`mask-image`). Fin des emojis et
+  symboles (réglages, statistiques, notes, effacer, annuler, rétablir, indice, mise à jour, retour, pause).
+- **Polices** intégrées (`public/polices/`, licences dans `licences/`) : Bungee, Rubik, Courier Prime,
+  Fraunces, Karla, Space Mono, VT323, IBM Plex Mono, Fira Mono, JetBrains Mono (SIL OFL 1.1), Px437 IBM VGA
+  8x16 / EGA 8x14 / BIOS (CC BY-SA 4.0, VileR).
+- **Décor génératif** (`src/socle/design/decors.ts`) : champ de caractères animé (~8 images/s, arrêté en
+  arrière-plan, figé si animations réduites) dans les zones `.decor` de l'accueil et de la fiche, motif figé
+  au fond des cartes ; uniquement pour l'ASCII génératif.
+- Variables de thème : `--couleur-decor-1/2/3`, `--couleur-halo`, `--police-titre/-chiffres/-notes`,
+  `--echelle-chiffres/-notes`, `--graisse-donnee/-saisie/-note`, `--grille-rayon/-cadre/-trait-bloc/-trait-case`,
+  `--carte-bordure`, `--carte-ombre` ; utilisées par le socle et les `style.css` des jeux.
+- docs/DESIGN.md (directions, fonctionnement, retrait en 6c, polices et licences).
+- Tests (`tests/socle/design/`) : choix enregistré, variables complètes, contrastes WCAG calculés depuis le
+  CSS (16 variantes), icônes et polices présentes, licences.
+
+### Modifié
+- `theme.css` : couleurs écrites `light-dark(<clair>, <sombre>)`, le thème ne change plus que
+  `color-scheme`. Ardoise : sélection et notes plus contrastées (notes sur la case choisie < 4,5:1 avant).
+- `theme.ts` : couleur de la barre d'Android lue sur le fond affiché (`mettreAJourCouleurBarre`), suit le
+  thème du système en automatique.
+- Voile des fenêtres : `--couleur-voile` au lieu d'un noir fixe.
+- Règle du sudoku : « (bouton « Notes ») » au lieu du symbole du crayon.
+- `.gitignore` : `captures/`.
 
 ## [Étape 6a, correction] — Workflow de déploiement — 2026-11-14
 

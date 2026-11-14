@@ -22,6 +22,8 @@ import { ouvrirStockageIndexedDB } from './socle/stockage/indexeddb.ts';
 import { creerStockageMemoire } from './socle/stockage/memoire.ts';
 import { CLE_NOUVEAUTES_VUES, CLE_REGLAGES, type Stockage } from './socle/stockage/stockage.ts';
 import { appliquerTheme } from './socle/theme.ts';
+import { appliquerDirectionEnregistree } from './socle/design/appliquer.ts';
+import { demarrerDecors } from './socle/design/decors.ts';
 import { surveillerVisibilite } from './socle/visibilite.ts';
 import { estFichierNouveautes, FICHIER_NOUVEAUTES, type FichierNouveautes, type GroupeNouveautes } from './types/nouveautes.ts';
 import { creerAlea, graineAleatoire } from './utils/alea.ts';
@@ -52,6 +54,10 @@ async function lireNouveautesInstallees(): Promise<FichierNouveautes | null> {
 async function demarrer(): Promise<void> {
   const racine = document.getElementById('app');
   if (racine === null) throw new Error('Élément #app introuvable dans index.html');
+  // Étape 6b (temporaire) : direction de design à l'essai (lecture synchrone : dès le premier
+  // affichage), et ses décors animés éventuels
+  appliquerDirectionEnregistree();
+  demarrerDecors(racine);
 
   const stockage = await ouvrirStockage();
   const versionActuelle = lireVersion(chargerJson, document.baseURI);

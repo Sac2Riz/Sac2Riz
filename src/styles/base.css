@@ -1,4 +1,5 @@
-/* Styles de base du socle (direction « Ardoise »). Tablette d'abord : grandes zones tactiles,
+/* Styles de base du socle (formes communes ; couleurs, polices et formes variables dans theme.css,
+   redéfinies par chaque direction de design à l'essai : src/styles/directions/). Tablette d'abord : grandes zones tactiles,
    mise en page qui s'adapte au paysage comme au portrait. Couleurs : variables de theme.css. */
 
 *,
@@ -45,8 +46,34 @@ button:disabled {
   outline-offset: 2px;
 }
 
+/* Icône SVG dessinée (src/styles/icones.css, puis chaque direction) : le fichier sert de masque, la
+   couleur est celle du texte (elle suit donc le thème et l'état du bouton). */
 .icone {
-  line-height: 1;
+  display: inline-block;
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Décor d'une direction de design (en-tête de l'accueil, haut de la fiche) : rien par défaut */
+.decor {
+  display: none;
+}
+
+/* Titres : police des titres de la direction */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--police-titre);
 }
 
 /* ---------- Boutons communs ---------- */
@@ -151,7 +178,8 @@ button:disabled {
   gap: var(--espace-2);
   padding: var(--espace-3);
   background: var(--couleur-surface);
-  border: 1px solid var(--couleur-bordure);
+  border: var(--carte-bordure) solid var(--couleur-bordure);
+  box-shadow: var(--carte-ombre);
   border-radius: calc(var(--rayon) * 1.5);
 }
 
@@ -521,7 +549,8 @@ button:disabled {
   border: 1px solid var(--couleur-bordure);
   border-radius: var(--rayon);
   background: var(--couleur-surface);
-  font-size: 1.7rem;
+  font-family: var(--police-chiffres);
+  font-size: calc(1.7rem * var(--echelle-chiffres));
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -532,7 +561,7 @@ button:disabled {
 
 /* Mode notes : chiffres du pavé plus petits, dans la couleur d'accent */
 .partie.mode-notes .touche-valeur {
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--echelle-chiffres));
   color: var(--couleur-accent);
 }
 
@@ -678,14 +707,15 @@ button:disabled {
 .dialogue {
   max-width: min(28rem, calc(100vw - 2rem));
   padding: 0;
-  border: 1px solid var(--couleur-bordure);
+  border: var(--carte-bordure) solid var(--couleur-bordure);
+  box-shadow: var(--carte-ombre);
   border-radius: calc(var(--rayon) * 1.5);
   background: var(--couleur-surface);
   color: var(--couleur-texte);
 }
 
 .dialogue::backdrop {
-  background: rgb(0 0 0 / 50%);
+  background: var(--couleur-voile);
 }
 
 .dialogue-contenu {
@@ -792,6 +822,24 @@ button:disabled {
 
 .choix-theme-bouton {
   padding: 0.4rem 0.8rem;
+}
+
+/* Étape 6b, TEMPORAIRE (retiré à l'étape 6c) : choix de la direction de design à l'essai */
+.reglage-direction {
+  display: grid;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.choix-direction {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.4rem;
+}
+
+.choix-direction .choix-theme-bouton {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.95rem;
 }
 
 /* Sections de la fenêtre des réglages : Application, Tous les jeux, Par jeu */
@@ -925,7 +973,8 @@ button:disabled {
   gap: var(--espace-2);
   padding: var(--espace-3);
   background: var(--couleur-surface);
-  border: 1px solid var(--couleur-bordure);
+  border: var(--carte-bordure) solid var(--couleur-bordure);
+  box-shadow: var(--carte-ombre);
   border-radius: calc(var(--rayon) * 1.5);
   text-align: center;
 }
