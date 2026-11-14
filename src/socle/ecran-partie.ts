@@ -1,6 +1,7 @@
 // ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau, chrono, réglages,
-// pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, indice) et pavé commun
-// (une touche est estompée quand sa valeur ne peut plus être posée).
+// pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, indice ; le jeu peut
+// en masquer : VueJeu.outilsMasques) et pavé : le pavé commun (une touche est estompée quand sa
+// valeur ne peut plus être posée), ou une zone confiée à la vue (pavé « personnalise »).
 //
 // L'état de la partie est une valeur « Partie » (partie.ts, code pur) remplacée à chaque
 // changement ; après chaque action, elle est redessinée et SAUVEGARDÉE.
@@ -19,6 +20,7 @@ import type { ContexteVue, VueJeu } from '../types/vue.ts';
 import type { BilanFin } from './bilan-fin.ts';
 import { boutonIcone, bouton, creer } from './dom.ts';
 import { etoiles, formaterTemps } from './format.ts';
+import { outilsAffiches, type Outil } from './outils.ts';
 import {
   annuler,
   changerPause,
@@ -98,9 +100,19 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const outilIndice = outil('💡', 'Indice', () => montrerIndice());
   const compteurIndices = creer('small', 'outil-compteur');
   outilIndice.append(compteurIndices);
-  outils.append(outilNotes, outilEffacer, outilAnnuler, outilRetablir, outilIndice);
+  const boutonsOutils: Readonly<Record<Outil, HTMLButtonElement>> = {
+    notes: outilNotes,
+    effacer: outilEffacer,
+    annuler: outilAnnuler,
+    retablir: outilRetablir,
+    indice: outilIndice,
+  };
+  const affiches = new Set(outilsAffiches(vue.outilsMasques));
+  for (const o of affiches) outils.append(boutonsOutils[o]);
+  outils.style.setProperty('--nb-outils', String(affiches.size));
 
   const pave = creer('div', 'partie-pave');
+  const pavePersonnalise = vue.pave.type === 'personnalise';
   const touches = new Map<string, HTMLButtonElement>();
   if (vue.pave.type === 'commun') {
     for (const valeur of vue.pave.valeurs) {
@@ -129,6 +141,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
 
   // Ordre du DOM = ordre de lecture ; la disposition portrait/paysage est faite en CSS (grid-template-areas)
   ecran.append(barre, zoneGrille, outils, pave, bandeau);
+  ecran.classList.toggle('pave-personnalise', pavePersonnalise);
   o.conteneur.replaceChildren(ecran);
 
   const contexte: ContexteVue<Json> = {
@@ -136,7 +149,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     reglages: o.reglages,
     modeNotes: () => modeNotes,
   };
-  const instance = vue.monter(zoneGrille, contexte);
+  const instance = vue.monter({ grille: zoneGrille, pave: pavePersonnalise ? pave : null }, contexte);
   zoneGrille.append(voilePause);
 
   function outil(icone: string, libelle: string, action: () => void): HTMLButtonElement {
@@ -189,6 +202,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     compteurIndices.textContent = n > 0 ? String(n) : '';
     outilIndice.setAttribute('aria-label', n > 0 ? `Indice (${n} utilisé${n > 1 ? 's' : ''})` : 'Indice');
     for (const touche of touches.values()) touche.disabled = bloque;
+    pave.inert = bloque; // pavé personnalisé : la vue n'a pas à gérer la pause elle-même
     pause.disabled = partie.terminee;
     pause.setAttribute('aria-label', enPause() ? 'Reprendre' : 'Mettre en pause');
     pause.title = pause.getAttribute('aria-label') ?? '';
@@ -318,10 +332,10 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     } else if (touches.has(touche)) {
       evenement.preventDefault();
       saisir(touche);
-    } else if (touche === 'Backspace' || touche === 'Delete') {
+    } else if ((touche === 'Backspace' || touche === 'Delete') && affiches.has('effacer')) {
       evenement.preventDefault();
       outilEffacer.click();
-    } else if (touche === 'n' || touche === 'N') {
+    } else if ((touche === 'n' || touche === 'N') && affiches.has('notes')) {
       outilNotes.click();
     }
   }

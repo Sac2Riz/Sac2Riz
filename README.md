@@ -13,7 +13,7 @@ publicité. Les parties sont sauvegardées automatiquement sur l'appareil.
 | Jeu | État |
 |---|---|
 | **Sudoku classique** (9×9) | en cours de développement |
-| **Chiffres casés** : placer une liste de nombres dans une grille façon mots croisés | prévu |
+| **Chiffres casés** : placer une liste de nombres dans une grille façon mots croisés | en cours de développement |
 | **Variantes du sudoku** : 6×6, 4×4, diagonal, irrégulier, Killer, Windoku | prévu |
 | **Kakuro** | prévu |
 

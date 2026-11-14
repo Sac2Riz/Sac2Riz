@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { LogiqueJeu } from '../../src/types/jeu.ts';
 import type { Json } from '../../src/types/json.ts';
 import { NIVEAUX, type Niveau } from '../../src/types/niveaux.ts';
-import type { ModuleJeuQuelconque } from '../../src/types/vue.ts';
+import { OUTILS_MASQUABLES, type ModuleJeuQuelconque, type VueJeu } from '../../src/types/vue.ts';
 import { BUDGET_PAR_DEFAUT_MS } from '../../src/socle/client-worker.ts';
 import { BUDGET_MAX_MS } from '../../src/types/worker.ts';
 import { creerAlea } from '../../src/utils/alea.ts';
@@ -40,10 +40,41 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
 
   const logique = await jeu.chargerLogique();
   assert.equal(logique.meta, jeu.meta, 'logique.meta doit être l\'objet META du jeu');
-  verifierLogique(logique);
+  // Un niveau à réglage de génération particulier (servi par pack, budget de fond long) est long
+  // à générer : il est contrôlé par le test long du jeu (npm run test:long), pas ici
+  verifierLogique(logique, niveauxRapides(logique));
+
+  // Configuration de la vue (le module se charge sous Node : aucun accès au DOM à l'import)
+  verifierConfigVue(await jeu.chargerVue(), logique);
 
   // Le niveau doit faire partie des 6 niveaux communs
   for (const niveau of jeu.meta.niveaux) assert.ok(NIVEAUX.includes(niveau));
+}
+
+/** Niveaux sans réglage dans meta.generation (génération rapide, par défaut). */
+export function niveauxRapides(logique: LogiqueJeu<Json, Json, Json>): Niveau[] {
+  return logique.meta.niveaux.filter((n) => logique.meta.generation[n] === undefined);
+}
+
+/** Configuration de la vue : outils masqués connus et sans doublon, pavé cohérent avec restants. */
+export function verifierConfigVue(vue: VueJeu<Json, Json, Json>, logique: LogiqueJeu<Json, Json, Json>): void {
+  const masques = vue.outilsMasques;
+  assert.equal(new Set(masques).size, masques.length, 'outil masqué en double');
+  for (const o of masques) assert.ok(OUTILS_MASQUABLES.includes(o), `outil inconnu : ${o}`);
+  assert.equal(typeof vue.monter, 'function');
+
+  const r = logique.generer(logique.meta.niveaux[0] ?? 'debutant', creerAlea(7), { doitArreter: () => false });
+  assert.ok(r.ok);
+  const restants = vue.restants(logique.etatInitial(r.donnees), r.donnees);
+  if (vue.pave.type === 'commun') {
+    assert.ok(vue.pave.valeurs.length > 0, 'pavé commun vide');
+    assert.equal(new Set(vue.pave.valeurs).size, vue.pave.valeurs.length, 'valeur du pavé en double');
+    if (restants !== null) {
+      for (const v of Object.keys(restants)) assert.ok(vue.pave.valeurs.includes(v), `restants : valeur hors pavé ${v}`);
+    }
+  } else {
+    assert.equal(restants, null, 'pavé personnalisé : restants doit renvoyer null');
+  }
 }
 
 /**

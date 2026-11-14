@@ -1,0 +1,185 @@
+/* Styles des chiffres casés (classes préfixées « chiffres-cases- »).
+   Couleurs : variables de thème (src/styles/theme.css), direction « Ardoise ».
+   Grille : le socle la place dans un conteneur dimensionné (container-type: size) ; elle y prend
+   la plus grande taille possible en gardant ses proportions (--l colonnes, --h lignes).
+   Liste : dans la zone du pavé que le socle confie à la vue (elle défile si besoin). */
+
+.chiffres-cases-grille {
+  /* La grille sert elle-même de conteneur : tailles de police en cqi (% de sa largeur) */
+  container-type: inline-size;
+  width: min(100cqw, calc(100cqh * var(--l) / var(--h)));
+  aspect-ratio: var(--l) / var(--h);
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--l), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--h), minmax(0, 1fr));
+  gap: 1px;
+  padding: 2px;
+  background: var(--couleur-trait-epais);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.chiffres-cases-noire {
+  background: var(--couleur-case-noire);
+}
+
+.chiffres-cases-case {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--couleur-case);
+  color: var(--couleur-saisie);
+  font-size: calc(62cqi / var(--l));
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Chiffres des emplacements pré-placés : couleur du texte, en gras (comme les chiffres donnés du sudoku) */
+.chiffres-cases-case.est-fixe {
+  color: var(--couleur-texte);
+  font-weight: 700;
+}
+
+/* Mises en évidence, de la plus faible à la plus forte (l'ordre compte) */
+.chiffres-cases-case.est-cible { background: var(--couleur-zone); }
+.chiffres-cases-case.est-cible::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 2px dashed var(--couleur-accent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.chiffres-cases-case.est-selection { background: var(--couleur-selection); }
+.chiffres-cases-case.est-touchee::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 2px solid var(--couleur-accent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.chiffres-cases-case.est-erreur { color: var(--couleur-erreur); }
+.chiffres-cases-case.est-erreur:not(.est-selection) { background: var(--couleur-erreur-fond); }
+
+.chiffres-cases-case:focus-visible {
+  outline: 3px solid var(--couleur-accent);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+/* Indice affiché (1er temps) : emplacements qui justifient en fond léger, emplacement visé sur fond
+   ambré, chiffres à placer en vert */
+.chiffres-cases-case.est-zone-indice { background: var(--couleur-zone); }
+.chiffres-cases-case.est-indice { background: var(--couleur-indice-fond); }
+.chiffres-cases-case.est-a-placer { color: var(--couleur-place); font-weight: 700; }
+
+/* Signal bref : cases d'un nombre déplacé ou retiré par le dernier placement */
+.chiffres-cases-case.est-signal {
+  animation: chiffres-cases-signal 0.9s ease-out;
+}
+
+@keyframes chiffres-cases-signal {
+  0%, 40% { background: var(--couleur-indice-fond); box-shadow: inset 0 0 0 3px var(--couleur-indice); }
+  100% { background: var(--couleur-case); box-shadow: inset 0 0 0 3px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chiffres-cases-case.est-signal {
+    animation: none;
+    box-shadow: inset 0 0 0 3px var(--couleur-indice);
+  }
+}
+
+/* ---------- Liste des nombres ---------- */
+
+.chiffres-cases-liste {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.chiffres-cases-groupe {
+  padding: 0.4rem 0.6rem 0.6rem;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: var(--rayon);
+  background: var(--couleur-surface);
+}
+
+.chiffres-cases-groupe.est-en-avant {
+  border: 2px solid var(--couleur-accent);
+  background: var(--couleur-zone);
+}
+
+.chiffres-cases-groupe-titre {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--couleur-texte-doux);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.chiffres-cases-groupe.est-en-avant .chiffres-cases-groupe-titre {
+  color: var(--couleur-accent);
+}
+
+.chiffres-cases-nombres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chiffres-cases-nombre {
+  min-width: 3rem;
+  min-height: 2.75rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--couleur-bordure);
+  border-radius: calc(var(--rayon) * 0.8);
+  background: var(--couleur-case);
+  color: var(--couleur-texte);
+  font-size: 1.2rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Nombre utilisé : barré, toujours touchable (le placer ailleurs le déplace) */
+.chiffres-cases-nombre.est-utilise {
+  color: var(--couleur-texte-doux);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  background: transparent;
+}
+
+/* Nombre pré-placé : barré et verrouillé */
+.chiffres-cases-nombre.est-verrouille {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+/* Autre longueur que l'emplacement sélectionné : estompé, sans effet */
+.chiffres-cases-nombre.est-estompe {
+  opacity: 0.35;
+}
+
+.chiffres-cases-nombre.est-choisi {
+  background: var(--couleur-accent);
+  border-color: var(--couleur-accent);
+  color: var(--couleur-sur-accent);
+  opacity: 1;
+}
+
+.chiffres-cases-nombre:focus-visible {
+  outline: 3px solid var(--couleur-accent);
+  outline-offset: 2px;
+}

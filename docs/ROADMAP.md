@@ -139,15 +139,25 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   réserve qui en tient compte. Chiffres casés : Diabolique servi par son pack, Expert réalimenté avec 30 s.
 - `npm test` ramené sous 10 s : les niveaux Expert et Diabolique ne sont contrôlés que par `npm run test:long`.
 
-### Étape 4b — Interface et intégration
-- `vue.ts`, `style.css` : grille, sélection d'un emplacement, saisie d'un nombre entier par la liste,
-  liste des nombres groupés par longueur et barrés une fois utilisés, signal bref sur un nombre retiré,
-  marques des indices ; une ligne dans `src/games/registre.ts` ; vérification dans Edge.
-- **Changements du contrat acceptés sur le principe par l'utilisateur** (à condition de rester génériques,
-  compatibles avec le sudoku et documentés dans AJOUTER_UN_JEU.md) :
-  - la **zone du pavé confiée à la vue** quand elle choisit `{ type: 'personnalise' }` (aujourd'hui la vue
-    ne reçoit que la zone de la grille et la zone du pavé reste vide) ;
-  - une **option pour masquer des outils** du socle (ex. « Notes », sans objet aux chiffres casés).
+### ✅ Étape 4b — Interface et intégration
+- `vue.ts`, `style.css`, `interaction.ts` (logique des touchers, pure et testée) ; une ligne dans
+  `src/games/registre.ts` : l'accueil propose deux jeux, chacun avec son « Continuer » et ses niveaux.
+- Emplacement d'abord : toucher une case sélectionne son emplacement (l'horizontal d'abord, toucher à
+  nouveau bascule sur le vertical), puis un nombre de la bonne longueur le remplit (autres longueurs
+  estompées, sans effet). **Décision de l'utilisateur** : nombre d'abord aussi — sans sélection, toucher un
+  nombre met en évidence les emplacements vides de sa longueur ; toucher l'un d'eux l'y place ; toucher à
+  nouveau le nombre ou une zone vide annule.
+- Liste groupée par longueur (groupe visé en tête et surligné), nombres utilisés barrés et déplaçables,
+  pré-placés distincts et verrouillés, « Effacer » ; signal bref sur un nombre déplacé ou retiré.
+- Indices, erreurs, réglages, chrono, sauvegarde, statistiques, fin de partie : socle commun.
+- **Changements du contrat acceptés par l'utilisateur** (génériques, sudoku inchangé, documentés dans
+  AJOUTER_UN_JEU.md) : `monter(zones, contexte)` avec la **zone du pavé confiée à la vue** pour un pavé
+  `personnalise` ; `outilsMasques` (les chiffres casés masquent « Notes »).
+- Tests : interaction (19 tests), outils, configuration de la vue dans les tests du registre (439 tests).
+- Vérifié dans Edge (tablette simulée 1280 × 800 et 800 × 1280, clair et sombre) : grille 11 × 11 et liste
+  complète lisibles, sélection, nombre d'abord, signal, indice, pause, deux « Continuer » ; sudoku inchangé.
+- Vérifié : compteur des touches et « Remplir les notes » bien retirés depuis la 3c ; `restants` gardé
+  (estompe une touche épuisée).
 
 ## Étape 5 — PWA, sauvegarde externe, déploiement
 - Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.

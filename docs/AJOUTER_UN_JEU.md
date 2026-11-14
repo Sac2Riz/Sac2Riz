@@ -37,13 +37,25 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
      mettre en évidence, libellé du bouton, action). Respecter `options.retraitAutoNotes` si le jeu a des notes.
    - `nomTechnique(id)` : nom affiché de `notation.techniqueMax` (écran de fin de partie).
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
-4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Choisir le pavé commun ou `{ type: 'personnalise' }`.
-   Ne jamais modifier l'état : appeler `contexte.jouer(action)`. `afficher` reçoit `{ etat, donnees,
-   erreurs, indice }` : dessiner les marques de l'indice quand il n'est pas `null`. Relire
-   `contexte.reglages()` à chaque affichage (réglages modifiables en cours de partie). `restants` donne le nombre de fois où
-   chaque valeur du pavé peut encore être posée (ou `null`) : la touche est estompée à 0, aucun nombre
-   n'est affiché. La vue doit remplir le conteneur reçu
-   (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour une grille carrée).
+4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Ne jamais modifier l'état : appeler `contexte.jouer(action)`.
+   - **Pavé** (`pave`) : `{ type: 'commun', valeurs: ['1', …] }` (le socle dessine les touches et appelle
+     `saisir(valeur)`), ou `{ type: 'personnalise' }` : le socle **confie la zone du pavé à la vue**.
+   - **`monter(zones, contexte)`** : `zones.grille` reçoit la grille ; `zones.pave` est la zone du pavé si
+     le pavé est personnalisé (la vue y dessine son panneau : liste, boutons…), `null` avec le pavé commun.
+     La zone du pavé personnalisé défile si son contenu dépasse ; en portrait elle est sous la grille (hauteur
+     bornée pour que la grille reste grande), en paysage dans la colonne de droite. Le socle la masque
+     pendant un indice (le bandeau prend sa place) et en pause, et la rend inerte quand le jeu est bloqué.
+   - **`outilsMasques`** : outils du socle sans objet pour ce jeu, parmi `'notes'`, `'effacer'`, `'indice'`
+     (`[]` = tous ; Annuler et Rétablir restent toujours). Un outil masqué disparaît de la barre (qui se
+     répartit sur les outils restants) et son raccourci clavier est désactivé.
+     Exemple : `chiffres-cases/vue.ts` (`pave: { type: 'personnalise' }`, `outilsMasques: ['notes']`).
+   - Bouton « Effacer » : le socle appelle `effacer()`, la vue sait ce qui est sélectionné.
+   - `afficher` reçoit `{ etat, donnees, erreurs, indice }` : dessiner les marques de l'indice quand il
+     n'est pas `null`. Relire `contexte.reglages()` à chaque affichage (réglages modifiables en cours de partie).
+   - `restants` donne le nombre de fois où chaque valeur du pavé commun peut encore être posée (ou `null`) :
+     la touche est estompée à 0, aucun nombre n'est affiché. Avec un pavé personnalisé, renvoyer `null`.
+   - La grille doit remplir `zones.grille` (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour
+     une grille carrée).
 5. **`style.css`** : classes préfixées par l'id, couleurs via les variables de thème.
 6. **`index.ts`** : normalement inchangé (`export const jeu = { meta, chargerLogique, chargerVue, chargerPack }`) ;
    `chargerPack` renvoie `null` si le jeu n'a pas de pack (voir `sudoku-classique/packs.ts` sinon).
@@ -64,8 +76,11 @@ Dans `src/games/registre.ts`, ajouter **une ligne** :
 ## 5. Tester
 
 - Les tests du registre vérifient automatiquement le nouveau jeu (`tests/games/verifier-module.ts`) :
-  structure, réglages de génération, génération reproductible pour chaque niveau, cohérence de la notation,
-  aller-retour JSON, partie complète jouée par les indices sans mutation, gardes de type.
+  structure, réglages de génération, génération reproductible, cohérence de la notation, aller-retour
+  JSON, partie complète jouée par les indices sans mutation, gardes de type, configuration de la vue
+  (outils masqués connus, pavé cohérent avec `restants`). Seuls les niveaux **sans réglage** dans
+  `meta.generation` y sont générés ; les niveaux servis par pack ou à budget long se contrôlent dans
+  le test long du jeu (`verifierLogique(logique, niveaux)` dans un `*.long.ts`).
 - **Avant d'avoir une vue**, la logique seule se contrôle avec `verifierLogique(logique, niveaux)` (même
   fichier) : c'est ce que fait la sous-étape 4a des chiffres casés.
 - `npm test` doit rester rapide (< 10 s au total) : un niveau long à générer (plusieurs secondes) est
@@ -111,8 +126,17 @@ d'une autre nature apporte tout dans son dossier, sans toucher au socle :
   marche aléatoire, pas seulement entre deux essais complets). Si un niveau ne tient pas dans le budget
   d'une tablette, le déclarer `{ mode: 'pack' }` dans `meta.generation`.
 - **Interface** (étape 4b) : le pavé commun est fait pour poser des chiffres. Un jeu qui pose autre chose
-  utilise `{ type: 'personnalise' }` ; les évolutions génériques du contrat de vue prévues à l'étape 4b
-  (zone du pavé confiée à la vue, outils masquables comme « Notes ») seront décrites ici.
+  (ici des nombres entiers) choisit `{ type: 'personnalise' }` et dessine son panneau dans `zones.pave`
+  (voir l'étape 3, point 4) ; il masque les outils sans objet (`outilsMasques: ['notes']`).
+- **Logique des touchers à part** : la vue ne fait que dessiner et transmettre les touchers ; ce que produit
+  chaque toucher (nouvelle sélection, action à jouer, éléments à mettre en évidence) est calculé par des
+  fonctions pures (`chiffres-cases/interaction.ts`), testées sous Node comme le reste du jeu.
+- **Signal visuel d'une conséquence** : quand une action en modifie d'autres (nombre déplacé, nombres
+  croisés retirés), la logique fournit une fonction qui les décrit **avant** l'action
+  (`consequencesPlacement`) ; la vue la consulte juste avant `contexte.jouer` et anime brièvement les
+  cases concernées (sans animation si `prefers-reduced-motion`).
+- **Grille non carrée** : la vue donne à sa grille les proportions `--l / --h` et la largeur
+  `min(100cqw, 100cqh × l / h)` ; couleur des cases noires : `--couleur-case-noire`.
 
 ## Si le format d'un jeu change plus tard
 

@@ -10,7 +10,7 @@
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
 import type { MarquesIndice } from '../../types/jeu.ts';
-import type { AffichageVue, ContexteVue, InstanceVue, VueJeu } from '../../types/vue.ts';
+import type { AffichageVue, ContexteVue, InstanceVue, VueJeu, ZonesVue } from '../../types/vue.ts';
 import { blocDe, colonneDe, ligneDe, seVoient } from './geometrie.ts';
 import { NOMBRE_CASES, TAILLE, type ActionSudoku, type DonneesSudoku, type EtatSudoku } from './types.ts';
 
@@ -76,7 +76,7 @@ function typePose(contexte: ContexteVue<ActionSudoku>): 'noter' | 'placer' | 'pl
   return contexte.reglages().retraitAutoNotes ? 'placer' : 'placer-seul';
 }
 
-function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionSudoku>): InstanceVue<DonneesSudoku, EtatSudoku> {
+function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionSudoku>): InstanceVue<DonneesSudoku, EtatSudoku> {
   chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
 
   let selection: number | null = null;
@@ -195,6 +195,7 @@ function restants(etat: EtatSudoku): Readonly<Record<string, number>> {
 
 export const vue: VueJeu<DonneesSudoku, EtatSudoku, ActionSudoku> = {
   pave: { type: 'commun', valeurs: Array.from({ length: TAILLE }, (_, i) => String(i + 1)) },
+  outilsMasques: [],
   monter,
   restants,
 };

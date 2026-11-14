@@ -97,4 +97,6 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   bat pas le record). Retirés ensuite : nombre restant sur les touches du pavé, bouton « Remplir les notes ».
 - ✅ Étape 4a — Chiffres casés, logique pure : modèle, règles, générateur, solveur (10 techniques),
   notation, indices, packs Expert/Diabolique ; `MetaJeu.generation` (niveau servi par son pack, budget de fond).
-- ⏭️ Prochaine : **Étape 4b** — Chiffres casés, interface et intégration au registre.
+- ✅ Étape 4b — Chiffres casés jouables (registre, vue, liste groupée, nombre d'abord, signal) ; contrat de
+  vue : `monter(zones, contexte)` (zone du pavé confiée à la vue) et `outilsMasques`.
+- ⏭️ Prochaine : **Étape 5** — PWA, sauvegarde externe, déploiement.

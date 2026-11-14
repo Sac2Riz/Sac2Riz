@@ -3,10 +3,10 @@
 // et le socle la rappelle ensuite via afficher().
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
-import type { ContexteVue, InstanceVue, VueJeu } from '../../types/vue.ts';
+import type { ContexteVue, InstanceVue, VueJeu, ZonesVue } from '../../types/vue.ts';
 import { TAILLE, type ActionModele, type DonneesModele, type EtatModele } from './types.ts';
 
-function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionModele>): InstanceVue<DonneesModele, EtatModele> {
+function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionModele>): InstanceVue<DonneesModele, EtatModele> {
   chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
 
   let selection: number | null = null;
@@ -56,6 +56,8 @@ function monter(conteneur: HTMLElement, contexte: ContexteVue<ActionModele>): In
 export const vue: VueJeu<DonneesModele, EtatModele, ActionModele> = {
   // Pavé commun du socle avec les chiffres 1 à TAILLE
   pave: { type: 'commun', valeurs: Array.from({ length: TAILLE }, (_, i) => String(i + 1)) },
+  // Outils du socle à masquer (ex. ['notes'] pour un jeu sans notes)
+  outilsMasques: [],
   monter,
   // Chaque chiffre ne se place qu'une fois : il reste 1 s'il n'est pas encore dans la ligne
   restants: (etat) =>

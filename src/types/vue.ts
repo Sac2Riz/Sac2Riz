@@ -43,15 +43,32 @@ export type ConfigPave =
   | { readonly type: 'commun'; readonly valeurs: readonly string[] }
   | { readonly type: 'personnalise' };
 
+/** Outils du socle qu'un jeu peut masquer (ex. « notes » pour un jeu sans notes). */
+export const OUTILS_MASQUABLES = ['notes', 'effacer', 'indice'] as const;
+export type OutilMasquable = (typeof OUTILS_MASQUABLES)[number];
+
+/**
+ * Zones de l'écran confiées à la vue : la grille, et la zone du pavé quand la vue a choisi
+ * { type: 'personnalise' } (null avec le pavé commun, que le socle dessine lui-même).
+ * Les deux sont dimensionnées par le socle (container-type: size pour la grille ; la zone du
+ * pavé défile si son contenu dépasse).
+ */
+export type ZonesVue = {
+  readonly grille: HTMLElement;
+  readonly pave: HTMLElement | null;
+};
+
 export interface VueJeu<D extends Json, E extends Json, A extends Json> {
   readonly pave: ConfigPave;
+  /** Outils du socle à masquer pour ce jeu ([] = tous affichés). */
+  readonly outilsMasques: readonly OutilMasquable[];
   /**
    * Pavé commun : nombre de fois où chaque valeur peut encore être placée, ou null. Seul le zéro
    * compte pour le socle : la touche est alors estompée (aucun nombre n'est affiché).
    */
   restants(etat: E, donnees: D): Readonly<Record<string, number>> | null;
-  /** Crée l'affichage du jeu dans le conteneur fourni par le socle. */
-  monter(conteneur: HTMLElement, contexte: ContexteVue<A>): InstanceVue<D, E>;
+  /** Crée l'affichage du jeu dans les zones fournies par le socle. */
+  monter(zones: ZonesVue, contexte: ContexteVue<A>): InstanceVue<D, E>;
 }
 
 /**

@@ -48,7 +48,8 @@ fonctions sans effet de bord.
 Le socle gère tout ce qui est commun, pour tous les jeux :
 
 - **Accueil** : liste des jeux (depuis le registre), bouton « Continuer », choix du niveau.
-- **Partie** : monte la vue du jeu, gère le **pavé** commun (si `vue.pave.type === 'commun'`), le **mode notes**,
+- **Partie** : monte la vue du jeu, gère le **pavé** commun (si `vue.pave.type === 'commun'` ; sinon la zone du
+  pavé est confiée à la vue), les **outils** (moins ceux de `vue.outilsMasques`), le **mode notes**,
   **effacer**, **annuler/rétablir illimité**, **chronomètre** avec pause, **indices** avec compteur,
   **vérification des erreurs** (si activée dans les réglages).
 - **Historique** : la partie est la liste des actions `A` + un curseur. L'état courant = `etatInitial` puis
@@ -156,12 +157,16 @@ src/socle/
   ou non et l'ancien record), partie en cours supprimée, puis écran de fin. Clavier physique : chiffres,
   Retour arrière/Suppr, N (notes), Ctrl+Z / Ctrl+Y ; les flèches sont gérées par la vue du jeu.
 - **Outils** : Notes, Effacer, Annuler, Rétablir, Indice
-  (avec le nombre d'indices utilisés). Toute action ferme le bandeau d'un indice affiché.
+  (avec le nombre d'indices utilisés). Toute action ferme le bandeau d'un indice affiché. Un jeu peut masquer
+  Notes, Effacer ou Indice (`vue.outilsMasques`, calcul dans `socle/outils.ts`) ; la barre se répartit sur
+  les outils restants (`--nb-outils`).
 - **Navigation** : en quittant l'accueil (partie, statistiques), **une** entrée est ajoutée à l'historique du
   navigateur ; l'écran de fin et la partie suivante la réutilisent. Le bouton retour d'Android ramène
   toujours à l'accueil.
 - **Mise en page** (`src/styles/base.css`) : portrait = barre, grille, outils, pavé sur une ligne ; paysage
-  = grille à gauche sur toute la hauteur, barre + pavé 3 × 3 + outils à droite. La grille est placée dans un
+  = grille à gauche sur toute la hauteur, barre + pavé 3 × 3 + outils à droite. Pavé personnalisé
+  (`.partie.pave-personnalise`) : zone défilable, de hauteur bornée sous la grille en portrait, colonne de
+  droite plus large en paysage. La grille est placée dans un
   conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
 - **Thème** : direction visuelle « Ardoise » (gris bleutés, accent bleu encre, police du système), toutes
   les couleurs dans `src/styles/theme.css` (clair et sombre).
@@ -234,8 +239,11 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 ### `VueJeu<D, E, A>` — fichier `vue.ts`, `export const vue`
 
 - `pave` : `{ type: 'commun', valeurs: ['1', …] }` pour le pavé du socle, ou `{ type: 'personnalise' }`
-  (ex. chiffres casés, qui affiche sa propre liste de nombres).
-- `monter(conteneur, contexte)` → `InstanceVue` : `afficher({ etat, donnees, erreurs, indice })` (`indice` =
+  (ex. chiffres casés, qui affiche sa propre liste de nombres dans la zone du pavé).
+- `outilsMasques` : outils du socle à masquer (`'notes' | 'effacer' | 'indice'`, `OUTILS_MASQUABLES`) ;
+  `[]` pour le sudoku, `['notes']` pour les chiffres casés.
+- `monter(zones, contexte)` avec `zones = { grille, pave }` (`pave` : zone du pavé confiée à la vue si le
+  pavé est personnalisé, sinon `null`) → `InstanceVue` : `afficher({ etat, donnees, erreurs, indice })` (`indice` =
   marques à dessiner, ou `null`), `saisir(valeur)`, `effacer()`, `detruire()`.
 - `contexte` : `jouer(action)`, `modeNotes()`, `reglages()` — une **fonction** : les réglages peuvent changer
   pendant la partie (mise en évidence, retrait automatique des notes), la vue les relit à chaque affichage.
@@ -269,7 +277,7 @@ Messages typés dans `src/types/worker.ts`. Le worker charge `../games/<id>/logi
 
 Premier jeu hors de la famille sudoku : il n'utilise pas `src/moteur/` (pas de régions ni de candidats par
 case) et apporte son modèle, son solveur et sa notation dans son dossier. Vue et intégration au registre :
-étape 4b.
+étape 4b (pavé personnalisé : la liste des nombres ; outil « Notes » masqué).
 
 ```
 src/games/chiffres-cases/
@@ -287,6 +295,11 @@ src/games/chiffres-cases/
 ├─ notation.ts           niveau + force (VERSION_NOTATION_CASES)
 ├─ indice.ts             indices en deux temps (nombre faux d'abord, puis chemin du solveur)
 ├─ gardes.ts, logique.ts, packs.ts, packs/
+├─ interaction.ts        touchers (pur) : emplacement d'abord (horizontal puis vertical au second toucher) ou
+│                        nombre d'abord (cibles = emplacements vides de sa longueur), liste groupée (groupe
+│                        visé en tête, barrés, verrouillés, estompés), Effacer, cases à signaler, flèches
+├─ vue.ts, style.css     grille à cases noires (proportions --l / --h), liste dans la zone du pavé, signal
+│                        bref (consequencesPlacement) ; index.ts (point d'entrée du registre)
 ```
 
 Tests : `tests/games/chiffres-cases/` (une technique par fichier dans `techniques/`) ; tests longs

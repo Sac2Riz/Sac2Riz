@@ -302,7 +302,8 @@ button:disabled {
 .partie-outils {
   grid-area: outils;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* --nb-outils : outils affichés (le jeu peut en masquer), posé par ecran-partie.ts */
+  grid-template-columns: repeat(var(--nb-outils, 5), minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -453,6 +454,47 @@ button:disabled {
   /* Colonne étroite : outils sur deux lignes */
   .partie-outils {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Pavé personnalisé (zone confiée à la vue du jeu, ex. liste des nombres des chiffres casés) :
+   zone défilable. Portrait : sous la grille, avec une hauteur bornée pour que la grille reste
+   grande. Paysage : colonne de droite plus large, outils sur une ligne. */
+.partie.pave-personnalise .partie-pave {
+  display: block;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.partie.pave-personnalise {
+  grid-template-rows: auto minmax(0, 1fr) auto clamp(8rem, 28dvh, 22rem);
+}
+
+/* Bandeau de l'indice : en haut de la zone (haute), pas étiré sur toute sa hauteur */
+.partie.pave-personnalise .partie-indice {
+  align-self: start;
+}
+
+/* Indice affiché : le bandeau remplace le panneau, comme le pavé commun */
+.partie.pave-personnalise.avec-indice .partie-pave {
+  display: none;
+}
+
+/* Pause : le panneau du jeu est masqué comme la grille */
+.partie.pave-personnalise.est-en-pause .partie-pave {
+  visibility: hidden;
+}
+
+@media (orientation: landscape) {
+  .partie.pave-personnalise {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .partie.pave-personnalise .partie-outils {
+    grid-template-columns: repeat(var(--nb-outils, 5), minmax(0, 1fr));
   }
 }
 

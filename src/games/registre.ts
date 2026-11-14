@@ -8,4 +8,5 @@ import type { EntreeRegistre } from '../types/vue.ts';
 
 export const REGISTRE: readonly EntreeRegistre[] = [
   { id: 'sudoku-classique', charger: () => import('./sudoku-classique/index.ts') },
+  { id: 'chiffres-cases', charger: () => import('./chiffres-cases/index.ts') },
 ];

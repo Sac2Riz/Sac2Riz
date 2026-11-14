@@ -2,6 +2,40 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 4b] — Chiffres casés : interface et intégration — 2026-11-14
+
+### Ajouté
+- Chiffres casés jouables, enregistrés dans le registre : l'accueil propose deux jeux, chacun avec son
+  « Continuer » et ses niveaux.
+- `chiffres-cases/vue.ts` et `style.css` (direction « Ardoise », clair et sombre) : grille à cases noires
+  aux proportions de la grille, liste des nombres groupée par longueur dans la zone du pavé.
+- `chiffres-cases/interaction.ts` (pur, testé) :
+  - toucher une case sélectionne son emplacement (l'horizontal d'abord ; toucher à nouveau la même case
+    bascule sur le vertical) ; un nombre de la bonne longueur le remplit, les autres longueurs sont
+    estompées et sans effet ;
+  - sans sélection, toucher un nombre le sélectionne et met en évidence les emplacements vides de sa
+    longueur ; toucher l'un d'eux y place le nombre ; toucher à nouveau le nombre ou une zone vide annule ;
+  - groupe de la longueur visée en tête et surligné ; nombres utilisés barrés et toujours déplaçables ;
+    nombres pré-placés distincts, verrouillés ; « Effacer » vide l'emplacement sélectionné ;
+  - signal bref (0,9 s) sur les cases d'un nombre déplacé ou d'un nombre croisé retiré
+    (`consequencesPlacement`) ; contour fixe si les animations sont réduites ; flèches du clavier, Échap.
+- Indices en deux temps, vérification des erreurs, réglages, chrono, pause, sauvegarde, statistiques et
+  fin de partie : ceux du socle, sans code propre au jeu.
+- Variable de thème `--couleur-case-noire` (clair et sombre).
+
+### Modifié (contrat de vue, changements acceptés par l'utilisateur)
+- `monter(zones, contexte)` : `zones = { grille, pave }` ; `pave` est la zone du pavé confiée à la vue
+  quand elle choisit `{ type: 'personnalise' }` (`null` avec le pavé commun). Mise en page dédiée
+  (`.partie.pave-personnalise`) : zone défilable, sous la grille en portrait, colonne plus large en paysage ;
+  masquée pendant un indice et en pause.
+- `VueJeu.outilsMasques` : outils du socle à masquer (`'notes' | 'effacer' | 'indice'`) ; le sudoku n'en
+  masque aucun, les chiffres casés masquent « Notes » (touche N désactivée). Barre d'outils adaptée au
+  nombre d'outils (`src/socle/outils.ts`, testé).
+- Tests du registre : la configuration de la vue de chaque jeu est vérifiée ; seuls les niveaux sans
+  réglage dans `meta.generation` sont générés dans `npm test` (les autres : `npm run test:long`).
+- Vérifié : le compteur des touches du pavé et « Remplir les notes » (retirés en 3c) n'existent plus ;
+  `restants` reste dans le contrat (il estompe une touche épuisée), les chiffres casés renvoient `null`.
+
 ## [Étape 4a] — Chiffres casés : logique pure — 2026-11-14
 
 ### Ajouté

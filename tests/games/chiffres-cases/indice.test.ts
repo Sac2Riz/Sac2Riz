@@ -1,4 +1,4 @@
-// Tests des indices des chiffres casés et du contrat LogiqueJeu (logique seule : la vue arrive en 4b).
+// Tests des indices des chiffres casés et du contrat LogiqueJeu (niveaux rapides ; la vue est vérifiée par le registre).
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { logique } from '../../../src/games/chiffres-cases/logique.ts';
