@@ -29,7 +29,7 @@ export function estDemande(valeur: unknown): valeur is DemandeWorker {
       typeof valeur['jeu'] === 'string' &&
       estPuzzle(valeur['puzzle']) &&
       estObjet(options) &&
-      typeof options['nombreAuDepart'] === 'boolean'
+      Object.values(options).every((v) => typeof v === 'boolean')
     );
   }
   return (

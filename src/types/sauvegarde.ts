@@ -1,34 +1,60 @@
 // Types des données conservées : réglages, partie en cours, statistiques, export.
 // Tout est du JSON (déclaré avec « type ») pour IndexedDB et le fichier d'export.
 
-import type { Puzzle } from './jeu.ts';
+import type { Puzzle, ValeursReglagesJeu } from './jeu.ts';
 import type { Json } from './json.ts';
 import type { Niveau } from './niveaux.ts';
 
 export type Theme = 'systeme' | 'clair' | 'sombre';
 
+/**
+ * Réglages du joueur (étape 6a), en trois sections dans l'écran des réglages :
+ * - Application : thème (la sauvegarde et la version ne sont pas des réglages enregistrés) ;
+ * - Tous les jeux : vérification des erreurs, mise en évidence ;
+ * - Par jeu : réglages déclarés par chaque jeu (MetaJeu.reglages), rangés par id de jeu.
+ */
 export type Reglages = {
   /** « systeme » suit le thème clair/sombre de la tablette. */
   readonly theme: Theme;
-  /** Signale les chiffres faux (comparaison avec la solution). */
+  /** Signale les cases fausses (comparaison avec la solution). */
   readonly verifierErreurs: boolean;
-  /** Met en évidence la ligne, la colonne, le bloc de la case choisie et les chiffres identiques. */
+  /** Aides visuelles autour de la case choisie (sudoku : ligne, colonne, bloc, chiffres identiques). */
   readonly miseEnEvidence: boolean;
-  /** Poser un chiffre retire cette note des cases de sa ligne, de sa colonne et de son bloc. */
-  readonly retraitAutoNotes: boolean;
   /**
-   * Chiffres casés : une NOUVELLE grille sans aucun nombre pré-placé en reçoit un (LogiqueJeu.preparer).
-   * Sans effet sur une partie en cours.
+   * Réglages propres aux jeux : jeux[idJeu][idReglage]. Seuls les réglages déjà changés ou repris
+   * d'une ancienne version y figurent ; les autres prennent la valeur par défaut déclarée par le jeu.
+   * Les réglages d'un jeu inconnu de cette version sont conservés tels quels.
    */
-  readonly nombreAuDepart: boolean;
+  readonly jeux: { readonly [jeu: string]: ValeursReglagesJeu };
 };
 
 export const REGLAGES_PAR_DEFAUT: Reglages = {
   theme: 'systeme',
   verifierErreurs: false,
   miseEnEvidence: true,
-  retraitAutoNotes: true,
-  nombreAuDepart: false,
+  jeux: {},
+};
+
+/**
+ * Réglages tels que relus du stockage ou d'un fichier, dans la forme actuelle mais avec des valeurs de
+ * jeu non encore vérifiées (une valeur d'un type inconnu est ignorée à la lecture, sans perdre les autres).
+ */
+export type ReglagesBruts = {
+  readonly theme: Theme;
+  readonly verifierErreurs: boolean;
+  readonly miseEnEvidence: boolean;
+  readonly jeux: { readonly [jeu: string]: { readonly [id: string]: Json } };
+};
+
+/** Réglages « à plat » enregistrés par les étapes 4b à 5 (avant les réglages par jeu). */
+export type ReglagesV3 = {
+  readonly theme: Theme;
+  readonly verifierErreurs: boolean;
+  readonly miseEnEvidence: boolean;
+  /** Devenu un réglage du sudoku classique. */
+  readonly retraitAutoNotes: boolean;
+  /** Devenu un réglage des chiffres casés. */
+  readonly nombreAuDepart: boolean;
 };
 
 /** Réglages enregistrés par les étapes 3c à 4b (avant « nombre au départ »). */
@@ -45,8 +71,8 @@ export type ReglagesV1 = {
   readonly verifierErreurs: boolean;
 };
 
-/** Ce que le magasin « reglages » peut contenir : forme actuelle ou ancienne (complétée à la lecture). */
-export type ReglagesEnregistres = Reglages | ReglagesV2 | ReglagesV1;
+/** Ce que le magasin « reglages » peut contenir : forme actuelle ou ancienne (convertie à la lecture). */
+export type ReglagesEnregistres = ReglagesBruts | ReglagesV3 | ReglagesV2 | ReglagesV1;
 
 /**
  * Partie en cours, sauvegardée automatiquement.
@@ -130,8 +156,12 @@ export type DonneesExportees = {
   readonly packsJoues: { readonly [cle: string]: EtatPack };
 };
 
-/** Version du format du fichier d'export (à incrémenter si sa forme change, avec conversion à l'import). */
-export const VERSION_EXPORT = 1;
+/**
+ * Version du format du fichier d'export (à incrémenter si sa forme change, avec conversion à l'import).
+ * 1 : réglages « à plat » (étape 5) ; 2 : réglages par section, avec les réglages par jeu (étape 6a).
+ * L'import accepte les deux (les réglages d'un fichier n° 1 sont convertis).
+ */
+export const VERSION_EXPORT = 2;
 
 /** Contenu du fichier d'export (sac2riz-sauvegarde-AAAA-MM-JJ.json). */
 export type FichierExport = {

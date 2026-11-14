@@ -10,6 +10,7 @@
 // Liste : groupée par longueur, toujours dans le même ordre ; le groupe de la sélection est surligné
 // (et, s'il est hors de vue, la liste défile doucement juste assez pour le montrer) ; nombres utilisés
 // barrés (toujours touchables : les placer ailleurs les déplace), verrouillés s'ils sont pré-placés.
+// Aperçu (fiche du jeu) : la grille seule (sans la liste), chiffres posés, pré-placés en gras.
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
 import type { AffichageVue, ContexteVue, InstanceVue, VueJeu, ZonesVue } from '../../types/vue.ts';
@@ -99,6 +100,24 @@ function dessinerListe(liste: HTMLElement, groupes: readonly GroupeListe[]): voi
       return section;
     }),
   );
+}
+
+/** Aperçu en lecture seule (fiche du jeu) : la grille et ses chiffres, sans liste ni écouteur. */
+function apercu(conteneur: HTMLElement, { donnees, etat }: { readonly donnees: DonneesCases; readonly etat: EtatCases }): void {
+  chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
+  const { plateau, cases } = creerPlateau(donnees);
+  plateau.setAttribute('aria-label', 'Aperçu de la grille');
+  const chiffres = chiffresDesCases(etat, donnees);
+  const { grille } = structureDe(donnees).probleme;
+  const fixes = new Set(donnees.preplaces.flatMap((id) => grille.emplacements[id]?.cellules ?? []));
+  cases.forEach((b, cellule) => {
+    if (b === null) return;
+    const chiffre = chiffres[cellule] ?? null;
+    b.textContent = chiffre === null ? '' : String(chiffre);
+    b.classList.toggle('est-fixe', fixes.has(cellule));
+    b.tabIndex = -1;
+  });
+  conteneur.append(plateau);
 }
 
 function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVue<DonneesCases, EtatCases> {
@@ -274,5 +293,6 @@ export const vue: VueJeu<DonneesCases, EtatCases, ActionCases> = {
   // Le joueur ne prend pas de notes : un emplacement reçoit un nombre entier ou rien
   outilsMasques: ['notes'],
   monter,
+  apercu,
   restants: () => null,
 };

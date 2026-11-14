@@ -1,6 +1,7 @@
 // ÉCRAN DES STATISTIQUES : pour chaque jeu, un tableau par niveau (parties terminées,
-// abandonnées, meilleur temps, temps moyen, force moyenne). Ouvert depuis l'accueil ; le bouton
-// « ← » ou le bouton retour d'Android y ramènent (géré par app.ts).
+// abandonnées, meilleur temps, temps moyen, force moyenne). Ouvert depuis l'accueil (tous les jeux)
+// ou depuis la fiche d'un jeu (ce jeu seul) ; le bouton « ← » ou le bouton retour d'Android ramènent
+// à l'écran d'où il a été ouvert (géré par app.ts).
 
 import type { MetaJeu } from '../types/jeu.ts';
 import type { StatsJeu } from '../types/sauvegarde.ts';
@@ -53,10 +54,17 @@ function tableau({ meta, stats }: StatsAffichees): HTMLElement {
   return section;
 }
 
-export function afficherStats(conteneur: HTMLElement, jeux: readonly StatsAffichees[], retour: () => void): void {
+export type OptionsStats = {
+  readonly titre: string;
+  /** Libellé du bouton « ← » (« Retour à l'accueil », « Retour à la fiche du jeu »). */
+  readonly libelleRetour: string;
+  readonly retour: () => void;
+};
+
+export function afficherStats(conteneur: HTMLElement, jeux: readonly StatsAffichees[], o: OptionsStats): void {
   const ecran = creer('div', 'ecran-stats');
   const barre = creer('header', 'ecran-barre');
-  barre.append(boutonIcone('bouton-icone', '←', 'Retour à l\'accueil', retour), creer('h1', 'ecran-titre', 'Statistiques'));
+  barre.append(boutonIcone('bouton-icone', '←', o.libelleRetour, o.retour), creer('h1', 'ecran-titre', o.titre));
   ecran.append(barre, ...jeux.map(tableau));
   ecran.append(
     creer(

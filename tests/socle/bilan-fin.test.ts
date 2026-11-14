@@ -15,11 +15,10 @@ const bilan: BilanFin = {
 };
 
 describe('bilan de fin de partie', () => {
-  test('temps, niveau, force, technique, indices', () => {
+  test('temps, niveau avec la force exacte, technique, indices', () => {
     assert.deepEqual(lignesBilan(bilan), [
       { libelle: 'Temps', valeur: '12:34' },
-      { libelle: 'Niveau', valeur: 'Expert ★★★★★' },
-      { libelle: 'Force', valeur: '9 / 10' },
+      { libelle: 'Niveau', valeur: 'Expert · Force 9' },
       { libelle: 'Technique la plus difficile', valeur: 'X-Wing' },
       { libelle: 'Indices utilisés', valeur: '0' },
     ]);

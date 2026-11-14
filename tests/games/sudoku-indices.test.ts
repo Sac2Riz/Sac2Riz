@@ -10,10 +10,10 @@ import { convertirPack } from '../../src/games/sudoku-classique/packs.ts';
 import type { ActionSudoku, DonneesSudoku, EtatSudoku } from '../../src/games/sudoku-classique/types.ts';
 import { masqueComplet, valeursDuMasque } from '../../src/moteur/candidats.ts';
 import { estPackSudoku } from '../../src/moteur/pack.ts';
-import type { Indice, OptionsJeu } from '../../src/types/jeu.ts';
+import type { Indice, ValeursReglagesJeu } from '../../src/types/jeu.ts';
 import { ENONCE_UNIQUE, SOLUTION_UNIQUE } from '../moteur/grilles-connues.ts';
 
-const AVEC_RETRAIT: OptionsJeu = { retraitAutoNotes: true };
+const AVEC_RETRAIT: ValeursReglagesJeu = { retraitAutoNotes: true };
 const donnees: DonneesSudoku = { enonce: ENONCE_UNIQUE, solution: SOLUTION_UNIQUE };
 const vides = ENONCE_UNIQUE.flatMap((v, i) => (v === 0 ? [i] : []));
 

@@ -1,13 +1,14 @@
 // ÉCRAN DE FIN DE PARTIE : temps, niveau, force, technique la plus difficile, indices utilisés
 // et record éventuel (voir bilan-fin.ts). Boutons « Nouvelle partie » (même jeu, même niveau)
-// et « Accueil » ; le bouton retour d'Android ramène aussi à l'accueil (géré par app.ts).
+// et « Retour » (fiche du jeu) ; le bouton retour d'Android ramène aussi à la fiche (géré par app.ts).
 
 import { bouton, creer } from './dom.ts';
 import { lignesBilan, messageRecord, type BilanFin } from './bilan-fin.ts';
 
 export type ActionsFin = {
   readonly nouvelle: () => void;
-  readonly accueil: () => void;
+  /** Retour à la fiche du jeu. */
+  readonly retour: () => void;
 };
 
 export function afficherFin(conteneur: HTMLElement, bilan: BilanFin, actions: ActionsFin): void {
@@ -34,7 +35,9 @@ export function afficherFin(conteneur: HTMLElement, bilan: BilanFin, actions: Ac
 
   const boutons = creer('div', 'fin-boutons');
   const nouvelle = bouton('bouton bouton-principal', 'Nouvelle partie', actions.nouvelle);
-  boutons.append(bouton('bouton bouton-secondaire', 'Accueil', actions.accueil), nouvelle);
+  const retour = bouton('bouton bouton-secondaire', 'Retour', actions.retour);
+  retour.setAttribute('aria-label', 'Retour à la fiche du jeu');
+  boutons.append(retour, nouvelle);
   carte.append(boutons);
   ecran.append(carte);
   conteneur.replaceChildren(ecran);

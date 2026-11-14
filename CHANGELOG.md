@@ -2,6 +2,47 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6a] — Nouvelle structure des écrans et des réglages — 2026-11-14
+
+### Ajouté
+- **Fiche d'un jeu** (`socle/ecran-fiche.ts`), ouverte en touchant un jeu sur l'accueil : nom et description,
+  aperçu en petit non jouable (partie en cours, sinon grille d'exemple), « Continuer » (niveau, force exacte,
+  temps), « Nouvelle partie » avec le choix du niveau, règles, statistiques de ce jeu (écran des statistiques
+  limité au jeu).
+- **Contrat** : `fiche.ts` par jeu (`FicheJeu` : `regles`, `exemple`), `ModuleJeu.chargerFiche`,
+  `VueJeu.apercu` (grille en lecture seule) ; `MetaJeu.reglages` (`ReglageJeu` : id, type `interrupteur`,
+  libellé, détail, valeur par défaut, `preparation`) affichés automatiquement par le socle ;
+  `utils/reglages-jeu.ts` (`estActif`, `valeursCompletes`, `preparationDemandee`). Sudoku : réglage
+  `retraitAutoNotes` ; chiffres casés : `nombreAuDepart`. Fiches et aperçus des deux jeux et du modèle.
+- **Navigation** (`socle/navigation.ts`, pur) : écrans, parents et profondeurs ; une entrée d'historique par
+  cran ; bouton retour d'Android partie → fiche du jeu → accueil.
+- **Version** dans les réglages : date et heure du build et début de l'empreinte (« 14/11/2026 17:30 ·
+  a1b2c3d4 »), lues dans `version.json` (écrit par le build, mis en cache) ; date **figée par les sources**
+  (`scripts/date-build.ts` : dernier commit touchant les sources de l'appli, ou date de modification des
+  sources non commitées) et comprise dans l'empreinte : deux builds identiques gardent la même version.
+  GitHub Action : historique complet (`fetch-depth: 0`).
+- Tests : navigation, réglages de jeu, migration des réglages (V1, V2, V3, forme actuelle, valeur d'un autre
+  type), import des fichiers n° 1 et n° 2, version et date du build, fiche et réglages de chaque jeu dans le
+  test du contrat (525 tests).
+
+### Modifié
+- **Accueil** : liste des jeux (nom, description, pastille « Partie en cours ») ; plus de partie lancée
+  depuis l'accueil.
+- **Niveaux** affichés avec leur force partout à la place des étoiles (`libelleNiveau` : « Débutant · Force
+  1-2 » ; `libelleForce` : « Moyen · Force 6 » pour la force exacte de la grille) : fiche, barre de la partie,
+  « Continuer », confirmation de remplacement, fin de partie (une ligne « Niveau » au lieu de « Niveau » +
+  « Force »), statistiques. `etoiles()` et `InfosNiveau.etoiles` retirés.
+- **Réglages** en trois sections : Application (thème, sauvegarde, version), Tous les jeux (vérification des
+  erreurs, mise en évidence), Par jeu (pendant une partie : le jeu en cours seulement). Nouvelle forme
+  enregistrée `Reglages` = `{ theme, verifierErreurs, miseEnEvidence, jeux }` ; anciennes formes converties
+  à la lecture (`normaliserReglages`, choix du joueur conservés). La fenêtre s'ouvre en haut.
+- `LogiqueJeu.indice` et `preparer` reçoivent les valeurs des réglages du jeu (`ValeursReglagesJeu`) au lieu
+  de `OptionsJeu` / `OptionsDepart` ; `ContexteVue.reglages()` renvoie `ReglagesVue` (`verifierErreurs`,
+  `miseEnEvidence`, `jeu`) ; demande `preparer` du worker : valeurs des réglages du jeu.
+- Export : `VERSION_EXPORT` = 2 (réglages par section) ; l'import accepte aussi les fichiers n° 1.
+- Fin de partie : boutons « Nouvelle partie » et « Retour » (vers la fiche du jeu, au lieu de l'accueil).
+- Import possible hors d'une partie (accueil, fiche, statistiques).
+
 ## [Étape 5] — PWA hors ligne, export/import, déploiement — 2026-11-14
 
 ### Ajouté

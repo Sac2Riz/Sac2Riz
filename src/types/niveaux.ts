@@ -9,26 +9,22 @@ export type Niveau = (typeof NIVEAUX)[number];
 /** Score de force d'une grille, de 1 (très facile) à 10 (diabolique). */
 export type Force = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
-/** Nombre d'étoiles affiché (Diabolique : 5 étoiles + mention « Diabolique »). */
-export type Etoiles = 1 | 2 | 3 | 4 | 5;
-
 export type InfosNiveau = {
   readonly id: Niveau;
   /** Nom affiché dans l'interface. */
   readonly nom: string;
-  readonly etoiles: Etoiles;
-  /** Plage de force correspondant au niveau (bornes incluses). */
+  /** Plage de force correspondant au niveau (bornes incluses), affichée avec le nom : « Moyen · Force 5-6 ». */
   readonly forceMin: Force;
   readonly forceMax: Force;
 };
 
 export const INFOS_NIVEAUX: Readonly<Record<Niveau, InfosNiveau>> = {
-  debutant: { id: 'debutant', nom: 'Débutant', etoiles: 1, forceMin: 1, forceMax: 2 },
-  facile: { id: 'facile', nom: 'Facile', etoiles: 2, forceMin: 3, forceMax: 4 },
-  moyen: { id: 'moyen', nom: 'Moyen', etoiles: 3, forceMin: 5, forceMax: 6 },
-  difficile: { id: 'difficile', nom: 'Difficile', etoiles: 4, forceMin: 7, forceMax: 8 },
-  expert: { id: 'expert', nom: 'Expert', etoiles: 5, forceMin: 9, forceMax: 9 },
-  diabolique: { id: 'diabolique', nom: 'Diabolique', etoiles: 5, forceMin: 10, forceMax: 10 },
+  debutant: { id: 'debutant', nom: 'Débutant', forceMin: 1, forceMax: 2 },
+  facile: { id: 'facile', nom: 'Facile', forceMin: 3, forceMax: 4 },
+  moyen: { id: 'moyen', nom: 'Moyen', forceMin: 5, forceMax: 6 },
+  difficile: { id: 'difficile', nom: 'Difficile', forceMin: 7, forceMax: 8 },
+  expert: { id: 'expert', nom: 'Expert', forceMin: 9, forceMax: 9 },
+  diabolique: { id: 'diabolique', nom: 'Diabolique', forceMin: 10, forceMax: 10 },
 };
 
 /**

@@ -2,8 +2,8 @@
 // Une partie terminée avec des indices compte dans les statistiques, mais ne peut pas battre
 // le record du meilleur temps : l'écran le dit au joueur.
 
-import { INFOS_NIVEAUX, type Force, type Niveau } from '../types/niveaux.ts';
-import { etoiles, formaterTemps } from './format.ts';
+import type { Force, Niveau } from '../types/niveaux.ts';
+import { formaterTemps, libelleForce } from './format.ts';
 
 export type BilanFin = {
   readonly jeu: string;
@@ -23,8 +23,7 @@ export type LigneBilan = { readonly libelle: string; readonly valeur: string };
 export function lignesBilan(b: BilanFin): LigneBilan[] {
   return [
     { libelle: 'Temps', valeur: formaterTemps(b.tempsMs) },
-    { libelle: 'Niveau', valeur: `${INFOS_NIVEAUX[b.niveau].nom} ${etoiles(b.niveau)}` },
-    { libelle: 'Force', valeur: `${b.force} / 10` },
+    { libelle: 'Niveau', valeur: libelleForce(b.niveau, b.force) },
     { libelle: 'Technique la plus difficile', valeur: b.technique },
     { libelle: 'Indices utilisés', valeur: String(b.indicesUtilises) },
   ];

@@ -48,7 +48,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   pour être testé sous Node.
 - `src/moteur/` : moteur de contraintes (régions unicité/somme), backtracking, générateur, solveur logique (`logique/`) :
   une technique par fichier dans `logique/techniques/`, une étape renvoyée **seulement si elle a un effet réel**.
-- `src/games/<id>/` : un jeu = un dossier (`meta.ts`, `types.ts`, `logique.ts`, `vue.ts`, `index.ts`, `style.css`, `packs/`).
+- `src/games/<id>/` : un jeu = un dossier (`meta.ts`, `types.ts`, `logique.ts`, `vue.ts`, `fiche.ts`, `index.ts`, `style.css`, `packs/`).
+  Le jeu fournit tout le contenu de sa fiche (description, règles, aperçu, exemple) et déclare ses réglages propres (`meta.reglages`).
   **Ajouter un jeu = un dossier + une ligne dans `src/games/registre.ts`**, sans toucher au socle → [docs/AJOUTER_UN_JEU.md](docs/AJOUTER_UN_JEU.md).
 - `src/games/_modele/` : module modèle à copier. Dossiers `_xxx` : testés, **jamais publiés**.
 - 4 configs TypeScript : `tsconfig.json` (appli, DOM), `src/worker/tsconfig.json` (WebWorker + code pur ; même `rootDir`/`outDir` que l'appli),
@@ -111,4 +112,11 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 5 — PWA installable et 100 % hors ligne (service worker versionné automatiquement, bandeau de
   mise à jour), icônes provisoires (`npm run icones`), export/import validé, déploiement GitHub Pages
   automatique à chaque push sur `main`.
-- ⏭️ Prochaine : refonte du design de l'appli (annoncée par l'utilisateur), puis variantes et nouveaux jeux.
+- ✅ Étape 6a — Structure des écrans et des réglages : accueil = liste des jeux ; **fiche d'un jeu** (aperçu,
+  Continuer, nouvelle partie, règles, statistiques) remplie par le module du jeu (`fiche.ts`, `vue.apercu`) ;
+  niveaux affichés avec leur force (plus d'étoiles) ; réglages en trois sections (Application / Tous les jeux /
+  Par jeu), réglages propres déclarés par chaque jeu (`MetaJeu.reglages`), migration des anciens réglages ;
+  version = date du build (figée par les sources, `scripts/date-build.ts`) + empreinte ; retour d'Android
+  partie → fiche → accueil (`socle/navigation.ts`).
+- ⏭️ Prochaine : étape 6b (7 directions de design proposées comme thèmes), puis 6c (finalisation), puis
+  variantes et nouveaux jeux.

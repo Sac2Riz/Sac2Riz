@@ -69,7 +69,7 @@ describe('statistiques (pur)', () => {
     stats = enregistrerAbandon(stats, 'facile');
     const [facile, moyen] = lignesStats(stats, ['facile', 'moyen']);
     assert.deepEqual(facile, {
-      niveau: 'Facile',
+      niveau: 'Facile · Force 3-4',
       terminees: '0',
       abandonnees: '1',
       meilleurTemps: '—',
@@ -77,7 +77,7 @@ describe('statistiques (pur)', () => {
       forceMoyenne: '—',
     });
     assert.deepEqual(moyen, {
-      niveau: 'Moyen',
+      niveau: 'Moyen · Force 5-6',
       terminees: '2',
       abandonnees: '0',
       meilleurTemps: '2:05',

@@ -47,7 +47,15 @@ fonctions sans effet de bord.
 
 Le socle gère tout ce qui est commun, pour tous les jeux :
 
-- **Accueil** : liste des jeux (depuis le registre), bouton « Continuer », choix du niveau.
+- **Écrans** (étape 6a) : **accueil** = liste des jeux du registre (nom, description courte, pastille
+  « Partie en cours ») + Statistiques (tous les jeux) et Réglages ; toucher un jeu ouvre sa **fiche**
+  (`ecran-fiche.ts`) : nom et description, **aperçu** non jouable (partie en cours, sinon grille d'exemple),
+  « Continuer » (niveau, force exacte, temps), « Nouvelle partie » avec le choix du niveau, **règles**,
+  statistiques de ce jeu. Tout le contenu propre au jeu vient de son module (`meta.ts`, `fiche.ts`,
+  `vue.apercu`) : le socle ne connaît aucun jeu.
+- **Niveaux** affichés avec leur force partout (`format.ts`) : `libelleNiveau` → « Débutant · Force 1-2 »
+  (choix du niveau, statistiques), `libelleForce` → « Moyen · Force 6 » (force exacte de la grille : partie,
+  « Continuer », fin de partie, confirmation de remplacement). Plus d'étoiles.
 - **Partie** : monte la vue du jeu, gère le **pavé** commun (si `vue.pave.type === 'commun'` ; sinon la zone du
   pavé est confiée à la vue), les **outils** (moins ceux de `vue.outilsMasques`), le **mode notes**,
   **effacer**, **annuler/rétablir illimité**, **chronomètre** avec pause, **indices** avec compteur,
@@ -64,21 +72,32 @@ Le socle gère tout ce qui est commun, pour tous les jeux :
   chargement, elle reste intacte).
 - **Export/import** (Réglages → Sauvegarde, étape 5) : `FichierExport` (`format`, `version`, `exporteLe`,
   `donnees` : réglages, parties en cours, statistiques, avancement dans les packs ; **pas la réserve**),
-  fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`. Import **depuis l'accueil seulement** (pendant une partie,
+  fichier `sac2riz-sauvegarde-AAAA-MM-JJ.json`. Import **hors d'une partie seulement** (pendant une partie,
   l'écran de partie réécrirait sa partie par-dessus) : `analyserImport` (`socle/donnees/import.ts`, pur)
-  vérifie tout avant d'écrire (JSON, format, version — plus récente : message dédié —, gardes du stockage,
+  vérifie tout avant d'écrire (JSON, format, version — plus récente : message dédié ; n° 1, d'avant
+  l'étape 6a : réglages à plat convertis par `normaliserReglages` —, gardes du stockage,
   jeux connus, une partie par jeu, chaque partie **rejouée** par `depuisSauvegarde`), puis confirmation avec
   résumé, `Stockage.remplacerDonnees` (**atomique**) et redémarrage de l'appli.
 - **Thème** clair/sombre : suit le système par défaut (`prefers-color-scheme`), forçable par `data-theme`.
   Choix Automatique / Clair / Sombre dans l'écran des réglages ; la couleur de la barre d'état d'Android
   suit le thème choisi (`src/socle/theme.ts`).
-- **Réglages** (`Reglages`) : thème, vérification des erreurs, mise en évidence, retrait automatique des
-  notes, nombre au départ (chiffres casés, désactivé par défaut). Écran en fenêtre (`<dialog>`) ouvert depuis
-  l'accueil et pendant une partie ; chaque changement s'applique tout de suite. Des réglages enregistrés par
-  une version plus ancienne (formes `ReglagesV1`, `ReglagesV2`) sont complétés par les valeurs par défaut à
-  la lecture (`socle/reglages.ts`, `completerReglages`).
-- **Préparation d'une nouvelle partie** : si « nombre au départ » est activé, la grille obtenue (réserve,
-  pack, génération) passe par `LogiqueJeu.preparer` dans le worker, sous le même indicateur de chargement,
+- **Réglages** (étape 6a) : fenêtre (`<dialog>`, `ecran-reglages.ts`) ouverte depuis l'accueil, la fiche ou la
+  partie ; chaque changement s'applique tout de suite. **Trois sections** :
+  1. **Application** : thème (Automatique / Clair / Sombre), sauvegarde (export / import), version
+     (« 14/11/2026 17:30 · a1b2c3d4 », lue dans `version.json` par `socle/pwa/version.ts`) ;
+  2. **Tous les jeux** : vérification des erreurs, mise en évidence (la vue la lit dans `contexte.reglages()`) ;
+  3. **Par jeu** : les réglages **déclarés par chaque jeu** (`MetaJeu.reglages`, voir le contrat), affichés
+     automatiquement ; pendant une partie, seulement le jeu en cours.
+  Forme enregistrée `Reglages` = `{ theme, verifierErreurs, miseEnEvidence, jeux: { [idJeu]: { [idReglage]: booléen } } }`
+  (seuls les réglages changés y figurent ; sinon la valeur par défaut déclarée par le jeu, `utils/reglages-jeu.ts`).
+  **Migration** à la lecture (`socle/reglages.ts`, `normaliserReglages`, testée) : les anciennes formes « à
+  plat » (`ReglagesV1` à `V3`, étapes 3b à 5) gardent thème, vérification et mise en évidence ; leurs réglages
+  propres à un jeu sont rangés sous ce jeu (`ANCIENS_REGLAGES_DE_JEU`, table figée : `retraitAutoNotes` →
+  sudoku, `nombreAuDepart` → chiffres casés). Une valeur de jeu qui n'est pas un booléen est ignorée seule ;
+  les réglages d'un jeu inconnu sont conservés. Pas de changement de schéma IndexedDB (même magasin).
+- **Préparation d'une nouvelle partie** : si un réglage du jeu marqué `preparation` est activé (chiffres
+  casés : « nombre au départ »), la grille obtenue (réserve, pack, génération) passe par
+  `LogiqueJeu.preparer` (avec les valeurs des réglages du jeu) dans le worker, sous le même indicateur de chargement,
   avant de créer la partie (`socle/app.ts`). Un **second worker**, créé au premier besoin (`main.ts`), s'en
   charge : la préparation n'attend jamais derrière une génération de fond. Échec → grille jouée telle
   quelle. Une partie reprise n'est jamais préparée.
@@ -115,7 +134,8 @@ src/socle/
 ├─ donnees/           export / import (étape 5) : export.ts (lecture, fichier, nom daté),
 │                     import.ts (analyse complète, pur), actions-donnees.ts (téléchargement, dialogues)
 └─ pwa/               mise-a-jour.ts (enregistrement du service worker, nouvelle version signalée,
-                      jamais de rechargement sans clic), bandeau-mise-a-jour.ts
+                      jamais de rechargement sans clic), bandeau-mise-a-jour.ts,
+                      version.ts (version et date du build affichées dans les réglages, étape 6a)
 ```
 
 ### Indices du sudoku classique (étape 3c) — `games/sudoku-classique/indice.ts`
@@ -145,17 +165,19 @@ src/socle/
 ├─ stats.ts           statistiques (pur) : enregistrerTerminee (sans record si indices), enregistrerAbandon,
 │                     estNouveauRecord, tempsMoyenMs, forceMoyenne, lignesStats (tableau affiché)
 ├─ service-parties.ts partie en cours et statistiques dans le stockage (écritures mises en série)
-├─ format.ts          formaterTemps (« 12:34 »), etoiles (pur)
-├─ app.ts             navigation (accueil, partie, statistiques, fin), confirmation, chargement,
+├─ format.ts          formaterTemps (« 12:34 »), libelleNiveau / libelleForce (« Moyen · Force 6 ») (pur)
+├─ navigation.ts      écrans, parents et profondeurs (pur, étape 6a)
+├─ app.ts             navigation (accueil, fiche, partie, statistiques, fin), confirmation, chargement,
 │                     bouton retour d'Android, réglages appliqués et enregistrés
-├─ accueil.ts         écran d'accueil : « Continuer », choix du niveau, menu Statistiques / Réglages
+├─ accueil.ts         écran d'accueil : liste des jeux, menu Statistiques / Réglages
+├─ ecran-fiche.ts     fiche d'un jeu : aperçu, Continuer, nouvelle partie, règles (étape 6a)
 ├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Indice),
 │                     pavé, bandeau de l'indice, chrono, sauvegarde, clavier
-├─ ecran-reglages.ts  fenêtre des réglages (étape 3c)
-├─ ecran-stats.ts     écran des statistiques par jeu et par niveau (étape 3c)
+├─ ecran-reglages.ts  fenêtre des réglages en trois sections (étapes 3c, 6a)
+├─ ecran-stats.ts     écran des statistiques par jeu et par niveau, tous les jeux ou un seul (étapes 3c, 6a)
 ├─ ecran-fin.ts       écran de fin de partie (étape 3c)
 ├─ bilan-fin.ts       lignes du bilan de fin et message sur le record (pur, étape 3c)
-├─ reglages.ts        completerReglages : réglages anciens complétés (pur, étape 3c)
+├─ reglages.ts        normaliserReglages (migration), réglages d'un jeu, réglages vus par la vue (pur)
 ├─ dialogue.ts        confirmer / informer (élément <dialog>)
 ├─ chargement.ts      indicateur de chargement (visible après 0,25 s) avec Annuler
 └─ dom.ts             petits utilitaires DOM (creer, bouton, boutonIcone)
@@ -175,9 +197,15 @@ src/socle/
   (avec le nombre d'indices utilisés). Toute action ferme le bandeau d'un indice affiché. Un jeu peut masquer
   Notes, Effacer ou Indice (`vue.outilsMasques`, calcul dans `socle/outils.ts`) ; la barre se répartit sur
   les outils restants (`--nb-outils`).
-- **Navigation** : en quittant l'accueil (partie, statistiques), **une** entrée est ajoutée à l'historique du
-  navigateur ; l'écran de fin et la partie suivante la réutilisent. Le bouton retour d'Android ramène
-  toujours à l'accueil.
+- **Navigation** (étape 6a, `navigation.ts` pur + `app.ts`) : chaque écran a un parent — accueil ← fiche
+  d'un jeu ← partie (et fin de partie) ; accueil ← statistiques de tous les jeux ; fiche ← statistiques du
+  jeu. Profondeur = nombre de crans depuis l'accueil = nombre d'entrées ajoutées à l'historique du
+  navigateur (`history.state = { profondeur }`) : descendre ajoute une entrée, la fin de partie et la partie
+  suivante remplacent celle de la partie. Les boutons « ← » font `history.back()`, comme le bouton retour
+  d'Android ; `popstate` remonte à l'ancêtre de l'écran courant à la profondeur atteinte (la partie est
+  sauvegardée et fermée d'abord). Une entrée plus profonde que l'écran courant (avancer, ou entrée restée
+  d'avant un rechargement) est ignorée. Un affichage commencé avant un changement d'écran est abandonné
+  (jeton), et une nouvelle partie dont le joueur est reparti pendant le chargement n'est pas ouverte.
 - **Mise en page** (`src/styles/base.css`) : portrait = barre, grille, outils, pavé sur une ligne ; paysage
   = grille à gauche sur toute la hauteur, barre + pavé 3 × 3 + outils à droite. Pavé personnalisé
   (`.partie.pave-personnalise`) : zone défilable, de hauteur bornée sous la grille en portrait, colonne de
@@ -185,8 +213,7 @@ src/socle/
   conteneur `container-type: size` : la vue y prend le plus grand carré possible (`min(100cqw, 100cqh)`).
 - **Thème** : direction visuelle « Ardoise » (gris bleutés, accent bleu encre, police du système), toutes
   les couleurs dans `src/styles/theme.css` (clair et sombre).
-- **Bouton retour d'Android** : entrer dans une partie ajoute une entrée à l'historique du navigateur ;
-  « retour » ramène à l'accueil (après sauvegarde) au lieu de quitter l'appli.
+- **Bouton retour d'Android** : partie → fiche du jeu → accueil (voir Navigation), sans quitter l'appli.
 
 - **Client du worker** (`creerClientWorker`) : `generer(jeu, niveau, 'urgent' | 'fond', budgetMs)` renvoie
   `{ resultat, annuler }` ; le résultat (`ok` + puzzle, `echec`, `erreur`, `annule`) ne rejette jamais.
@@ -234,15 +261,15 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 
 | Membre | Rôle |
 |---|---|
-| `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat`, `generation` (réglages de génération par niveau : `{ mode: 'pack' }` ou `{ mode: 'worker', budgetFondMs }` ; `{}` = fonctionnement par défaut) |
+| `meta` | `MetaJeu` : id (= dossier), nom, description, niveaux, `versionFormat`, `generation` (réglages de génération par niveau : `{ mode: 'pack' }` ou `{ mode: 'worker', budgetFondMs }` ; `{}` = fonctionnement par défaut), `reglages` (réglages propres au jeu, `ReglageJeu[]`, voir ci-dessous) |
 | `generer(niveau, alea, { doitArreter })` | `{ ok: true, donnees, notation }` ou `{ ok: false, raison }` (exécuté dans le worker) |
 | `noter(donnees)` | `Notation` (niveau, force, technique max, détails) ou `null` si l'essai-erreur est nécessaire |
-| `preparer(donnees, options)` | données d'une **nouvelle** partie selon les réglages (`OptionsDepart` : `nombreAuDepart`), dans le worker ; sinon le même objet |
+| `preparer(donnees, reglages)` | données d'une **nouvelle** partie selon les réglages du jeu (`ValeursReglagesJeu`), dans le worker, seulement si un réglage `preparation` est activé ; sinon le même objet |
 | `etatInitial(donnees)` | état E en début de partie |
 | `appliquer(etat, action, donnees)` | **nouvel** état (jamais de mutation) |
 | `erreurs(etat, donnees)` | cases fausses (comparaison avec la solution) |
 | `estTerminee(etat, donnees)` | grille complète et juste |
-| `indice(etat, donnees, options)` | `Indice` ou `null` (voir ci-dessous) ; `options.retraitAutoNotes` = réglage du joueur |
+| `indice(etat, donnees, reglages)` | `Indice` ou `null` (voir ci-dessous) ; `reglages` = valeurs des réglages du jeu (sudoku : `retraitAutoNotes`) |
 | `nomTechnique(id)` | nom affiché de `Notation.techniqueMax` (écran de fin) |
 | `estDonnees` / `estEtat` / `estAction` | gardes de type pour relire sauvegardes et imports |
 | `migrer?(ancien, version)` | facultatif : conversion d'un ancien format |
@@ -252,6 +279,17 @@ trois types JSON : **D** (données de la grille : énoncé, solution), **E** (é
 `placements`), `libelleAction` (« Placer le 7 en L3C5 », « Retirer 3 candidats ») et `action`.
 Le socle affiche titre et explication, la vue dessine les marques, puis le socle joue l'action si le joueur
 le demande.
+
+**`ReglageJeu`** (étape 6a) : `{ id, type: 'interrupteur', libelle, detail, defaut, preparation }`. Le socle
+affiche chaque réglage déclaré dans la section du jeu, l'enregistre sous `Reglages.jeux[idJeu][id]` et
+transmet au jeu **toutes** les valeurs (`ValeursReglagesJeu`, défauts complétés) : `indice`, `preparer`,
+`contexte.reglages().jeu`. Le jeu les lit avec `estActif(valeurs, REGLAGE)` (`utils/reglages-jeu.ts`).
+`preparation: true` = le réglage change la grille d'une nouvelle partie (le socle appelle alors `preparer`).
+Seul le type `interrupteur` existe ; le champ `type` permettra d'en ajouter d'autres.
+
+**`FicheJeu<D, E>`** (fichier `fiche.ts`, `export const fiche`, code pur) : `regles` (phrases simples, une par
+point) et `exemple: { donnees, etat }` (grille d'exemple en partie remplie, vérifiée par les gardes du jeu
+dans les tests). Avec `meta.nom`, `meta.description` et `vue.apercu`, c'est tout le contenu de la fiche.
 
 Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`, `notation`, `donnees`).
 `alea` est un générateur **à graine** (`src/utils/alea.ts`) : même graine → même grille.
@@ -265,8 +303,12 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 - `monter(zones, contexte)` avec `zones = { grille, pave }` (`pave` : zone du pavé confiée à la vue si le
   pavé est personnalisé, sinon `null`) → `InstanceVue` : `afficher({ etat, donnees, erreurs, indice })` (`indice` =
   marques à dessiner, ou `null`), `saisir(valeur)`, `effacer()`, `detruire()`.
+- `apercu(conteneur, { donnees, etat })` (étape 6a) : la grille **en lecture seule** pour la fiche du jeu
+  (aucun écouteur ; le socle rend le conteneur inerte, le dimensionne avec `container-type: size` et le
+  vide ensuite).
 - `contexte` : `jouer(action)`, `modeNotes()`, `reglages()` — une **fonction** : les réglages peuvent changer
-  pendant la partie (mise en évidence, retrait automatique des notes), la vue les relit à chaque affichage.
+  pendant la partie, la vue les relit à chaque affichage. `ReglagesVue` = `{ verifierErreurs,
+  miseEnEvidence, jeu }` (`jeu` : valeurs des réglages propres au jeu).
   Le conteneur est dimensionné par le socle (`container-type: size`).
 - `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée,
   ou `null`. Le socle n'affiche pas ce nombre : il s'en sert seulement pour **estomper** une touche à 0.
@@ -275,8 +317,8 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
 
 ### `ModuleJeu` — fichier `index.ts`, `export const jeu`
 
-`{ meta, chargerLogique, chargerVue, chargerPack }` : l'accueil ne charge que les métadonnées ; logique et
-vue sont importées à la demande (`import()` dynamique). `chargerPack(niveau)` renvoie les grilles du pack du
+`{ meta, chargerLogique, chargerVue, chargerFiche, chargerPack }` : l'accueil ne charge que les métadonnées ;
+logique, vue et fiche sont importées à la demande (`import()` dynamique ; la fiche à l'ouverture de la fiche du jeu). `chargerPack(niveau)` renvoie les grilles du pack du
 niveau sous forme de `Puzzle` (ou `null` sans pack) ; le service des packs du socle l'appelle quand la
 réserve est vide.
 
@@ -491,6 +533,13 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
   - jamais d'accès à IndexedDB : parties, stats, réglages, réserve survivent aux mises à jour (les
     changements de schéma passent par les migrations du stockage) ;
   - en développement (`npm run dev`), le marqueur n'est pas remplacé : rien en cache, le réseau répond.
+- **Version affichée** (étape 6a) : le build écrit aussi `dist/version.json` = `{ version, date }` (mis en cache
+  comme le reste), lu par la page et affiché dans les réglages (« 14/11/2026 17:30 · a1b2c3d4 » ; « Développement »
+  sans build). La **date est figée par les sources** (`scripts/date-build.ts`) : date du dernier commit qui
+  touche les sources de l'appli (`src/`, `public/`, scripts de build, `tsconfig.json`, `package-lock.json`) ;
+  sources modifiées non commitées : leur date de modification la plus récente ; sans Git : heure du build.
+  Elle entre dans l'empreinte de version : deux builds au contenu identique gardent **la même version** (pas
+  de fausse mise à jour). La GitHub Action récupère tout l'historique (`fetch-depth: 0`) pour cela.
 - **Côté page** (`socle/pwa/mise-a-jour.ts`, testé avec de faux objets) : nouvelle version signalée si elle
   attend au démarrage ou quand elle passe à « installed » alors qu'une version contrôle la page (jamais à
   la première installation) → bandeau (Recharger / Plus tard). Recharger : `App.sauvegarder()` (partie en

@@ -3,7 +3,7 @@
 // Le fichier doit exporter « logique » : le worker le charge sous ce nom.
 
 import type { Alea } from '../../types/alea.ts';
-import type { Indice, LogiqueJeu, OptionsGeneration, OptionsJeu, ResultatGeneration } from '../../types/jeu.ts';
+import type { Indice, LogiqueJeu, OptionsGeneration, ResultatGeneration, ValeursReglagesJeu } from '../../types/jeu.ts';
 import type { Json } from '../../types/json.ts';
 import { INFOS_NIVEAUX, NIVEAUX, type Niveau, type Notation } from '../../types/niveaux.ts';
 import { estEntierEntre, estObjet, estTableauDe } from '../../utils/gardes-json.ts';
@@ -97,10 +97,10 @@ function estTerminee(etat: EtatModele, donnees: DonneesModele): boolean {
 
 /**
  * Indice en deux temps : les marques (cases, candidats) sont montrées avec l'explication,
- * puis l'action est jouée si le joueur le demande. Les options (réglages du joueur) ne
- * changent rien pour ce jeu sans retrait automatique des notes.
+ * puis l'action est jouée si le joueur le demande. Les réglages du jeu (meta.reglages)
+ * ne changent rien ici : le modèle n'en déclare aucun.
  */
-function indice(etat: EtatModele, donnees: DonneesModele, _options: OptionsJeu): Indice<ActionModele> | null {
+function indice(etat: EtatModele, donnees: DonneesModele, _reglages: ValeursReglagesJeu): Indice<ActionModele> | null {
   const cellule = etat.valeurs.findIndex((v, i) => v !== donnees.solution[i]);
   const valeur = donnees.solution[cellule];
   if (cellule < 0 || valeur === undefined) return null;

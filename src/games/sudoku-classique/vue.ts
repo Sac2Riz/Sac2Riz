@@ -7,11 +7,14 @@
 // Indice affiché (1er temps) : régions concernées en fond léger, cases du motif sur fond ambré, candidats du motif en couleur,
 // candidats éliminés barrés en rouge (dessinés même si le joueur ne les a pas notés), chiffre à
 // placer en vert ; les autres mises en évidence sont alors suspendues.
+// Aperçu (fiche du jeu) : la même grille, sans sélection ni écouteur, chiffres et notes seulement.
 
 import { chargerFeuilleDeStyle } from '../../socle/styles.ts';
 import type { MarquesIndice } from '../../types/jeu.ts';
 import type { AffichageVue, ContexteVue, InstanceVue, VueJeu, ZonesVue } from '../../types/vue.ts';
+import { estActif } from '../../utils/reglages-jeu.ts';
 import { blocDe, colonneDe, ligneDe, seVoient } from './geometrie.ts';
+import { RETRAIT_AUTO_NOTES } from './meta.ts';
 import { NOMBRE_CASES, TAILLE, type ActionSudoku, type DonneesSudoku, type EtatSudoku } from './types.ts';
 
 /** Éléments d'une case. */
@@ -73,16 +76,11 @@ function creerCase(cellule: number, choisir: (cellule: number) => void): Case {
 /** Action produite par une touche du pavé, selon le mode notes et le réglage du retrait des notes. */
 function typePose(contexte: ContexteVue<ActionSudoku>): 'noter' | 'placer' | 'placer-seul' {
   if (contexte.modeNotes()) return 'noter';
-  return contexte.reglages().retraitAutoNotes ? 'placer' : 'placer-seul';
+  return estActif(contexte.reglages().jeu, RETRAIT_AUTO_NOTES) ? 'placer' : 'placer-seul';
 }
 
-function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionSudoku>): InstanceVue<DonneesSudoku, EtatSudoku> {
-  chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
-
-  let selection: number | null = null;
-  let dernier: AffichageVue<DonneesSudoku, EtatSudoku> | null = null;
-
-  // Grille = 9 blocs (séparés par un trait épais), chacun de 9 cases (séparées par un trait fin)
+/** Plateau : 9 blocs (séparés par un trait épais), chacun de 9 cases (séparées par un trait fin). */
+function creerPlateau(choisir: (cellule: number) => void): { plateau: HTMLDivElement; cases: Case[] } {
   const plateau = document.createElement('div');
   plateau.className = 'sudoku-classique-grille';
   plateau.setAttribute('role', 'grid');
@@ -99,6 +97,36 @@ function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionSud
     blocs[blocDe(cellule)]?.append(c.bouton);
   }
   plateau.append(...blocs);
+  return { plateau, cases };
+}
+
+/** Aperçu en lecture seule (fiche du jeu) : chiffres donnés, chiffres posés et notes. */
+function apercu(conteneur: HTMLElement, { donnees, etat }: { readonly donnees: DonneesSudoku; readonly etat: EtatSudoku }): void {
+  chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
+  const { plateau, cases } = creerPlateau(() => {});
+  plateau.setAttribute('aria-label', 'Aperçu de la grille');
+  cases.forEach((c, cellule) => {
+    const valeur = etat.valeurs[cellule] ?? 0;
+    const notes = valeur === 0 ? (etat.notes[cellule] ?? []) : [];
+    const donnee = (donnees.enonce[cellule] ?? 0) !== 0;
+    c.chiffre.textContent = valeur !== 0 ? String(valeur) : '';
+    c.notes.forEach((note, i) => {
+      note.textContent = notes.includes(i + 1) ? String(i + 1) : '';
+    });
+    c.bouton.classList.toggle('est-donnee', donnee);
+    c.bouton.classList.toggle('est-saisie', !donnee && valeur !== 0);
+    c.bouton.tabIndex = -1;
+  });
+  conteneur.append(plateau);
+}
+
+function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionSudoku>): InstanceVue<DonneesSudoku, EtatSudoku> {
+  chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
+
+  let selection: number | null = null;
+  let dernier: AffichageVue<DonneesSudoku, EtatSudoku> | null = null;
+
+  const { plateau, cases } = creerPlateau(choisir);
   conteneur.append(plateau);
 
   function choisir(cellule: number): void {
@@ -197,5 +225,6 @@ export const vue: VueJeu<DonneesSudoku, EtatSudoku, ActionSudoku> = {
   pave: { type: 'commun', valeurs: Array.from({ length: TAILLE }, (_, i) => String(i + 1)) },
   outilsMasques: [],
   monter,
+  apercu,
   restants,
 };

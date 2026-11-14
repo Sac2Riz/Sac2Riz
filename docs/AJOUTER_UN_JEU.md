@@ -17,14 +17,32 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
 
 ## 3. Adapter chaque fichier
 
-1. **`meta.ts`** : `id` (= nom du dossier), `nom`, `description`, `niveaux`, `versionFormat: 1`,
-   `generation: {}`.
+1. **`meta.ts`** : `id` (= nom du dossier), `nom`, `description` (courte : une phrase, affichée sur
+   l'accueil et la fiche du jeu), `niveaux`, `versionFormat: 1`, `generation: {}`, `reglages: []`.
    - `generation` règle, niveau par niveau, comment le socle obtient les grilles (`GenerationNiveau`,
      `src/types/jeu.ts`). Un niveau absent est généré dans le worker avec le budget par défaut (4 s).
      `{ mode: 'pack' }` : niveau servi **uniquement** par son pack, jamais généré sur l'appareil (génération
      trop longue pour une tablette). `{ mode: 'worker', budgetFondMs }` : la réalimentation de la réserve en
      arrière-plan dispose d'un budget plus long (la génération urgente garde 4 s ; mettre aussi un pack pour ce
      niveau, servi avant elle). Exemple : `chiffres-cases/meta.ts`.
+   - `reglages` : **les réglages propres au jeu** (étape 6a). Le socle les affiche tout seul dans la section
+     « Par jeu » de l'écran des réglages (sous le nom du jeu), les enregistre et les transmet au jeu. Chaque
+     réglage est un `ReglageJeu` (`src/types/jeu.ts`) exporté par `meta.ts` pour être relu ailleurs :
+     ```ts
+     export const RETRAIT_AUTO_NOTES: ReglageJeu = {
+       id: 'retraitAutoNotes',          // camelCase, unique dans le jeu ; ne plus le changer (clé enregistrée)
+       type: 'interrupteur',            // seul type pour l'instant (oui / non)
+       libelle: 'Retrait automatique des notes',
+       detail: 'Poser un chiffre le retire des notes de sa ligne, de sa colonne et de son bloc.',
+       defaut: true,
+       preparation: false,              // true : change la grille d'une NOUVELLE partie (voir preparer)
+     };
+     ```
+     Pour lire sa valeur : `estActif(reglages, RETRAIT_AUTO_NOTES)` (`src/utils/reglages-jeu.ts`), avec les
+     valeurs reçues par `indice`, `preparer` ou `contexte.reglages().jeu` (toujours complètes : la valeur par
+     défaut remplace un réglage jamais changé). Les réglages **communs à tous les jeux** (vérification des
+     erreurs, mise en évidence) ne se déclarent pas : le socle les gère, la vue lit `contexte.reglages()`.
+     Exemples : `sudoku-classique/meta.ts` (`RETRAIT_AUTO_NOTES`), `chiffres-cases/meta.ts` (`NOMBRE_AU_DEPART`).
 2. **`types.ts`** : définir D (données de grille), E (état du joueur), A (actions).
    - Toujours `type X = { … }` (pas `interface`), pas de propriété optionnelle (`| null` à la place).
 3. **`logique.ts`** : implémenter `LogiqueJeu<D, E, A>` (voir [ARCHITECTURE.md](ARCHITECTURE.md#contrat-des-modules-de-jeu)).
@@ -33,13 +51,15 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
    - `generer` doit garantir une solution unique et consulter `doitArreter()` entre deux essais (budget de temps du worker).
    - `noter` : critères du jeu, documentés dans [DIFFICULTE.md](DIFFICULTE.md).
    - Gardes `estDonnees` / `estEtat` / `estAction` strictes : elles protègent l'import de fichiers.
-   - `indice(etat, donnees, options)` : renvoie un indice en deux temps (titre, explication, marques à
-     mettre en évidence, libellé du bouton, action). Respecter `options.retraitAutoNotes` si le jeu a des notes.
+   - `indice(etat, donnees, reglages)` : renvoie un indice en deux temps (titre, explication, marques à
+     mettre en évidence, libellé du bouton, action). Respecter les réglages du jeu qui changent les actions
+     (sudoku : `estActif(reglages, RETRAIT_AUTO_NOTES)`).
    - `nomTechnique(id)` : nom affiché de `notation.techniqueMax` (écran de fin de partie).
-   - `preparer(donnees, options)` : données d'une **nouvelle** partie ajustées selon les réglages
-     (`options.nombreAuDepart` : aide au départ). Jeu sans objet : `preparer: (donnees) => donnees`. Exécuté
-     dans le worker (peut noter la grille plusieurs fois), jamais sur une partie en cours ; la grille doit
-     rester à solution unique. Exemple : `chiffres-cases/depart.ts`.
+   - `preparer(donnees, reglages)` : données d'une **nouvelle** partie ajustées selon les réglages du jeu
+     marqués `preparation: true` (chiffres casés : `NOMBRE_AU_DEPART`, aide au départ). Le socle ne l'appelle
+     que si l'un d'eux est activé. Jeu sans objet : `preparer: (donnees) => donnees`. Exécuté dans le worker
+     (peut noter la grille plusieurs fois), jamais sur une partie en cours ; la grille doit rester à solution
+     unique. Exemple : `chiffres-cases/depart.ts`.
    - Garder l'export `export const logique` (le worker le charge sous ce nom).
 4. **`vue.ts`** : implémenter `VueJeu<D, E, A>`. Ne jamais modifier l'état : appeler `contexte.jouer(action)`.
    - **Pavé** (`pave`) : `{ type: 'commun', valeurs: ['1', …] }` (le socle dessine les touches et appelle
@@ -55,17 +75,34 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
      Exemple : `chiffres-cases/vue.ts` (`pave: { type: 'personnalise' }`, `outilsMasques: ['notes']`).
    - Bouton « Effacer » : le socle appelle `effacer()`, la vue sait ce qui est sélectionné.
    - `afficher` reçoit `{ etat, donnees, erreurs, indice }` : dessiner les marques de l'indice quand il
-     n'est pas `null`. Relire `contexte.reglages()` à chaque affichage (réglages modifiables en cours de partie).
+     n'est pas `null`. Relire `contexte.reglages()` à chaque affichage (réglages modifiables en cours de
+     partie) : `miseEnEvidence` (commun) et `jeu` (réglages du jeu).
+   - **`apercu(conteneur, { donnees, etat })`** (fiche du jeu) : dessiner la grille **en lecture seule**, sans
+     écouteur ni clavier, sans sélection ni mise en évidence. Le conteneur est carré, petit (≈ 20rem) et
+     dimensionné par le socle comme la zone de grille d'une partie (`container-type: size`) : la même CSS que
+     la grille jouée convient. Le socle rend le conteneur inerte et le vide ensuite (rien à libérer). Le plus
+     simple : réutiliser la fonction qui crée le plateau de `monter` et n'y écrire que les chiffres.
+     Exemples : `sudoku-classique/vue.ts`, `chiffres-cases/vue.ts` (grille seule, sans la liste).
    - `restants` donne le nombre de fois où chaque valeur du pavé commun peut encore être posée (ou `null`) :
      la touche est estompée à 0, aucun nombre n'est affiché. Avec un pavé personnalisé, renvoyer `null`.
    - La grille doit remplir `zones.grille` (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour
      une grille carrée).
-5. **`style.css`** : classes préfixées par l'id, couleurs via les variables de thème.
-6. **`index.ts`** : normalement inchangé (`export const jeu = { meta, chargerLogique, chargerVue, chargerPack }`) ;
+5. **`fiche.ts`** (étape 6a) : le contenu de la **fiche du jeu**, `export const fiche: FicheJeu<D, E>`
+   (code pur, chargé à l'ouverture de la fiche). La fiche affiche, dans cet ordre : `meta.nom`,
+   `meta.description`, l'aperçu (la partie en cours, sinon l'exemple, dessinés par `vue.apercu`),
+   « Continuer » / « Nouvelle partie » (gérés par le socle), puis les règles.
+   - `regles` : les règles **expliquées simplement**, une phrase par point (3 à 5 points), dans l'ordre de
+     lecture : but, contrainte, unicité de la solution, comment jouer si ce n'est pas évident.
+   - `exemple: { donnees, etat }` : une petite grille facile, **en partie remplie** (pas terminée, sans
+     erreur). Le plus sûr : partir de `logique.etatInitial(donnees)` et jouer quelques coups conseillés par
+     `logique.indice` (exemples : `sudoku-classique/fiche.ts`, `chiffres-cases/fiche.ts`). Les tests la
+     passent aux gardes `estDonnees` / `estEtat`.
+6. **`style.css`** : classes préfixées par l'id, couleurs via les variables de thème.
+7. **`index.ts`** : normalement inchangé (`export const jeu = { meta, chargerLogique, chargerVue, chargerFiche, chargerPack }`) ;
    `chargerPack` renvoie `null` si le jeu n'a pas de pack (voir `sudoku-classique/packs.ts` sinon).
-7. **(facultatif) `packs/<niveau>.json`** : grilles pré-générées (Expert, Diabolique). Obligatoire pour un
+8. **(facultatif) `packs/<niveau>.json`** : grilles pré-générées (Expert, Diabolique). Obligatoire pour un
    niveau `{ mode: 'pack' }`.
-8. **Autres fichiers** : libres. Le dossier peut contenir autant de fichiers et de sous-dossiers que
+9. **Autres fichiers** : libres. Le dossier peut contenir autant de fichiers et de sous-dossiers que
    nécessaire (`chiffres-cases/` : `grille.ts`, `solveur/techniques/`, `generateur.ts`, `indice.ts`…).
    Seule contrainte : tout ce que `logique.ts` importe est du code pur (il tourne dans le worker).
 
@@ -80,9 +117,11 @@ Dans `src/games/registre.ts`, ajouter **une ligne** :
 ## 5. Tester
 
 - Les tests du registre vérifient automatiquement le nouveau jeu (`tests/games/verifier-module.ts`) :
-  structure, réglages de génération, génération reproductible, cohérence de la notation, aller-retour
-  JSON, partie complète jouée par les indices sans mutation, gardes de type, configuration de la vue
-  (outils masqués connus, pavé cohérent avec `restants`). Seuls les niveaux **sans réglage** dans
+  structure (dont `fiche.ts`), réglages de génération, **réglages déclarés** (identifiants uniques en
+  camelCase, textes, valeurs par défaut), génération reproductible, cohérence de la notation, aller-retour
+  JSON, partie complète jouée par les indices sans mutation, `preparer` (réglages `preparation` inactifs :
+  même objet ; actifs : grille valide), gardes de type, configuration de la vue (outils masqués connus, pavé
+  cohérent avec `restants`, `apercu` présent), **fiche** (règles non vides, exemple valide, ni terminé ni faux). Seuls les niveaux **sans réglage** dans
   `meta.generation` y sont générés ; les niveaux servis par pack ou à budget long se contrôlent dans
   le test long du jeu (`verifierLogique(logique, niveaux)` dans un `*.long.ts`).
 - **Avant d'avoir une vue**, la logique seule se contrôle avec `verifierLogique(logique, niveaux)` (même

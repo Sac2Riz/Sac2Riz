@@ -19,10 +19,12 @@ import { cellulesDe } from '../../moteur/logique/contexte.ts';
 import { etatInitial as etatLogiqueInitial } from '../../moteur/logique/etat.ts';
 import { prochaineEtape } from '../../moteur/logique/solveur.ts';
 import { TECHNIQUES } from '../../moteur/logique/techniques/index.ts';
-import type { Indice, OptionsJeu } from '../../types/jeu.ts';
+import type { Indice, ValeursReglagesJeu } from '../../types/jeu.ts';
 import type { EtatLogique, Etape } from '../../types/logique.ts';
 import { CONTEXTE } from './definition.ts';
+import { estActif } from '../../utils/reglages-jeu.ts';
 import { nomCase } from './geometrie.ts';
+import { RETRAIT_AUTO_NOTES } from './meta.ts';
 import type { ActionSudoku, DonneesSudoku, EtatSudoku } from './types.ts';
 
 /** Nom affiché de chaque technique, d'après son identifiant. */
@@ -55,12 +57,12 @@ function zonesDe(etape: Etape): number[] {
 
 const pluriel = (n: number, mot: string): string => `${n} ${mot}${n > 1 ? 's' : ''}`;
 
-function actionPlacer(options: OptionsJeu, cellule: number, valeur: number): ActionSudoku {
-  return { type: options.retraitAutoNotes ? 'placer' : 'placer-seul', cellule, valeur };
+function actionPlacer(reglages: ValeursReglagesJeu, cellule: number, valeur: number): ActionSudoku {
+  return { type: estActif(reglages, RETRAIT_AUTO_NOTES) ? 'placer' : 'placer-seul', cellule, valeur };
 }
 
 /** Indice tiré d'une étape du solveur. */
-function depuisEtape(etape: Etape, depart: EtatLogique, options: OptionsJeu): Indice<ActionSudoku> {
+function depuisEtape(etape: Etape, depart: EtatLogique, reglages: ValeursReglagesJeu): Indice<ActionSudoku> {
   const titre = nomTechnique(etape.technique);
   const placement = etape.placements[0];
   if (placement !== undefined) {
@@ -76,7 +78,7 @@ function depuisEtape(etape: Etape, depart: EtatLogique, options: OptionsJeu): In
         placements: [placement],
       },
       libelleAction: `Placer le ${valeur} en ${nomCase(cellule)}`,
-      action: actionPlacer(options, cellule, valeur),
+      action: actionPlacer(reglages, cellule, valeur),
     };
   }
   // Éliminations : chaque case concernée garde ses candidats moins ceux retirés
@@ -104,7 +106,7 @@ function marquesCase(cellule: number): Indice<ActionSudoku>['marques'] {
   return { cellules: [cellule], zones: [], candidats: [], eliminations: [], placements: [] };
 }
 
-export function indice(etat: EtatSudoku, donnees: DonneesSudoku, options: OptionsJeu): Indice<ActionSudoku> | null {
+export function indice(etat: EtatSudoku, donnees: DonneesSudoku, reglages: ValeursReglagesJeu): Indice<ActionSudoku> | null {
   const faute = cellulesFausses(etat, donnees)[0];
   if (faute !== undefined) {
     return {
@@ -120,7 +122,7 @@ export function indice(etat: EtatSudoku, donnees: DonneesSudoku, options: Option
 
   const depart = etatPourIndice(etat, donnees);
   const etape = prochaineEtape(CONTEXTE, depart);
-  if (etape !== null) return depuisEtape(etape, depart, options);
+  if (etape !== null) return depuisEtape(etape, depart, reglages);
 
   const valeur = donnees.solution[cellule] ?? 0;
   return {
@@ -128,6 +130,6 @@ export function indice(etat: EtatSudoku, donnees: DonneesSudoku, options: Option
     explication: `Aucune technique connue ne permet d'avancer : la case ${nomCase(cellule)} contient un ${valeur}.`,
     marques: { ...marquesCase(cellule), placements: [{ cellule, valeur }] },
     libelleAction: `Placer le ${valeur}`,
-    action: actionPlacer(options, cellule, valeur),
+    action: actionPlacer(reglages, cellule, valeur),
   };
 }

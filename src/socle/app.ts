@@ -1,37 +1,46 @@
-// L'APPLI : navigation entre l'accueil et l'écran de partie, et enchaînement des services.
+// L'APPLI : navigation entre les écrans et enchaînement des services.
+//
+// Écrans (étape 6a, voir navigation.ts) : accueil (liste des jeux) → fiche d'un jeu → partie (puis
+// fin de partie) ; statistiques de tous les jeux (depuis l'accueil) ou d'un jeu (depuis sa fiche).
+// Les réglages sont une fenêtre par-dessus. Chaque cran vers le bas ajoute UNE entrée à
+// l'historique du navigateur ; la fin de partie et la partie suivante remplacent l'entrée de la
+// partie. Le bouton « retour » d'Android (ou un bouton « ← » de l'écran, qui fait history.back())
+// remonte d'un cran : partie → fiche du jeu → accueil, sans quitter l'appli. La partie est
+// sauvegardée avant d'être quittée.
 //
 // Nouvelle partie sur un jeu qui a déjà une partie en cours :
 //   1. confirmation demandée au joueur (sinon on ne fait rien) ;
 //   2. grille obtenue (réserve, pack ou génération urgente avec indicateur de chargement), puis,
-//      si le réglage « nombre au départ » est activé, préparée dans le worker (LogiqueJeu.preparer,
-//      sous le même indicateur) ; si la préparation échoue, la grille est jouée telle quelle ;
+//      si un réglage du jeu qui change la grille est activé (ReglageJeu.preparation), préparée dans
+//      le worker (LogiqueJeu.preparer, sous le même indicateur) ; si la préparation échoue, la
+//      grille est jouée telle quelle ;
 //   3. SEULEMENT ALORS l'ancienne partie compte comme abandonnée et est remplacée
 //      (si le joueur annule le chargement, son ancienne partie reste intacte).
 // Une partie reprise (« Continuer ») n'est jamais préparée : un réglage changé ne la modifie pas.
-// Écrans : accueil, partie, statistiques, fin de partie ; les réglages sont une fenêtre par-dessus.
-// Bouton « retour » d'Android hors de l'accueil : retour à l'accueil (UNE entrée est ajoutée à
-// l'historique du navigateur en quittant l'accueil ; la fin de partie et la partie suivante
-// réutilisent cette entrée), sans quitter l'appli.
 // Mise à jour de l'appli (étape 5) : demarrerApp renvoie sauvegarder(), appelée avant de passer à
 // la nouvelle version (la partie en cours est enregistrée, chrono compris).
 
-import type { OptionsDepart, Puzzle } from '../types/jeu.ts';
+import type { MetaJeu, Puzzle, ValeursReglagesJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
-import { INFOS_NIVEAUX, type Niveau } from '../types/niveaux.ts';
+import type { Niveau } from '../types/niveaux.ts';
 import type { Reglages } from '../types/sauvegarde.ts';
 import type { ModuleJeuQuelconque, VueJeu } from '../types/vue.ts';
+import { preparationDemandee } from '../utils/reglages-jeu.ts';
 import { afficherAccueil, type JeuAccueil } from './accueil.ts';
 import type { BilanFin } from './bilan-fin.ts';
 import { afficherChargement } from './chargement.ts';
 import type { DemandeEnCours } from './client-worker.ts';
 import type { ActionsDonnees } from './donnees/actions-donnees.ts';
 import { confirmer, informer } from './dialogue.ts';
+import { afficherFiche, type PartieFiche } from './ecran-fiche.ts';
 import { afficherFin } from './ecran-fin.ts';
-import { afficherPartie } from './ecran-partie.ts';
+import { afficherPartie, type EcranPartie } from './ecran-partie.ts';
 import { ouvrirReglages } from './ecran-reglages.ts';
 import { afficherStats } from './ecran-stats.ts';
-import { formaterTemps } from './format.ts';
+import { formaterTemps, libelleForce } from './format.ts';
+import { ACCUEIL, ancetre, changementHistorique, profondeur, type Ecran } from './navigation.ts';
 import { depuisSauvegarde, nouvellePartie, versSauvegarde, type Logique, type Partie } from './partie.ts';
+import { reglagesDuJeu, reglagesVue } from './reglages.ts';
 import type { ServiceParties } from './service-parties.ts';
 import type { ServiceReserve } from './reserve.ts';
 import { appliquerTheme } from './theme.ts';
@@ -44,11 +53,13 @@ export type OptionsApp = {
   readonly reserve: ServiceReserve;
   readonly reglages: Reglages;
   /** Prépare dans le worker la grille d'une nouvelle partie (LogiqueJeu.preparer : aide au départ). */
-  readonly preparer: (puzzle: Puzzle<Json>, options: OptionsDepart) => DemandeEnCours;
+  readonly preparer: (puzzle: Puzzle<Json>, reglages: ValeursReglagesJeu) => DemandeEnCours;
   /** Enregistre les réglages modifiés (écran des réglages). */
   readonly enregistrerReglages: (reglages: Reglages) => Promise<void>;
-  /** Export / import des données (section « Sauvegarde » des réglages). */
+  /** Export / import des données (section « Application » des réglages). */
   readonly donnees: ActionsDonnees;
+  /** Version de l'appli mise en forme (« 14/11/2026 17:30 · a1b2c3d4 »), pour les réglages. */
+  readonly version: Promise<string>;
 };
 
 /** Ce que l'appli expose à main.ts. */
@@ -57,14 +68,22 @@ export type App = {
   readonly sauvegarder: () => Promise<void>;
 };
 
-/** Écran autre que l'accueil : quitter() y revient (bouton retour d'Android). */
-type EcranCourant = { readonly quitter: () => Promise<void>; readonly sauvegarder: () => Promise<void> };
+/** Entrée de l'historique du navigateur : profondeur de l'écran (0 = accueil). */
+type EtatHistorique = { readonly profondeur: number };
 
-const rienASauvegarder = (): Promise<void> => Promise.resolve();
+function profondeurHistorique(etat: unknown): number {
+  if (typeof etat !== 'object' || etat === null || !('profondeur' in etat)) return 0;
+  const p: unknown = etat.profondeur;
+  return typeof p === 'number' && Number.isInteger(p) && p >= 0 ? p : 0;
+}
 
 export function demarrerApp(o: OptionsApp): App {
   const maintenant = (): number => Date.now();
-  let ecranCourant: EcranCourant | null = null;
+  let courant: Ecran = ACCUEIL;
+  /** Écran de partie affiché (fermé — donc sauvegardé — avant de le quitter). */
+  let partieOuverte: EcranPartie | null = null;
+  /** Augmente à chaque changement d'écran : un affichage commencé avant est abandonné. */
+  let jeton = 0;
   /** Vrai pendant une opération (chargement, confirmation) : ignore les doubles touchers. */
   let occupe = false;
   let reglages = o.reglages;
@@ -76,25 +95,54 @@ export function demarrerApp(o: OptionsApp): App {
     o.enregistrerReglages(reglages).catch((erreur: unknown) => console.error('Réglages non enregistrés :', erreur));
   }
 
-  // L'import n'est proposé que depuis l'accueil (voir ecran-reglages.ts)
-  const afficherReglages = (): Promise<void> =>
+  /**
+   * Fenêtre des réglages. Section « Par jeu » : tous les jeux, ou seulement le jeu en cours pendant
+   * une partie. L'import n'y est pas proposé pendant une partie (voir ecran-reglages.ts).
+   */
+  const afficherReglages = (jeux: readonly MetaJeu[]): Promise<void> =>
     ouvrirReglages(() => reglages, changerReglages, {
-      exporter: o.donnees.exporter,
-      importer: ecranCourant === null ? o.donnees.importer : null,
+      sauvegarde: { exporter: o.donnees.exporter, importer: partieOuverte === null ? o.donnees.importer : null },
+      version: o.version,
+      jeux,
     });
 
   // ---------- Navigation ----------
-  /** En quittant l'accueil : une entrée dans l'historique du navigateur (une seule). */
-  function entrer(ecran: EcranCourant): void {
-    if (history.state === null) history.pushState({ ecran: 'autre' }, '');
-    ecranCourant = ecran;
+  /** Passe à un écran plus bas (nouvelle entrée d'historique) ou de même profondeur (entrée remplacée). */
+  function aller(vers: Ecran): void {
+    const etat: EtatHistorique = { profondeur: profondeur(vers) };
+    if (changementHistorique(courant, vers) === 'ajouter') history.pushState(etat, '');
+    else history.replaceState(etat, '');
+    courant = vers;
+    jeton++;
   }
 
-  /** Retour à l'accueil ; retire l'entrée ajoutée si on revient par un bouton de l'écran. */
-  function sortir(): void {
-    ecranCourant = null;
-    if (history.state !== null) history.back();
-    void accueil();
+  /** Bouton « ← » d'un écran : comme le bouton retour d'Android (traité par popstate). */
+  const retour = (): void => history.back();
+
+  /** Remonte vers un écran parent (bouton retour) : ferme la partie (sauvegarde) puis l'affiche. */
+  async function remonter(vers: Ecran): Promise<void> {
+    const partie = partieOuverte;
+    partieOuverte = null;
+    courant = vers;
+    jeton++;
+    if (partie !== null) await partie.fermer();
+    await afficher(vers);
+  }
+
+  /** Affiche un écran « simple » (accueil, fiche, statistiques) d'après l'écran courant. */
+  async function afficher(ecran: Ecran): Promise<void> {
+    switch (ecran.type) {
+      case 'accueil':
+        return accueil();
+      case 'fiche':
+        return fiche(ecran.jeu);
+      case 'stats':
+        return statistiques(ecran.jeu);
+      case 'partie':
+      case 'fin':
+        // Jamais atteint en remontant (leurs parents sont la fiche) : par sécurité, la fiche
+        return fiche(ecran.jeu);
+    }
   }
 
   function moduleDe(id: string): ModuleJeuQuelconque {
@@ -109,33 +157,6 @@ export function demarrerApp(o: OptionsApp): App {
     return { logique, vue };
   }
 
-  async function accueil(): Promise<void> {
-    const jeux: JeuAccueil[] = await Promise.all(
-      o.jeux.map(async (module) => ({ module, partie: await o.parties.lire(module.meta.id) })),
-    );
-    if (ecranCourant !== null) return; // un autre écran a été ouvert entre-temps
-    afficherAccueil(o.racine, jeux, {
-      continuer: (jeu) => void enSecurite(() => continuer(jeu)),
-      nouvelle: (jeu, niveau) => void enSecurite(() => nouvelle(jeu, niveau)),
-      statistiques: () => void enSecurite(statistiques),
-      reglages: () => void afficherReglages(),
-    });
-  }
-
-  async function statistiques(): Promise<void> {
-    const jeux = await Promise.all(o.jeux.map(async ({ meta }) => ({ meta, stats: await o.parties.stats(meta.id) })));
-    entrer({ quitter: async () => sortir(), sauvegarder: rienASauvegarder });
-    afficherStats(o.racine, jeux, sortir);
-  }
-
-  function fin(bilan: BilanFin): void {
-    entrer({ quitter: async () => sortir(), sauvegarder: rienASauvegarder });
-    afficherFin(o.racine, bilan, {
-      accueil: sortir,
-      nouvelle: () => void enSecurite(() => nouvelle(bilan.jeu, bilan.niveau)),
-    });
-  }
-
   /** Une seule opération à la fois ; toute erreur inattendue est signalée au joueur. */
   async function enSecurite(operation: () => Promise<void>): Promise<void> {
     if (occupe) return;
@@ -145,48 +166,124 @@ export function demarrerApp(o: OptionsApp): App {
     } catch (erreur) {
       console.error(erreur);
       await informer('Oups', `Une erreur est survenue : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
-      await accueil();
+      // Écran simple : redessiné ; partie ou fin de partie : retour à la fiche du jeu
+      if (courant.type === 'partie' || courant.type === 'fin') retour();
+      else await afficher(courant).catch((e: unknown) => console.error(e));
     } finally {
       occupe = false;
     }
   }
 
-  function ouvrir(logique: Logique, vue: VueJeu<Json, Json, Json>, partie: Partie): void {
-    // entrer() avant l'affichage : ecranCourant n'est jamais null pendant la partie
-    entrer({ quitter: () => Promise.resolve(), sauvegarder: rienASauvegarder });
-    ecranCourant = afficherPartie({
+  // ---------- Écrans ----------
+  async function accueil(): Promise<void> {
+    const j = jeton;
+    const jeux: JeuAccueil[] = await Promise.all(
+      o.jeux.map(async (module) => ({ module, partie: await o.parties.lire(module.meta.id) })),
+    );
+    if (j !== jeton) return; // un autre écran a été ouvert entre-temps
+    afficherAccueil(o.racine, jeux, {
+      ouvrir: (id) => void enSecurite(() => ouvrirFiche(id)),
+      statistiques: () => void enSecurite(() => ouvrirStats(null)),
+      reglages: () => void afficherReglages(o.jeux.map((m) => m.meta)),
+    });
+  }
+
+  async function ouvrirFiche(id: string): Promise<void> {
+    aller({ type: 'fiche', jeu: id });
+    await fiche(id);
+  }
+
+  async function fiche(id: string): Promise<void> {
+    const j = jeton;
+    const module = moduleDe(id);
+    const [sauvegarde, contenu, logique, vue] = await Promise.all([
+      o.parties.lire(id),
+      module.chargerFiche(),
+      module.chargerLogique(),
+      module.chargerVue(),
+    ]);
+    if (j !== jeton) return;
+    let partie: PartieFiche | null = null;
+    if (sauvegarde !== null) {
+      // L'aperçu montre la partie telle qu'elle est (rejouée comme pour « Continuer »)
+      const relue = depuisSauvegarde(logique, sauvegarde, maintenant(), false);
+      const { niveau, force } = sauvegarde.puzzle.notation;
+      partie = { niveau, force, chronoMs: sauvegarde.chronoMs, etat: relue?.etat ?? null, donnees: sauvegarde.puzzle.donnees };
+    }
+    afficherFiche(o.racine, { meta: module.meta, fiche: contenu, vue, partie }, {
+      continuer: () => void enSecurite(() => continuer(id)),
+      nouvelle: (niveau) => void enSecurite(() => nouvelle(id, niveau)),
+      statistiques: () => void enSecurite(() => ouvrirStats(id)),
+      retour,
+    });
+  }
+
+  async function ouvrirStats(jeu: string | null): Promise<void> {
+    aller({ type: 'stats', jeu });
+    await statistiques(jeu);
+  }
+
+  /** Statistiques de tous les jeux (jeu = null) ou d'un seul. */
+  async function statistiques(jeu: string | null): Promise<void> {
+    const j = jeton;
+    const modules = jeu === null ? o.jeux : [moduleDe(jeu)];
+    const jeux = await Promise.all(modules.map(async ({ meta }) => ({ meta, stats: await o.parties.stats(meta.id) })));
+    if (j !== jeton) return;
+    const seul = jeu === null ? null : (modules[0]?.meta ?? null);
+    afficherStats(o.racine, jeux, {
+      titre: seul === null ? 'Statistiques' : `Statistiques — ${seul.nom}`,
+      libelleRetour: seul === null ? 'Retour à l\'accueil' : 'Retour à la fiche du jeu',
+      retour,
+    });
+  }
+
+  function fin(bilan: BilanFin): void {
+    partieOuverte = null; // l'écran de partie s'est déjà libéré
+    aller({ type: 'fin', jeu: bilan.jeu });
+    afficherFin(o.racine, bilan, {
+      retour,
+      nouvelle: () => void enSecurite(() => nouvelle(bilan.jeu, bilan.niveau)),
+    });
+  }
+
+  function ouvrirPartie(logique: Logique, vue: VueJeu<Json, Json, Json>, partie: Partie): void {
+    const meta = logique.meta;
+    // aller() avant l'affichage : l'écran courant est déjà « partie » pendant qu'elle se dessine
+    aller({ type: 'partie', jeu: meta.id });
+    partieOuverte = afficherPartie({
       conteneur: o.racine,
       logique,
       vue,
       partie,
-      reglages: () => reglages,
-      ouvrirReglages: afficherReglages,
+      reglages: () => reglagesVue(reglages, meta),
+      ouvrirReglages: () => afficherReglages([meta]),
       parties: o.parties,
       maintenant,
-      quitter: sortir,
+      retour,
       finir: fin,
     });
   }
 
   async function continuer(id: string): Promise<void> {
     const [sauvegarde, { logique, vue }] = await Promise.all([o.parties.lire(id), chargerJeu(id)]);
-    if (sauvegarde === null) return accueil();
+    if (sauvegarde === null) return fiche(id);
     const partie = depuisSauvegarde(logique, sauvegarde, maintenant(), estVisible(document));
     if (partie === null) {
       await o.parties.oublier(id);
       await informer('Partie illisible', 'La partie enregistrée ne peut pas être reprise. Elle a été supprimée.');
-      return accueil();
+      return fiche(id);
     }
-    ouvrir(logique, vue, partie);
+    ouvrirPartie(logique, vue, partie);
   }
 
   async function nouvelle(id: string, niveau: Niveau): Promise<void> {
+    const depart = jeton;
     const enCours = await o.parties.lire(id);
     if (enCours !== null) {
-      const ancien = INFOS_NIVEAUX[enCours.puzzle.notation.niveau].nom;
+      const { niveau: ancien, force } = enCours.puzzle.notation;
       const ok = await confirmer(
         'Remplacer la partie en cours ?',
-        `Votre partie ${ancien} (${formaterTemps(enCours.chronoMs)}) sera comptée comme abandonnée dans les statistiques.`,
+        `Votre partie ${libelleForce(ancien, force)} (${formaterTemps(enCours.chronoMs)}) sera comptée comme abandonnée dans les statistiques.`,
         'Nouvelle partie',
       );
       if (!ok) return;
@@ -217,10 +314,12 @@ export function demarrerApp(o: OptionsApp): App {
       return;
     }
 
-    // Aide au départ (réglage) : calculée dans le worker, sous le même indicateur de chargement
-    const options: OptionsDepart = { nombreAuDepart: reglages.nombreAuDepart };
-    if (options.nombreAuDepart) {
-      preparation = o.preparer(puzzle, options);
+    // Réglages du jeu qui changent la grille (aide au départ…) : calculés dans le worker, sous le
+    // même indicateur de chargement
+    const meta = jeu.logique.meta;
+    const valeurs = reglagesDuJeu(reglages, meta);
+    if (preparationDemandee(meta.reglages, valeurs)) {
+      preparation = o.preparer(puzzle, valeurs);
       const prepare = await preparation.resultat;
       if (annule || prepare.statut === 'annule') {
         chargement.fermer();
@@ -229,25 +328,32 @@ export function demarrerApp(o: OptionsApp): App {
       if (prepare.statut === 'ok' && prepare.puzzle.jeu === id && jeu.logique.estDonnees(prepare.puzzle.donnees)) {
         puzzle = { ...puzzle, donnees: prepare.puzzle.donnees };
       } else {
-        console.error('Aide au départ impossible, grille jouée telle quelle :', prepare);
+        console.error('Préparation impossible, grille jouée telle quelle :', prepare);
       }
     }
     chargement.fermer();
+    // Le joueur est reparti ailleurs pendant le chargement (bouton retour) : on n'ouvre rien
+    if (jeton !== depart) return;
 
     if (enCours !== null) await o.parties.abandonner(id);
     const instant = maintenant();
     const partie = nouvellePartie(jeu.logique, puzzle, instant, new Date(instant).toISOString(), estVisible(document));
     await o.parties.sauvegarder(versSauvegarde(jeu.logique, partie, instant, new Date(instant).toISOString()));
-    ouvrir(jeu.logique, jeu.vue, partie);
+    ouvrirPartie(jeu.logique, jeu.vue, partie);
   }
 
-  // Bouton « retour » d'Android (ou du navigateur) pendant une partie.
+  // Bouton « retour » d'Android (ou du navigateur), et boutons « ← » des écrans (history.back()) :
+  // l'entrée d'historique atteinte dit à quelle profondeur remonter. Une entrée plus profonde que
+  // l'écran courant (avancer, ou entrée restée d'avant un rechargement) est ignorée.
   // Au démarrage (y compris après un rechargement en pleine partie), on part de l'accueil.
-  history.replaceState(null, '');
-  window.addEventListener('popstate', () => {
-    if (ecranCourant !== null) void ecranCourant.quitter();
+  const etatDepart: EtatHistorique = { profondeur: 0 };
+  history.replaceState(etatDepart, '');
+  window.addEventListener('popstate', (evenement) => {
+    const cible = profondeurHistorique(evenement.state);
+    if (cible >= profondeur(courant)) return;
+    void remonter(ancetre(courant, cible)).catch((erreur: unknown) => console.error(erreur));
   });
 
   void accueil();
-  return { sauvegarder: () => ecranCourant?.sauvegarder() ?? Promise.resolve() };
+  return { sauvegarder: () => partieOuverte?.sauvegarder() ?? Promise.resolve() };
 }

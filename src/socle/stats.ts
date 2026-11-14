@@ -7,9 +7,9 @@
 //   séparé « abandonnees », SANS toucher aux temps : meilleur temps et temps moyen ne portent
 //   que sur les parties terminées.
 
-import { INFOS_NIVEAUX, type Force, type Niveau } from '../types/niveaux.ts';
+import type { Force, Niveau } from '../types/niveaux.ts';
 import type { StatsJeu, StatsNiveau } from '../types/sauvegarde.ts';
-import { formaterTemps } from './format.ts';
+import { formaterTemps, libelleNiveau } from './format.ts';
 
 export const STATS_NIVEAU_VIDES: StatsNiveau = {
   terminees: 0,
@@ -83,7 +83,7 @@ export function lignesStats(stats: StatsJeu, niveaux: readonly Niveau[]): LigneS
     const moyen = tempsMoyenMs(s);
     const force = forceMoyenne(s);
     return {
-      niveau: INFOS_NIVEAUX[niveau].nom,
+      niveau: libelleNiveau(niveau),
       terminees: String(s.terminees),
       abandonnees: String(s.abandonnees),
       meilleurTemps: s.meilleurTempsMs === null ? RIEN : formaterTemps(s.meilleurTempsMs),

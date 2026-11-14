@@ -9,8 +9,12 @@ import { crc32, inflateSync } from 'node:zlib';
 import { genererIcones } from '../../scripts/generer-icones.ts';
 import { contient, formesIcone, iconeSvg, rendre } from '../../scripts/icones/dessin.ts';
 import { encoderPng, SIGNATURE_PNG } from '../../scripts/icones/png.ts';
+import { cheminsModifies, choisirDateBuild } from '../../scripts/date-build.ts';
 import { construireManifeste, ecrireManifeste, injecterManifeste } from '../../scripts/manifeste-precache.ts';
-import { estManifestePrecache } from '../../src/types/service-worker.ts';
+import { estInfosVersion, estManifestePrecache } from '../../src/types/service-worker.ts';
+
+/** Date de build des exemples. */
+const DATE = '2026-11-14T16:30:00.000Z';
 
 const temporaires: string[] = [];
 function dossierTemporaire(): string {
@@ -109,21 +113,27 @@ describe('manifeste du service worker', () => {
     return dist;
   }
 
-  test('liste : tous les fichiers sauf les .map et le service worker, triés, avec des « / »', () => {
-    const m = construireManifeste(distExemple());
-    assert.deepEqual(m.fichiers, ['games/jeu-a/packs/expert.json', 'index.html', 'main.js']);
+  test('liste : tous les fichiers sauf les .map et le service worker, triés, avec des « / », plus version.json', () => {
+    const m = construireManifeste(distExemple(), DATE);
+    assert.deepEqual(m.fichiers, ['games/jeu-a/packs/expert.json', 'index.html', 'main.js', 'version.json']);
     assert.match(m.version, /^[0-9a-f]{12}$/);
   });
 
   test('version : identique pour un contenu identique, différente dès qu\'un fichier change', () => {
     const a = distExemple();
     const b = distExemple();
-    assert.equal(construireManifeste(a).version, construireManifeste(b).version);
+    assert.equal(construireManifeste(a, DATE).version, construireManifeste(b, DATE).version);
     ecrire(b, 'games/jeu-a/packs/expert.json', '{"grilles":[1]}');
-    assert.notEqual(construireManifeste(a).version, construireManifeste(b).version);
-    // Une carte de source ne compte pas
+    assert.notEqual(construireManifeste(a, DATE).version, construireManifeste(b, DATE).version);
+    // Une carte de source ne compte pas, ni un ancien version.json
     ecrire(a, 'main.js.map', '{"autre":true}');
-    assert.equal(construireManifeste(a).version, construireManifeste(distExemple()).version);
+    ecrire(a, 'version.json', '{"ancien":true}');
+    assert.equal(construireManifeste(a, DATE).version, construireManifeste(distExemple(), DATE).version);
+  });
+
+  test('version : la date du build en fait partie', () => {
+    const a = distExemple();
+    assert.notEqual(construireManifeste(a, DATE).version, construireManifeste(a, '2026-11-15T08:00:00.000Z').version);
   });
 
   test('injection : le marqueur devient un texte JSON relisible', () => {
@@ -143,10 +153,15 @@ describe('manifeste du service worker', () => {
     assert.throws(() => injecterManifeste(injecterManifeste(SOURCE, m), m), /0 fois/);
   });
 
-  test('ecrireManifeste : réécrit le service worker du dossier', () => {
+  test('ecrireManifeste : réécrit le service worker et écrit version.json (version et date)', () => {
     const dist = distExemple();
-    const m = ecrireManifeste(dist);
+    const m = ecrireManifeste(dist, DATE);
     assert.ok(readFileSync(join(dist, 'service-worker.js'), 'utf8').includes(m.version));
+    const infos: unknown = JSON.parse(readFileSync(join(dist, 'version.json'), 'utf8'));
+    assert.ok(estInfosVersion(infos));
+    assert.deepEqual(infos, { version: m.version, date: DATE });
+    // Deux builds identiques : même version (pas de fausse mise à jour)
+    assert.equal(ecrireManifeste(distExemple(), DATE).version, m.version);
   });
 
   test('garde du manifeste', () => {
@@ -154,5 +169,32 @@ describe('manifeste du service worker', () => {
     assert.equal(estManifestePrecache({ version: '', fichiers: [] }), false);
     assert.equal(estManifestePrecache({ version: 'v', fichiers: [''] }), false);
     assert.equal(estManifestePrecache('__MANIFESTE_PRECACHE__'), false);
+  });
+});
+
+describe('date du build', () => {
+  const COMMIT = '2026-11-10T09:15:00+01:00';
+
+  test('sources commitées : date du dernier commit qui les touche', () => {
+    assert.equal(choisirDateBuild({ modifications: [], dernierCommit: COMMIT }, new Date(0)), '2026-11-10T08:15:00.000Z');
+  });
+
+  test('sources modifiées non commitées : modification la plus récente (stable)', () => {
+    const a = Date.UTC(2026, 10, 14, 10, 0);
+    const b = Date.UTC(2026, 10, 14, 12, 0);
+    const etat = { modifications: [a, b], dernierCommit: COMMIT };
+    assert.equal(choisirDateBuild(etat, new Date(0)), new Date(b).toISOString());
+    assert.equal(choisirDateBuild(etat, new Date()), choisirDateBuild(etat, new Date(0)), "indépendante de l'heure du build");
+  });
+
+  test('sans Git : heure du build', () => {
+    const maintenant = new Date(Date.UTC(2026, 10, 14));
+    assert.equal(choisirDateBuild({ modifications: [], dernierCommit: null }, maintenant), maintenant.toISOString());
+  });
+
+  test('lecture de « git status --porcelain »', () => {
+    const sortie = [' M src/main.ts', '?? src/socle/nouveau.ts', 'R  src/a.ts -> src/b.ts', ''].join('\n');
+    assert.deepEqual(cheminsModifies(sortie), ['src/main.ts', 'src/socle/nouveau.ts', 'src/b.ts']);
+    assert.deepEqual(cheminsModifies(''), []);
   });
 });

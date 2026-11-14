@@ -8,10 +8,11 @@ Le nom commence par `_` : le dossier est **vérifié par les tests** mais **jama
 
 | Fichier | Rôle | DOM ? |
 |---|---|---|
-| `meta.ts` | id, nom, description, niveaux, versionFormat, generation (`{}` par défaut) | non |
+| `meta.ts` | id, nom, description, niveaux, versionFormat, generation (`{}` par défaut), reglages (`[]` par défaut) | non |
 | `types.ts` | types D (données), E (état), A (actions) | non |
 | `logique.ts` | `export const logique` : génération, notation, règles, gardes | non |
-| `vue.ts` | `export const vue` : affichage et saisie | oui |
+| `vue.ts` | `export const vue` : affichage, saisie et aperçu en lecture seule (fiche du jeu) | oui |
+| `fiche.ts` | `export const fiche` : règles et grille d'exemple de la fiche du jeu | non |
 | `index.ts` | `export const jeu` : point d'entrée référencé par le registre | non (types seulement) |
 | `style.css` | styles du jeu, classes préfixées par l'id | — |
 | `packs/` | (facultatif) grilles pré-générées en JSON | — |

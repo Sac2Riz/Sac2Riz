@@ -1,4 +1,4 @@
-// ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau, chrono, réglages,
+// ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau et force, chrono, réglages,
 // pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, indice ; le jeu peut
 // en masquer : VueJeu.outilsMasques) et pavé : le pavé commun (une touche est estompée quand sa
 // valeur ne peut plus être posée), ou une zone confiée à la vue (pavé « personnalise »).
@@ -15,11 +15,10 @@
 import type { Indice } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import { INFOS_NIVEAUX } from '../types/niveaux.ts';
-import type { Reglages } from '../types/sauvegarde.ts';
-import type { ContexteVue, VueJeu } from '../types/vue.ts';
+import type { ContexteVue, ReglagesVue, VueJeu } from '../types/vue.ts';
 import type { BilanFin } from './bilan-fin.ts';
 import { boutonIcone, bouton, creer } from './dom.ts';
-import { etoiles, formaterTemps } from './format.ts';
+import { formaterTemps, libelleForce } from './format.ts';
 import { outilsAffiches, type Outil } from './outils.ts';
 import {
   annuler,
@@ -43,13 +42,13 @@ export type OptionsEcranPartie = {
   readonly logique: Logique;
   readonly vue: VueJeu<Json, Json, Json>;
   readonly partie: Partie;
-  /** Réglages actuels (ils peuvent changer pendant la partie). */
-  readonly reglages: () => Reglages;
+  /** Réglages actuels, communs et propres au jeu (ils peuvent changer pendant la partie). */
+  readonly reglages: () => ReglagesVue;
   /** Ouvre l'écran des réglages ; se résout à sa fermeture. */
   readonly ouvrirReglages: () => Promise<void>;
   readonly parties: ServiceParties;
-  /** Retour à l'accueil (appelé après la dernière sauvegarde). */
-  readonly quitter: () => void;
+  /** Bouton « ← » : retour à la fiche du jeu (l'appli appelle ensuite fermer()). */
+  readonly retour: () => void;
   /** Grille terminée (statistiques déjà enregistrées) : affiche l'écran de fin. */
   readonly finir: (bilan: BilanFin) => void;
   /** Horloge en millisecondes (Date.now). */
@@ -57,10 +56,10 @@ export type OptionsEcranPartie = {
 };
 
 /**
- * Écran affiché ; quitter() sauvegarde, libère tout et retourne à l'accueil ;
+ * Écran affiché ; fermer() sauvegarde et libère tout (l'appli affiche ensuite la fiche du jeu) ;
  * sauvegarder() enregistre la partie tout de suite (avant une mise à jour de l'appli).
  */
-export type EcranPartie = { readonly quitter: () => Promise<void>; readonly sauvegarder: () => Promise<void> };
+export type EcranPartie = { readonly fermer: () => Promise<void>; readonly sauvegarder: () => Promise<void> };
 
 const RAFRAICHISSEMENT_CHRONO_MS = 250;
 /** Pause entre la dernière case remplie et l'écran de fin (on voit la grille complète). */
@@ -73,15 +72,17 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   let ferme = false;
   /** Indice montré (1er temps), ou null. */
   let indice: Indice<Json> | null = null;
-  const niveau = partie.puzzle.notation.niveau;
+  const { niveau, force } = partie.puzzle.notation;
 
   // ---------- Construction de l'écran ----------
   const ecran = creer('div', 'partie');
 
   const barre = creer('header', 'partie-barre');
-  const retour = boutonIcone('bouton-icone', '←', 'Retour à l\'accueil', () => void quitter());
+  const retour = boutonIcone('bouton-icone', '←', 'Retour à la fiche du jeu', () => o.retour());
   const titre = creer('div', 'partie-titre');
-  titre.append(creer('span', 'partie-niveau', INFOS_NIVEAUX[niveau].nom), creer('span', 'partie-etoiles', etoiles(niveau)));
+  // « Moyen · Force 6 » : sur une ligne en portrait, sur deux (sans le point) dans la colonne étroite du paysage
+  titre.setAttribute('aria-label', libelleForce(niveau, force));
+  titre.append(creer('span', 'partie-niveau', INFOS_NIVEAUX[niveau].nom), creer('span', 'partie-force', `Force ${force}`));
   const chrono = creer('span', 'partie-chrono');
   chrono.setAttribute('role', 'timer');
   const reglages = boutonIcone('bouton-icone', '⚙', 'Réglages', () => void ouvrirReglages());
@@ -256,7 +257,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
       dessiner();
       return;
     }
-    const trouve = logique.indice(partie.etat, partie.puzzle.donnees, { retraitAutoNotes: o.reglages().retraitAutoNotes });
+    const trouve = logique.indice(partie.etat, partie.puzzle.donnees, o.reglages().jeu);
     if (trouve === null) return;
     partie = compterIndice(partie);
     indice = trouve;
@@ -296,7 +297,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     }
     // Laisse voir un instant la grille complète avant l'écran de fin
     await new Promise((r) => setTimeout(r, DELAI_FIN_MS));
-    if (ferme) return; // le joueur est déjà reparti vers l'accueil (statistiques enregistrées)
+    if (ferme) return; // le joueur est déjà reparti vers la fiche du jeu (statistiques enregistrées)
     liberer();
     o.finir({
       jeu: partie.puzzle.jeu,
@@ -355,19 +356,18 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   }
 
   let enSortie = false;
-  async function quitter(): Promise<void> {
+  async function fermer(): Promise<void> {
     if (ferme || enSortie) return;
     enSortie = true;
     // Fige le chrono à l'instant du départ (la sauvegarde ne compte plus le temps passé hors de la partie)
     partie = changerVisibilitePartie(partie, false, o.maintenant());
     await sauvegarder();
     liberer();
-    o.quitter();
   }
 
   // Reprise alors que l'appli est en arrière-plan (rare) : le chrono part arrêté
   partie = changerVisibilitePartie(partie, estVisible(document), o.maintenant());
   dessiner();
   void sauvegarder();
-  return { quitter, sauvegarder };
+  return { fermer, sauvegarder };
 }

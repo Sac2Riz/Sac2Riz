@@ -13,6 +13,27 @@ export type ManifestePrecache = {
   readonly fichiers: readonly string[];
 };
 
+/**
+ * Version de l'appli affichée dans les réglages : fichier dist/version.json, écrit au build
+ * (scripts/manifeste-precache.ts) et mis en cache comme les autres fichiers.
+ */
+export type InfosVersion = {
+  /** Même empreinte que ManifestePrecache.version. */
+  readonly version: string;
+  /** Date du build (ISO 8601), figée par les sources : deux builds identiques ont la même (scripts/date-build.ts). */
+  readonly date: string;
+};
+
+/** Nom du fichier de version, à la racine de dist/. */
+export const FICHIER_VERSION = 'version.json';
+
+/** Garde de type des infos de version (fichier relu par la page). */
+export function estInfosVersion(valeur: unknown): valeur is InfosVersion {
+  if (!estObjet(valeur)) return false;
+  const { version, date } = valeur;
+  return typeof version === 'string' && version.length > 0 && typeof date === 'string' && !Number.isNaN(Date.parse(date));
+}
+
 /** Message de la page vers le service worker en attente : « prends la main » (clic sur Recharger). */
 export type MessageVersServiceWorker = { readonly type: 'activer' };
 

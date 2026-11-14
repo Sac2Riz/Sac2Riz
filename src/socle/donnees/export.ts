@@ -9,7 +9,7 @@ import {
   type FichierExport,
   type StatsJeu,
 } from '../../types/sauvegarde.ts';
-import { completerReglages } from '../reglages.ts';
+import { normaliserReglages } from '../reglages.ts';
 import { CLE_REGLAGES, type Stockage } from '../stockage/stockage.ts';
 
 /** Lit dans le stockage toutes les données à exporter. */
@@ -25,8 +25,8 @@ export async function lireDonnees(stockage: Stockage): Promise<DonneesExportees>
   const packs: { [cle: string]: EtatPack } = {};
   for (const { cle, valeur } of packsJoues) packs[cle] = valeur;
   return {
-    // Des réglages d'une ancienne version sont exportés complétés (forme actuelle)
-    reglages: completerReglages(reglages),
+    // Des réglages d'une ancienne version sont exportés convertis (forme actuelle)
+    reglages: normaliserReglages(reglages),
     parties: parties.map((e) => e.valeur),
     stats: statsParJeu,
     packsJoues: packs,

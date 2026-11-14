@@ -81,7 +81,8 @@ Fin de chaque étape : `npm run check` vert, mise à jour de CLAUDE.md, ROADMAP.
 - Nouvelle partie alors qu'une partie est en cours : confirmation ; **décision de l'utilisateur** : la partie
   remplacée compte comme **abandonnée** (compteur séparé `abandonnees`) ; meilleurs temps et temps moyens ne
   portent que sur les parties terminées.
-- Mise en page portrait/paysage, grandes touches ; bouton retour d'Android → accueil ; clavier physique.
+- Mise en page portrait/paysage, grandes touches ; bouton retour d'Android → accueil (→ fiche du jeu depuis
+  l'étape 6a) ; clavier physique.
 - Fin de partie minimale (statistiques enregistrées, message « Bravo ») ; l'écran complet reste en 3c.
 - Tests : sudoku (règles, retrait des notes, gardes, indices, pavé, packs), partie, statistiques, service des
   parties, format (300 tests) ; parcours complet vérifié dans Edge (portrait, paysage, clair, sombre).
@@ -193,6 +194,40 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
 - README : mention « bientôt disponible » retirée une fois l'appli en ligne.
 - Vérifié dans Edge automatisé (installation, hors ligne, import, mise à jour). Test sur la tablette :
   installation, mode avion, reprise, export/import, réception d'une mise à jour.
+
+## Étape 6 — Refonte de l'interface (découpée en trois sous-étapes, un commit chacune)
+
+### ✅ Étape 6a — Structure des écrans et des réglages (dans le style actuel « Ardoise »)
+- **Accueil** : liste des jeux (nom, description courte, pastille discrète « Partie en cours ») ; plus de
+  partie lancée depuis l'accueil ; Statistiques (tous les jeux) et Réglages.
+- **Fiche d'un jeu** (nouvel écran) : nom et description, aperçu en petit non jouable (partie en cours,
+  sinon grille d'exemple), « Continuer » (niveau, force, temps), « Nouvelle partie » avec le choix du
+  niveau, règles expliquées simplement, statistiques de ce jeu.
+- **Contrat** (générique, documenté dans AJOUTER_UN_JEU.md) : fichier `fiche.ts` par jeu (`FicheJeu` :
+  `regles`, `exemple`), `ModuleJeu.chargerFiche`, `VueJeu.apercu` (grille en lecture seule) ; réglages
+  propres déclarés par chaque jeu (`MetaJeu.reglages`, `ReglageJeu` : libellé, type, valeur par défaut,
+  `preparation`), transmis à `indice`, `preparer` et à la vue (`ValeursReglagesJeu`).
+- **Niveaux avec leur force** à la place des étoiles, partout : « Débutant · Force 1-2 » … « Diabolique ·
+  Force 10 » ; force exacte de la grille pendant la partie, dans « Continuer » et en fin de partie
+  (« Moyen · Force 6 »).
+- **Réglages en trois sections** : Application (thème, sauvegarde, version), Tous les jeux (vérification
+  des erreurs, mise en évidence), Par jeu (sudoku : retrait automatique des notes ; chiffres casés : nombre
+  au départ) ; pendant une partie, seulement le jeu en cours. **Décisions de l'utilisateur** : mise en
+  évidence dans « Tous les jeux » ; la version affiche la date et l'heure du build avec l'empreinte
+  (« 14/11/2026 17:30 · a1b2c3d4 »), date figée par les sources (deux builds identiques = même version).
+- **Migration** des réglages enregistrés (formes à plat V1 à V3 → réglages par jeu), testée ; export
+  n° 2, import des fichiers n° 1 et n° 2.
+- **Navigation** : bouton retour d'Android partie → fiche du jeu → accueil ; fin de partie : « Nouvelle
+  partie » et « Retour » (vers la fiche).
+- Tests (525) ; vérifié dans Edge en tablette simulée (1280 × 800 clair, 800 × 1280 sombre) : migration
+  d'anciens réglages, accueil, fiches (exemple et partie en cours), réglages, partie, retour à chaque
+  niveau, partie finie et écran de fin, statistiques, nombre au départ.
+
+### Étape 6b — Directions de design
+- 7 directions de design proposées comme **thèmes** sur la vraie appli, pour que l'utilisateur choisisse.
+
+### Étape 6c — Finalisation du design choisi
+- Finalisation de la direction retenue (et des icônes).
 
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.

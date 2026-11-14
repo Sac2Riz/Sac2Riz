@@ -105,7 +105,8 @@ describe('traitement des demandes de préparation (aide au départ)', () => {
 
   test('estDemande : préparation valide ; options ou puzzle invalides refusés', () => {
     assert.ok(estDemande(demandePrep(true)));
-    assert.equal(estDemande({ ...demandePrep(true), options: {} }), false);
+    assert.ok(estDemande({ ...demandePrep(true), options: {} }), 'aucun réglage : valeurs par défaut');
+    assert.equal(estDemande({ ...demandePrep(true), options: null }), false);
     assert.equal(estDemande({ ...demandePrep(true), options: { nombreAuDepart: 'oui' } }), false);
     assert.equal(estDemande({ ...demandePrep(true), puzzle: { jeu: 'chiffres-cases' } }), false);
   });

@@ -3,7 +3,8 @@
 // Contrôles, dans l'ordre :
 //   1. texte JSON lisible ;
 //   2. fichier de sauvegarde Sac2Riz (champ « format ») ;
-//   3. version du format connue (une version plus récente vient d'une appli plus récente) ;
+//   3. version du format connue (une version plus récente vient d'une appli plus récente) ; un
+//      fichier n° 1 (avant l'étape 6a) est accepté : ses réglages « à plat » sont convertis ;
 //   4. chaque donnée, avec les gardes de type de la relecture du stockage (gardes-sauvegarde.ts) ;
 //   5. jeux connus de cette version de l'appli, une seule partie en cours par jeu ;
 //   6. chaque partie en cours REJOUÉE par la logique de son jeu (gardes estDonnees / estAction,
@@ -16,6 +17,7 @@ import {
   type DonneesExportees,
   type EtatPack,
   type PartieSauvegardee,
+  type Reglages,
   type StatsJeu,
 } from '../../types/sauvegarde.ts';
 import { estObjet } from '../../utils/gardes-json.ts';
@@ -23,10 +25,15 @@ import {
   estDateIso,
   estEtatPack,
   estPartieSauvegardee,
-  estReglages,
+  estReglagesBruts,
+  estReglagesV1,
   estStatsJeu,
 } from '../../utils/gardes-sauvegarde.ts';
 import { depuisSauvegarde, type Logique } from '../partie.ts';
+import { normaliserReglages } from '../reglages.ts';
+
+/** Versions du fichier d'export acceptées à l'import (n° 1 : réglages à plat, convertis). */
+const VERSIONS_ACCEPTEES: readonly number[] = [1, VERSION_EXPORT];
 
 /** Ce que le joueur voit avant de confirmer le remplacement. */
 export type ResumeImport = {
@@ -65,11 +72,11 @@ export function analyserImport(texte: string, logiques: readonly Logique[]): Res
         'Mettez l\'appli à jour, puis recommencez l\'import.',
     );
   }
-  if (version !== VERSION_EXPORT) return refus('Version de sauvegarde inconnue : ce fichier ne peut pas être importé.');
+  if (typeof version !== 'number' || !VERSIONS_ACCEPTEES.includes(version)) return refus('Version de sauvegarde inconnue : ce fichier ne peut pas être importé.');
   if (!estDateIso(exporteLe) || !estObjet(donnees)) return refus('Sauvegarde incomplète ou abîmée.');
 
   const parJeu = new Map(logiques.map((l) => [l.meta.id, l]));
-  const resultat = verifierDonnees(donnees, parJeu);
+  const resultat = verifierDonnees(donnees, parJeu, version);
   if (typeof resultat === 'string') return refus(resultat);
   const terminees = Object.values(resultat.stats).reduce(
     (total, statsJeu) => total + Object.values(statsJeu).reduce((n, s) => n + s.terminees, 0),
@@ -78,13 +85,27 @@ export function analyserImport(texte: string, logiques: readonly Logique[]): Res
   return { ok: true, donnees: resultat, resume: { exporteLe, parties: resultat.parties.length, terminees } };
 }
 
+/**
+ * Réglages du fichier dans la forme actuelle, ou null s'ils sont abîmés. N° 1 : réglages à plat
+ * (étapes 3b à 5), convertis ; n° 2 : forme actuelle, valeurs des jeux qui ne sont pas des oui/non ignorées.
+ */
+function lireReglages(valeur: Json | undefined, version: number): Reglages | null {
+  if (version === 1) {
+    const aPlat = estReglagesV1(valeur) && !(estObjet(valeur) && 'jeux' in valeur);
+    return aPlat ? normaliserReglages(valeur) : null;
+  }
+  return estReglagesBruts(valeur) ? normaliserReglages(valeur) : null;
+}
+
 /** Données vérifiées, ou le message expliquant le refus. */
 function verifierDonnees(
   donnees: { readonly [cle: string]: Json },
   parJeu: ReadonlyMap<string, Logique>,
+  version: number,
 ): DonneesExportees | string {
-  const { reglages, parties, stats, packsJoues } = donnees;
-  if (!estReglages(reglages)) return 'Les réglages de la sauvegarde sont abîmés.';
+  const { reglages: reglagesLus, parties, stats, packsJoues } = donnees;
+  const reglages = lireReglages(reglagesLus, version);
+  if (reglages === null) return 'Les réglages de la sauvegarde sont abîmés.';
 
   if (!Array.isArray(parties)) return 'Les parties en cours de la sauvegarde sont abîmées.';
   const partiesLues: PartieSauvegardee[] = [];

@@ -159,7 +159,49 @@ button:disabled {
   color: var(--couleur-texte-doux);
 }
 
-.carte-jeu-sous-titre {
+/* Accueil : la carte entière est un bouton qui ouvre la fiche du jeu */
+.carte-jeu-bouton {
+  position: relative;
+  width: 100%;
+  gap: 0.35rem;
+  padding-right: calc(var(--espace-3) + 1.5rem);
+  text-align: left;
+  font: inherit;
+}
+
+.carte-jeu-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem var(--espace-2);
+}
+
+.carte-jeu-bouton .carte-jeu-nom {
+  font-weight: 700;
+}
+
+/* Indicateur discret d'une partie en cours */
+.pastille-en-cours {
+  padding: 0.1rem 0.6rem;
+  border-radius: 1rem;
+  background: var(--couleur-zone);
+  color: var(--couleur-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.carte-jeu-fleche {
+  position: absolute;
+  top: 50%;
+  right: var(--espace-3);
+  transform: translateY(-50%);
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--couleur-texte-doux);
+}
+
+.carte-jeu-sous-titre,
+.fiche-sous-titre {
   margin: var(--espace-1) 0 0;
   font-size: 0.85rem;
   font-weight: 600;
@@ -205,14 +247,97 @@ button:disabled {
   font-weight: 600;
 }
 
-.bouton-niveau-etoiles {
+.bouton-niveau-force {
   font-size: 0.85rem;
-  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
   color: var(--couleur-accent);
 }
 
-.niveau-diabolique .bouton-niveau-etoiles {
+.niveau-diabolique .bouton-niveau-force {
   color: var(--couleur-erreur);
+}
+
+/* ---------- Fiche d'un jeu ----------
+   Écran large : aperçu à gauche, description et choix de la partie à droite ; règles dessous.
+   Écran étroit : tout en colonne. */
+
+.ecran-fiche {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: max(var(--espace-3), env(safe-area-inset-top)) max(var(--espace-3), env(safe-area-inset-right))
+    max(var(--espace-3), env(safe-area-inset-bottom)) max(var(--espace-3), env(safe-area-inset-left));
+  display: grid;
+  gap: var(--espace-3);
+}
+
+.fiche-corps {
+  display: grid;
+  gap: var(--espace-3);
+  align-items: start;
+}
+
+@media (min-width: 44rem) {
+  .fiche-corps {
+    grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+  }
+}
+
+.fiche-apercu {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--espace-1);
+}
+
+/* Conteneur de l'aperçu : la vue du jeu y prend le plus grand carré possible, comme en partie */
+.fiche-apercu-grille {
+  width: min(100%, 20rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.fiche-apercu-legende {
+  font-size: 0.85rem;
+  color: var(--couleur-texte-doux);
+}
+
+.fiche-presentation {
+  display: grid;
+  gap: var(--espace-2);
+}
+
+.fiche-description {
+  margin: 0;
+  color: var(--couleur-texte-doux);
+}
+
+.fiche-jouer {
+  display: grid;
+  gap: var(--espace-1);
+}
+
+.fiche-regles {
+  padding: var(--espace-2) var(--espace-3);
+  background: var(--couleur-surface);
+  border: 1px solid var(--couleur-bordure);
+  border-radius: calc(var(--rayon) * 1.5);
+}
+
+.fiche-regles .fiche-sous-titre {
+  margin-top: 0;
+}
+
+.fiche-regles-liste {
+  margin: var(--espace-1) 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.fiche-stats {
+  justify-self: start;
 }
 
 /* ---------- Écran de partie ----------
@@ -254,12 +379,19 @@ button:disabled {
 .partie-niveau {
   font-weight: 700;
   font-size: 1.15rem;
+  white-space: nowrap;
 }
 
-.partie-etoiles {
+/* Force exacte de la grille : « · Force 6 » à la suite du niveau */
+.partie-force {
+  font-weight: 600;
   color: var(--couleur-accent);
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.partie-force::before {
+  content: "· ";
+  color: var(--couleur-texte-doux);
 }
 
 .partie-chrono {
@@ -422,6 +554,22 @@ button:disabled {
 }
 
 @media (orientation: landscape) {
+  /* Colonne étroite : niveau et force l'un sous l'autre */
+  .partie-titre {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    line-height: 1.2;
+  }
+
+  .partie-force {
+    font-size: 0.9rem;
+  }
+
+  .partie-force::before {
+    content: none;
+  }
+
   .partie {
     max-width: none;
     column-gap: var(--espace-3);
@@ -624,6 +772,54 @@ button:disabled {
 
 .choix-theme-bouton {
   padding: 0.4rem 0.8rem;
+}
+
+/* Sections de la fenêtre des réglages : Application, Tous les jeux, Par jeu */
+.reglages-section {
+  display: grid;
+}
+
+.reglages-section + .reglages-section {
+  margin-top: var(--espace-1);
+}
+
+.reglages-section-titre {
+  margin: 0 0 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--couleur-accent);
+  border-bottom: 2px solid var(--couleur-accent);
+}
+
+/* Pas de trait au-dessus du premier réglage d'une section ou d'un jeu (le titre en sert) */
+.reglages-section-titre + .reglage,
+.reglages-jeu-nom + .reglage {
+  border-top: none;
+}
+
+.reglages-jeu {
+  display: grid;
+}
+
+.reglages-jeu-nom {
+  margin: var(--espace-1) 0 0;
+  font-size: 1rem;
+}
+
+.reglages-jeu-vide {
+  margin: 0.25rem 0 0;
+}
+
+.reglage-version {
+  cursor: default;
+}
+
+.reglage-valeur {
+  font-variant-numeric: tabular-nums;
+  color: var(--couleur-texte-doux);
 }
 
 .choix-theme-bouton[aria-checked="true"] {

@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { LogiqueJeu } from '../../src/types/jeu.ts';
+import type { LogiqueJeu, ValeursReglagesJeu } from '../../src/types/jeu.ts';
 import type { Json } from '../../src/types/json.ts';
 import { NIVEAUX, type Niveau } from '../../src/types/niveaux.ts';
 import { OUTILS_MASQUABLES, type ModuleJeuQuelconque, type VueJeu } from '../../src/types/vue.ts';
@@ -32,11 +32,12 @@ function geler<T extends Json>(valeur: T): T {
 export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque): Promise<void> {
   // Structure du dossier
   assert.equal(jeu.meta.id, dossier, 'meta.id doit être identique au nom du dossier');
-  for (const fichier of ['meta.ts', 'logique.ts', 'vue.ts', 'index.ts']) {
+  for (const fichier of ['meta.ts', 'logique.ts', 'vue.ts', 'fiche.ts', 'index.ts']) {
     assert.ok(existsSync(cheminJeu(dossier, fichier)), `fichier manquant : ${fichier}`);
   }
   assert.ok(jeu.meta.niveaux.length > 0, 'au moins un niveau');
   assert.ok(Number.isInteger(jeu.meta.versionFormat) && jeu.meta.versionFormat >= 1);
+  assert.ok(jeu.meta.nom.length > 0 && jeu.meta.description.length > 0, 'nom et description');
 
   const logique = await jeu.chargerLogique();
   assert.equal(logique.meta, jeu.meta, 'logique.meta doit être l\'objet META du jeu');
@@ -47,8 +48,36 @@ export async function verifierModule(dossier: string, jeu: ModuleJeuQuelconque):
   // Configuration de la vue (le module se charge sous Node : aucun accès au DOM à l'import)
   verifierConfigVue(await jeu.chargerVue(), logique);
 
+  // Fiche du jeu : règles et grille d'exemple valide (gardes du jeu), en cours de partie
+  const fiche = await jeu.chargerFiche();
+  assert.ok(fiche.regles.length > 0, 'au moins une règle');
+  for (const regle of fiche.regles) assert.ok(regle.trim().length > 0, 'règle vide');
+  const { donnees, etat } = fiche.exemple;
+  assert.ok(logique.estDonnees(donnees), 'exemple : données refusées par estDonnees');
+  assert.ok(logique.estEtat(etat), 'exemple : état refusé par estEtat');
+  assert.equal(logique.estTerminee(etat, donnees), false, 'exemple : grille déjà terminée');
+  assert.deepEqual(logique.erreurs(etat, donnees), [], 'exemple : chiffre faux');
+
   // Le niveau doit faire partie des 6 niveaux communs
   for (const niveau of jeu.meta.niveaux) assert.ok(NIVEAUX.includes(niveau));
+}
+
+/** Réglages propres au jeu : identifiants uniques en camelCase, textes et valeurs par défaut. */
+export function verifierReglagesJeu(logique: LogiqueJeu<Json, Json, Json>): void {
+  const ids = logique.meta.reglages.map((r) => r.id);
+  assert.equal(new Set(ids).size, ids.length, 'réglage en double');
+  for (const r of logique.meta.reglages) {
+    assert.match(r.id, /^[a-z][a-zA-Z0-9]*$/, `identifiant de réglage en camelCase : ${r.id}`);
+    assert.equal(r.type, 'interrupteur');
+    assert.ok(r.libelle.length > 0 && r.detail.length > 0, `textes du réglage ${r.id}`);
+    assert.equal(typeof r.defaut, 'boolean');
+    assert.equal(typeof r.preparation, 'boolean');
+  }
+}
+
+/** Valeurs de tous les réglages du jeu : les réglages « preparation » à la valeur voulue, les autres par défaut. */
+function valeursPreparation(logique: LogiqueJeu<Json, Json, Json>, active: boolean): ValeursReglagesJeu {
+  return Object.fromEntries(logique.meta.reglages.map((r) => [r.id, r.preparation ? active : r.defaut]));
 }
 
 /** Niveaux sans réglage dans meta.generation (génération rapide, par défaut). */
@@ -62,6 +91,7 @@ export function verifierConfigVue(vue: VueJeu<Json, Json, Json>, logique: Logiqu
   assert.equal(new Set(masques).size, masques.length, 'outil masqué en double');
   for (const o of masques) assert.ok(OUTILS_MASQUABLES.includes(o), `outil inconnu : ${o}`);
   assert.equal(typeof vue.monter, 'function');
+  assert.equal(typeof vue.apercu, 'function', 'aperçu de la fiche du jeu');
 
   const r = logique.generer(logique.meta.niveaux[0] ?? 'debutant', creerAlea(7), { doitArreter: () => false });
   assert.ok(r.ok);
@@ -88,6 +118,9 @@ export function verifierLogique(
   logique: LogiqueJeu<Json, Json, Json>,
   niveaux: readonly Niveau[] = logique.meta.niveaux,
 ): void {
+  verifierReglagesJeu(logique);
+  const valeursDefaut = valeursPreparation(logique, false);
+
   // Réglages de génération : niveaux proposés par le jeu, budget de fond au moins égal au budget urgent
   for (const [niveau, reglage] of Object.entries(logique.meta.generation)) {
     assert.ok(logique.meta.niveaux.some((n) => n === niveau), `réglage de génération pour un niveau absent : ${niveau}`);
@@ -120,7 +153,7 @@ export function verifierLogique(
     assert.ok(logique.estEtat(etat));
     assert.equal(logique.estTerminee(etat, donnees), false);
     for (let coups = 0; coups < 1000 && !logique.estTerminee(etat, donnees); coups++) {
-      const indice = logique.indice(etat, donnees, { retraitAutoNotes: true });
+      const indice = logique.indice(etat, donnees, valeursDefaut);
       assert.ok(indice !== null, 'un indice doit exister tant que la grille n\'est pas finie');
       assert.ok(logique.estAction(indice.action));
       assert.ok(indice.titre.length > 0 && indice.explication.length > 0 && indice.libelleAction.length > 0);
@@ -133,10 +166,10 @@ export function verifierLogique(
     // Nom affiché de la technique la plus difficile (écran de fin)
     assert.ok(logique.nomTechnique(r1.notation.techniqueMax).length > 0);
 
-    // Préparation d'une nouvelle partie (réglage « nombre au départ ») : option inactive → mêmes
-    // données (même objet) ; active → données valides, toujours résolues par la logique, sans mutation
-    assert.equal(logique.preparer(donnees, { nombreAuDepart: false }), donnees);
-    const preparees = logique.preparer(geler(donnees), { nombreAuDepart: true });
+    // Préparation d'une nouvelle partie (réglages « preparation », ex. nombre au départ) : inactifs →
+    // mêmes données (même objet) ; actifs → données valides, toujours résolues par la logique, sans mutation
+    assert.equal(logique.preparer(donnees, valeursPreparation(logique, false)), donnees);
+    const preparees = logique.preparer(geler(donnees), valeursPreparation(logique, true));
     assert.ok(logique.estDonnees(preparees));
     assert.ok(logique.noter(preparees) !== null, 'grille préparée résolue par la logique');
   }

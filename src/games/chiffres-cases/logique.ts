@@ -10,7 +10,8 @@ import { estActionCases, estDonneesCases, estEtatCases } from './gardes.ts';
 import { nombreAuDepart } from './depart.ts';
 import { genererCases } from './generateur.ts';
 import { indiceCases, nomTechnique } from './indice.ts';
-import { META } from './meta.ts';
+import { estActif } from '../../utils/reglages-jeu.ts';
+import { META, NOMBRE_AU_DEPART } from './meta.ts';
 import { noterCases } from './notation.ts';
 import { structureDe } from './probleme.ts';
 import { casesFausses, effacerEmplacement, estTermineeCases, etatInitialCases, placerNombre } from './regles.ts';
@@ -34,7 +35,7 @@ export const logique: LogiqueJeu<DonneesCases, EtatCases, ActionCases> = {
   meta: META,
   generer,
   noter: noterCases,
-  preparer: (donnees, options) => (options.nombreAuDepart ? nombreAuDepart(donnees) : donnees),
+  preparer: (donnees, reglages) => (estActif(reglages, NOMBRE_AU_DEPART) ? nombreAuDepart(donnees) : donnees),
   etatInitial: etatInitialCases,
   appliquer,
   erreurs: casesFausses,

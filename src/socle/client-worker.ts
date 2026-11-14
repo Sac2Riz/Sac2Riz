@@ -15,7 +15,7 @@
 // Le vrai Worker est créé par une « fabrique » fournie à la création (calculs.ts dans le
 // navigateur, un faux worker dans les tests).
 
-import type { OptionsDepart, Puzzle } from '../types/jeu.ts';
+import type { Puzzle, ValeursReglagesJeu } from '../types/jeu.ts';
 import type { Json } from '../types/json.ts';
 import type { Niveau } from '../types/niveaux.ts';
 import { BUDGET_MAX_MS, type DemandeWorker, type ReponseWorker } from '../types/worker.ts';
@@ -59,10 +59,10 @@ export interface ClientWorker {
   /** budgetMs : budget de cette demande (null = budget par défaut du client). */
   generer(jeu: string, niveau: Niveau, priorite: Priorite, budgetMs: number | null): DemandeEnCours;
   /**
-   * Prépare une grille pour une nouvelle partie (LogiqueJeu.preparer), en priorité urgente, avec le
+   * Prépare une grille pour une nouvelle partie (LogiqueJeu.preparer, avec les réglages du jeu), en priorité urgente, avec le
    * budget par défaut comme garde-fou. Résultat « ok » : le puzzle préparé.
    */
-  preparer(puzzle: Puzzle<Json>, options: OptionsDepart): DemandeEnCours;
+  preparer(puzzle: Puzzle<Json>, options: ValeursReglagesJeu): DemandeEnCours;
   /** Vrai si le worker répond au « ping » dans le délai. */
   verifier(delaiMs: number): Promise<boolean>;
   /** Annule tout et arrête le worker. */
@@ -86,7 +86,7 @@ export const MARGE_PAR_DEFAUT_MS = 10_000;
 /** Calcul demandé par une tâche. */
 type Travail =
   | { readonly type: 'generer'; readonly niveau: Niveau }
-  | { readonly type: 'preparer'; readonly puzzle: Puzzle<Json>; readonly options: OptionsDepart };
+  | { readonly type: 'preparer'; readonly puzzle: Puzzle<Json>; readonly options: ValeursReglagesJeu };
 
 /** Tâche interne (objet de travail local, modifié sur place). */
 type Tache = {

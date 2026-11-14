@@ -11,6 +11,7 @@ import type {
   EtatPack,
   PartieSauvegardee,
   Reglages,
+  ReglagesBruts,
   ReglagesEnregistres,
   ReglagesV1,
   StatsJeu,
@@ -98,20 +99,36 @@ export function estReglagesV1(valeur: unknown): valeur is ReglagesV1 {
   );
 }
 
-/** Réglages complets (forme actuelle). */
-export function estReglages(valeur: unknown): valeur is Reglages {
-  if (!estObjet(valeur)) return false;
-  const { miseEnEvidence, retraitAutoNotes, nombreAuDepart } = valeur;
-  return (
-    estReglagesV1(valeur) &&
-    typeof miseEnEvidence === 'boolean' &&
-    typeof retraitAutoNotes === 'boolean' &&
-    typeof nombreAuDepart === 'boolean'
-  );
+/** Objet dont chaque valeur passe la garde (clés quelconques). */
+function estDictionnaireDe<T>(valeur: unknown, garde: (v: unknown) => v is T): valeur is { readonly [cle: string]: T } {
+  return estObjet(valeur) && Object.values(valeur).every(garde);
 }
 
-/** Contenu acceptable du magasin « reglages » : forme actuelle ou ancienne (complétée à la lecture). */
+const estObjetJson = (v: unknown): v is { readonly [id: string]: Json } => estObjet(v) && estJson(v);
+const estBooleen = (v: unknown): v is boolean => typeof v === 'boolean';
+const estValeursJeu = (v: unknown): v is { readonly [id: string]: boolean } => estDictionnaireDe(v, estBooleen);
+
+/** Partie commune aux réglages actuels : thème, réglages de tous les jeux. */
+function estSocleReglages(valeur: unknown): boolean {
+  return estObjet(valeur) && typeof valeur['miseEnEvidence'] === 'boolean' && estReglagesV1(valeur);
+}
+
+/** Réglages actuels, valeurs des jeux vérifiées (export, import d'un fichier n° 2). */
+export function estReglages(valeur: unknown): valeur is Reglages {
+  return estSocleReglages(valeur) && estObjet(valeur) && estDictionnaireDe(valeur['jeux'], estValeursJeu);
+}
+
+/** Réglages actuels dont les valeurs des jeux restent à trier (normaliserReglages, socle/reglages.ts). */
+export function estReglagesBruts(valeur: unknown): valeur is ReglagesBruts {
+  return estSocleReglages(valeur) && estObjet(valeur) && estDictionnaireDe(valeur['jeux'], estObjetJson);
+}
+
+/**
+ * Contenu acceptable du magasin « reglages » : forme actuelle (ReglagesBruts), ou une ancienne
+ * forme « à plat » (V1 à V3, reconnues par leur partie commune ; converties à la lecture).
+ */
 export function estReglagesEnregistres(valeur: unknown): valeur is ReglagesEnregistres {
+  if (estObjet(valeur) && 'jeux' in valeur) return estReglagesBruts(valeur);
   return estReglagesV1(valeur);
 }
 

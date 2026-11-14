@@ -15,7 +15,8 @@ import { creerServiceParties } from './socle/service-parties.ts';
 import { ouvrirStockageIndexedDB } from './socle/stockage/indexeddb.ts';
 import { creerStockageMemoire } from './socle/stockage/memoire.ts';
 import { CLE_REGLAGES, type Stockage } from './socle/stockage/stockage.ts';
-import { completerReglages } from './socle/reglages.ts';
+import { normaliserReglages } from './socle/reglages.ts';
+import { lireVersion, texteVersion } from './socle/pwa/version.ts';
 import { appliquerTheme } from './socle/theme.ts';
 import { surveillerVisibilite } from './socle/visibilite.ts';
 import { creerAlea, graineAleatoire } from './utils/alea.ts';
@@ -35,8 +36,8 @@ async function demarrer(): Promise<void> {
   if (racine === null) throw new Error('Élément #app introuvable dans index.html');
 
   const stockage = await ouvrirStockage();
-  // Des réglages d'une ancienne version sont complétés (le thème choisi est conservé)
-  const reglages = completerReglages(await stockage.lire('reglages', CLE_REGLAGES));
+  // Des réglages d'une ancienne version sont convertis (les choix du joueur sont conservés)
+  const reglages = normaliserReglages(await stockage.lire('reglages', CLE_REGLAGES));
   appliquerTheme(reglages.theme);
 
   // Charge uniquement les points d'entrée (index.ts) des jeux : métadonnées pour l'accueil
@@ -69,6 +70,13 @@ async function demarrer(): Promise<void> {
     enregistrerReglages: (r) => stockage.ecrire('reglages', CLE_REGLAGES, r),
     // Redémarrage demandé par le joueur après un import (bouton « Redémarrer »)
     donnees: creerActionsDonnees({ stockage, jeux, redemarrer: () => location.reload() }),
+    // version.json écrit par le build (servi par le cache hors ligne) ; absent avec npm run dev
+    version: lireVersion(async (url) => {
+      const reponse = await fetch(url, { cache: 'no-cache' });
+      if (!reponse.ok) return null;
+      const valeur: unknown = await reponse.json();
+      return valeur;
+    }, document.baseURI).then(texteVersion),
   });
 
   // Remplit la réserve en arrière-plan (dans le worker) pour des démarrages instantanés

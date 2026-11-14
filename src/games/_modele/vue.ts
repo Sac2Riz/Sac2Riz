@@ -53,12 +53,31 @@ function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionMod
   };
 }
 
+/**
+ * Aperçu de la fiche du jeu : la grille en lecture seule (aucun écouteur ; le socle rend le
+ * conteneur inerte et le vide ensuite).
+ */
+function apercu(conteneur: HTMLElement, { donnees, etat }: { readonly donnees: DonneesModele; readonly etat: EtatModele }): void {
+  chargerFeuilleDeStyle(new URL('./style.css', import.meta.url));
+  const ligne = document.createElement('div');
+  ligne.className = 'modele-ligne';
+  etat.valeurs.forEach((valeur, i) => {
+    const c = document.createElement('span');
+    c.className = 'modele-case';
+    c.classList.toggle('est-donnee', (donnees.donnes[i] ?? 0) !== 0);
+    c.textContent = valeur !== 0 ? String(valeur) : '';
+    ligne.append(c);
+  });
+  conteneur.append(ligne);
+}
+
 export const vue: VueJeu<DonneesModele, EtatModele, ActionModele> = {
   // Pavé commun du socle avec les chiffres 1 à TAILLE
   pave: { type: 'commun', valeurs: Array.from({ length: TAILLE }, (_, i) => String(i + 1)) },
   // Outils du socle à masquer (ex. ['notes'] pour un jeu sans notes)
   outilsMasques: [],
   monter,
+  apercu,
   // Chaque chiffre ne se place qu'une fois : il reste 1 s'il n'est pas encore dans la ligne
   restants: (etat) =>
     Object.fromEntries(Array.from({ length: TAILLE }, (_, i) => [String(i + 1), etat.valeurs.includes(i + 1) ? 0 : 1])),

@@ -1,7 +1,7 @@
 // Protocole des messages échangés entre la page et le Web Worker de calcul.
 // Le worker exécute les calculs lourds (génération, notation) sans figer l'interface.
 
-import type { OptionsDepart, Puzzle } from './jeu.ts';
+import type { Puzzle, ValeursReglagesJeu } from './jeu.ts';
 import type { Json } from './json.ts';
 import type { Niveau } from './niveaux.ts';
 
@@ -20,14 +20,15 @@ export type DemandeWorker =
     }
   | {
       /**
-       * Prépare une grille pour une NOUVELLE partie (LogiqueJeu.preparer : aide au départ…).
+       * Prépare une grille pour une NOUVELLE partie (LogiqueJeu.preparer : aide au départ…),
+       * selon les réglages du jeu (options).
        * Réponse : « genere » avec le puzzle préparé (mêmes jeu, graine et notation).
        */
       readonly type: 'preparer';
       readonly requete: number;
       readonly jeu: string;
       readonly puzzle: Puzzle<Json>;
-      readonly options: OptionsDepart;
+      readonly options: ValeursReglagesJeu;
     };
 
 /** Messages renvoyés par le worker à la page. */

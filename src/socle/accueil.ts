@@ -1,12 +1,11 @@
-// ÉCRAN D'ACCUEIL : pour chaque jeu, le bouton « Continuer » (s'il y a une partie en cours)
-// et le choix du niveau pour une nouvelle partie ; en haut, « Statistiques » et « Réglages ». L'écran ne décide de rien : il appelle les
-// actions fournies par l'appli (app.ts), qui gère confirmation, chargement et navigation.
+// ÉCRAN D'ACCUEIL : la liste des jeux (nom, description courte, pastille « Partie en cours ») ;
+// toucher un jeu ouvre sa fiche (ecran-fiche.ts), d'où l'on reprend ou commence une partie.
+// En haut, « Statistiques » (tous les jeux) et « Réglages ». L'écran ne décide de rien : il appelle
+// les actions fournies par l'appli (app.ts).
 
-import { INFOS_NIVEAUX, type Niveau } from '../types/niveaux.ts';
 import type { PartieSauvegardee } from '../types/sauvegarde.ts';
 import type { ModuleJeuQuelconque } from '../types/vue.ts';
 import { bouton, creer } from './dom.ts';
-import { etoiles, formaterTemps } from './format.ts';
 
 export type JeuAccueil = {
   readonly module: ModuleJeuQuelconque;
@@ -15,8 +14,7 @@ export type JeuAccueil = {
 };
 
 export type ActionsAccueil = {
-  readonly continuer: (jeu: string) => void;
-  readonly nouvelle: (jeu: string, niveau: Niveau) => void;
+  readonly ouvrir: (jeu: string) => void;
   readonly statistiques: () => void;
   readonly reglages: () => void;
 };
@@ -34,34 +32,15 @@ function menu(actions: ActionsAccueil): HTMLElement {
   return nav;
 }
 
+/** Carte d'un jeu : un seul grand bouton qui ouvre sa fiche. */
 function carteJeu({ module, partie }: JeuAccueil, actions: ActionsAccueil): HTMLElement {
   const { meta } = module;
-  const carte = creer('section', 'carte-jeu');
-  carte.setAttribute('aria-labelledby', `jeu-${meta.id}`);
-  const titre = creer('h2', 'carte-jeu-nom', meta.nom);
-  titre.id = `jeu-${meta.id}`;
-  carte.append(titre, creer('p', 'carte-jeu-description', meta.description));
-
-  if (partie !== null) {
-    const niveau = partie.puzzle.notation.niveau;
-    const continuer = bouton('bouton bouton-principal bouton-continuer', '', () => actions.continuer(meta.id));
-    continuer.append(
-      creer('span', 'bouton-continuer-titre', 'Continuer'),
-      creer('span', 'bouton-continuer-detail', `${INFOS_NIVEAUX[niveau].nom} · ${formaterTemps(partie.chronoMs)}`),
-    );
-    carte.append(continuer);
-  }
-
-  carte.append(creer('h3', 'carte-jeu-sous-titre', 'Nouvelle partie'));
-  const niveaux = creer('div', 'choix-niveaux');
-  for (const niveau of meta.niveaux) {
-    const b = bouton(`bouton bouton-niveau niveau-${niveau}`, '', () => actions.nouvelle(meta.id, niveau));
-    const nomNiveau = INFOS_NIVEAUX[niveau].nom;
-    b.setAttribute('aria-label', `Nouvelle partie, niveau ${nomNiveau}`);
-    b.append(creer('span', 'bouton-niveau-nom', nomNiveau), creer('span', 'bouton-niveau-etoiles', etoiles(niveau)));
-    niveaux.append(b);
-  }
-  carte.append(niveaux);
+  const carte = bouton('carte-jeu carte-jeu-bouton', '', () => actions.ouvrir(meta.id));
+  const entete = creer('span', 'carte-jeu-entete');
+  entete.append(creer('span', 'carte-jeu-nom', meta.nom));
+  if (partie !== null) entete.append(creer('span', 'pastille-en-cours', 'Partie en cours'));
+  carte.append(entete, creer('span', 'carte-jeu-description', meta.description), creer('span', 'carte-jeu-fleche', '›'));
+  carte.setAttribute('aria-label', `${meta.nom}${partie !== null ? ', partie en cours' : ''}. ${meta.description}`);
   return carte;
 }
 

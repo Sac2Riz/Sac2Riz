@@ -1,17 +1,26 @@
 // LE CONTRAT des modules de jeu — partie AFFICHAGE (utilise le DOM).
 // Ce fichier ne doit jamais être importé par du code pur (moteur, logique, worker).
 
-import type { LogiqueJeu, MarquesIndice, MetaJeu, Puzzle } from './jeu.ts';
+import type { FicheJeu, LogiqueJeu, MarquesIndice, MetaJeu, Puzzle, ValeursReglagesJeu } from './jeu.ts';
 import type { Json } from './json.ts';
 import type { Niveau } from './niveaux.ts';
-import type { Reglages } from './sauvegarde.ts';
+
+/** Réglages vus par la vue d'un jeu : les réglages communs à tous les jeux et ceux du jeu. */
+export type ReglagesVue = {
+  /** Les cases fausses sont signalées (le socle passe alors erreurs à afficher()). */
+  readonly verifierErreurs: boolean;
+  /** Aides visuelles autour de la sélection (sudoku : ligne, colonne, bloc, chiffres identiques). */
+  readonly miseEnEvidence: boolean;
+  /** Réglages propres au jeu (MetaJeu.reglages), tous présents (valeurs par défaut complétées). */
+  readonly jeu: ValeursReglagesJeu;
+};
 
 /** Ce que le socle fournit à la vue d'un jeu. */
 export interface ContexteVue<A extends Json> {
   /** Joue une action : le socle gère historique, chrono, sauvegarde et fin de partie. */
   jouer(action: A): void;
   /** Réglages actuels (ils peuvent changer pendant la partie : les relire à chaque affichage). */
-  reglages(): Readonly<Reglages>;
+  reglages(): ReglagesVue;
   /** Vrai si le mode notes est actif. */
   modeNotes(): boolean;
 }
@@ -69,6 +78,13 @@ export interface VueJeu<D extends Json, E extends Json, A extends Json> {
   restants(etat: E, donnees: D): Readonly<Record<string, number>> | null;
   /** Crée l'affichage du jeu dans les zones fournies par le socle. */
   monter(zones: ZonesVue, contexte: ContexteVue<A>): InstanceVue<D, E>;
+  /**
+   * Aperçu de la fiche du jeu : dessine la grille dans le conteneur, EN LECTURE SEULE (aucun
+   * écouteur, aucun clavier ; le socle rend le conteneur inerte). Le conteneur est dimensionné par
+   * le socle (container-type: size, comme la zone de grille d'une partie). Il est vidé ensuite par
+   * le socle : rien à libérer.
+   */
+  apercu(conteneur: HTMLElement, affichage: { readonly donnees: D; readonly etat: E }): void;
 }
 
 /**
@@ -80,6 +96,8 @@ export interface ModuleJeu<D extends Json, E extends Json, A extends Json> {
   readonly meta: MetaJeu;
   chargerLogique(): Promise<LogiqueJeu<D, E, A>>;
   chargerVue(): Promise<VueJeu<D, E, A>>;
+  /** Contenu de la fiche du jeu (règles, grille d'exemple) : fichier fiche.ts, chargé à l'ouverture de la fiche. */
+  chargerFiche(): Promise<FicheJeu<D, E>>;
   /**
    * Grilles pré-générées du jeu pour ce niveau (packs embarqués, voir socle/packs.ts),
    * ou null si le jeu n'a pas de pack pour ce niveau.

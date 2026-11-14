@@ -1,17 +1,27 @@
-// ÉCRAN DES RÉGLAGES : fenêtre (<dialog>) ouverte depuis l'accueil ou pendant une partie.
-// Chaque changement est appliqué tout de suite (changer() : thème, enregistrement, nouvel
-// affichage de la grille) ; « Fermer », Échap ou le bouton retour d'Android ferment la fenêtre.
-// Section « Sauvegarde » : export de toutes les données dans un fichier, et import d'un tel
-// fichier — seulement depuis l'accueil : pendant une partie, l'écran de partie sauvegarde la
-// partie en cours et écraserait celle qui vient d'être importée.
+// ÉCRAN DES RÉGLAGES : fenêtre (<dialog>) ouverte depuis l'accueil, la fiche d'un jeu ou une partie.
+// Trois sections clairement séparées (étape 6a) :
+//   1. Application : thème, sauvegarde (export / import), version de l'appli ;
+//   2. Tous les jeux : vérification des erreurs, mise en évidence ;
+//   3. Par jeu : une sous-section par jeu avec SES réglages, déclarés par le jeu (MetaJeu.reglages)
+//      et affichés automatiquement ; pendant une partie, seulement le jeu en cours.
+// Chaque changement est appliqué tout de suite (changer() : thème, enregistrement, nouvel affichage
+// de la grille) ; « Fermer », Échap ou le bouton retour d'Android ferment la fenêtre.
+// Import : seulement hors d'une partie (l'écran de partie sauvegarde la partie en cours et
+// écraserait celle qui vient d'être importée).
 
+import type { MetaJeu, ReglageJeu } from '../types/jeu.ts';
 import type { Reglages, Theme } from '../types/sauvegarde.ts';
+import { estActif } from '../utils/reglages-jeu.ts';
 import { bouton, creer } from './dom.ts';
+import { changerReglageJeu, reglagesDuJeu } from './reglages.ts';
 import { NOMS_THEMES, ORDRE_THEMES } from './theme.ts';
 
-/** Réglages à interrupteur (vrai / faux), dans l'ordre d'affichage. */
-const INTERRUPTEURS: readonly {
-  readonly cle: 'verifierErreurs' | 'miseEnEvidence' | 'retraitAutoNotes' | 'nombreAuDepart';
+type Lire = () => Reglages;
+type Changer = (r: Reglages) => void;
+
+/** Réglages communs à tous les jeux (interrupteurs), dans l'ordre d'affichage. */
+const COMMUNS: readonly {
+  readonly cle: 'verifierErreurs' | 'miseEnEvidence';
   readonly titre: string;
   readonly detail: string;
 }[] = [
@@ -23,38 +33,25 @@ const INTERRUPTEURS: readonly {
   {
     cle: 'miseEnEvidence',
     titre: 'Mise en évidence',
-    detail: 'Ligne, colonne et bloc de la case choisie, et chiffres identiques.',
-  },
-  {
-    cle: 'retraitAutoNotes',
-    titre: 'Retrait automatique des notes',
-    detail: 'Poser un chiffre le retire des notes de sa ligne, de sa colonne et de son bloc.',
-  },
-  {
-    cle: 'nombreAuDepart',
-    titre: 'Toujours placer un nombre au départ',
-    detail: 'Chiffres casés : une nouvelle grille sans nombre donné en reçoit un, choisi pour aider à démarrer.',
+    detail: 'Met en valeur ce qui est lié à la case choisie (au sudoku : sa ligne, sa colonne, son bloc et les chiffres identiques).',
   },
 ];
 
-function interrupteur(
-  { cle, titre, detail }: (typeof INTERRUPTEURS)[number],
-  lire: () => Reglages,
-  changer: (r: Reglages) => void,
-): HTMLElement {
+/** Une ligne « titre + explication + interrupteur ». */
+function interrupteur(titre: string, detail: string, valeur: () => boolean, ecrire: (v: boolean) => void): HTMLElement {
   const ligne = creer('label', 'reglage');
   const textes = creer('span', 'reglage-textes');
   textes.append(creer('span', 'reglage-titre', titre), creer('span', 'reglage-detail', detail));
   const caseACocher = creer('input', 'reglage-interrupteur');
   caseACocher.type = 'checkbox';
   caseACocher.setAttribute('role', 'switch');
-  caseACocher.checked = lire()[cle];
-  caseACocher.addEventListener('change', () => changer({ ...lire(), [cle]: caseACocher.checked }));
+  caseACocher.checked = valeur();
+  caseACocher.addEventListener('change', () => ecrire(caseACocher.checked));
   ligne.append(textes, caseACocher);
   return ligne;
 }
 
-function choixTheme(lire: () => Reglages, changer: (r: Reglages) => void): HTMLElement {
+function choixTheme(lire: Lire, changer: Changer): HTMLElement {
   const groupe = creer('div', 'reglage reglage-theme');
   const titre = creer('span', 'reglage-titre', 'Thème');
   titre.id = 'reglage-theme-titre';
@@ -86,7 +83,7 @@ export type SauvegardeReglages = {
   readonly importer: ((fichier: File) => Promise<void>) | null;
 };
 
-function sectionSauvegarde({ exporter, importer }: SauvegardeReglages): HTMLElement {
+function sauvegarde({ exporter, importer }: SauvegardeReglages): HTMLElement {
   const groupe = creer('div', 'reglage reglage-sauvegarde');
   const textes = creer('span', 'reglage-textes');
   textes.append(
@@ -95,7 +92,7 @@ function sectionSauvegarde({ exporter, importer }: SauvegardeReglages): HTMLElem
       'span',
       'reglage-detail',
       importer === null
-        ? 'Exporter toutes vos données dans un fichier. L\'import se fait depuis l\'accueil.'
+        ? 'Exporter toutes vos données dans un fichier. L\'import se fait en dehors d\'une partie.'
         : 'Exporter toutes vos données dans un fichier, ou les remplacer par un fichier exporté.',
     ),
   );
@@ -126,15 +123,58 @@ function sectionSauvegarde({ exporter, importer }: SauvegardeReglages): HTMLElem
   return groupe;
 }
 
+/** Version de l'appli : texte affiché dès qu'il est connu (lecture de version.json). */
+function version(texte: Promise<string>): HTMLElement {
+  const ligne = creer('div', 'reglage reglage-version');
+  const valeur = creer('span', 'reglage-valeur', '…');
+  ligne.append(creer('span', 'reglage-titre', 'Version'), valeur);
+  void texte.then((t) => {
+    valeur.textContent = t;
+  });
+  return ligne;
+}
+
+/** Section à titre (Application, Tous les jeux, Par jeu). */
+function section(id: string, titre: string, ...contenu: HTMLElement[]): HTMLElement {
+  const s = creer('section', 'reglages-section');
+  const h = creer('h3', 'reglages-section-titre', titre);
+  h.id = `reglages-${id}`;
+  s.setAttribute('aria-labelledby', h.id);
+  s.append(h, ...contenu);
+  return s;
+}
+
+function reglageJeu(meta: MetaJeu, reglage: ReglageJeu, lire: Lire, changer: Changer): HTMLElement {
+  return interrupteur(
+    reglage.libelle,
+    reglage.detail,
+    () => estActif(reglagesDuJeu(lire(), meta), reglage),
+    (v) => changer(changerReglageJeu(lire(), meta.id, reglage.id, v)),
+  );
+}
+
+/** Sous-section d'un jeu : ses réglages déclarés, ou une phrase s'il n'en a aucun. */
+function sousSectionJeu(meta: MetaJeu, lire: Lire, changer: Changer): HTMLElement {
+  const bloc = creer('div', 'reglages-jeu');
+  bloc.append(creer('h4', 'reglages-jeu-nom', meta.nom));
+  if (meta.reglages.length === 0) bloc.append(creer('p', 'reglage-detail reglages-jeu-vide', 'Aucun réglage propre à ce jeu.'));
+  for (const r of meta.reglages) bloc.append(reglageJeu(meta, r, lire, changer));
+  return bloc;
+}
+
+export type OptionsReglages = {
+  readonly sauvegarde: SauvegardeReglages;
+  /** Version de l'appli, déjà mise en forme (« 14/11/2026 17:30 · a1b2c3d4 »). */
+  readonly version: Promise<string>;
+  /** Jeux de la section « Par jeu » (pendant une partie : le jeu en cours seulement). */
+  readonly jeux: readonly MetaJeu[];
+};
+
 /**
  * Ouvre la fenêtre des réglages ; se résout à sa fermeture.
  * lire() donne les réglages actuels, changer() applique et enregistre les nouveaux.
  */
-export function ouvrirReglages(
-  lire: () => Reglages,
-  changer: (r: Reglages) => void,
-  sauvegarde: SauvegardeReglages,
-): Promise<void> {
+export function ouvrirReglages(lire: Lire, changer: Changer, o: OptionsReglages): Promise<void> {
   const dialogue = creer('dialog', 'dialogue dialogue-reglages');
   const contenu = creer('div', 'dialogue-contenu');
   const fermer = bouton('bouton bouton-principal', 'Fermer', () => dialogue.close());
@@ -142,9 +182,15 @@ export function ouvrirReglages(
   boutons.append(fermer);
   contenu.append(
     creer('h2', 'dialogue-titre', 'Réglages'),
-    ...INTERRUPTEURS.map((i) => interrupteur(i, lire, changer)),
-    choixTheme(lire, changer),
-    sectionSauvegarde(sauvegarde),
+    section('application', 'Application', choixTheme(lire, changer), sauvegarde(o.sauvegarde), version(o.version)),
+    section(
+      'communs',
+      'Tous les jeux',
+      ...COMMUNS.map(({ cle, titre, detail }) =>
+        interrupteur(titre, detail, () => lire()[cle], (v) => changer({ ...lire(), [cle]: v })),
+      ),
+    ),
+    section('jeux', 'Par jeu', ...o.jeux.map((meta) => sousSectionJeu(meta, lire, changer))),
     boutons,
   );
   dialogue.append(contenu);
@@ -155,6 +201,8 @@ export function ouvrirReglages(
       resoudre();
     });
     dialogue.showModal();
-    fermer.focus();
+    // Fenêtre ouverte en haut (sections dans l'ordre) : le focus sur « Fermer », en bas, ne la fait pas défiler
+    fermer.focus({ preventScroll: true });
+    dialogue.scrollTop = 0;
   });
 }

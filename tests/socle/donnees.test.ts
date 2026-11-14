@@ -49,7 +49,7 @@ function stats(terminees: number): StatsJeu {
 const etatPack: EtatPack = { taille: 3, ordre: [2, 0, 1], position: 1, derniere: 2, cycle: 1 };
 
 const donneesExemple: DonneesExportees = {
-  reglages: { ...REGLAGES_PAR_DEFAUT, theme: 'sombre', verifierErreurs: true },
+  reglages: { ...REGLAGES_PAR_DEFAUT, theme: 'sombre', verifierErreurs: true, jeux: { 'jeu-futur': { option: true } } },
   parties: [partieEnCours()],
   stats: { _modele: stats(2) },
   packsJoues: { '_modele/expert': etatPack },
@@ -100,7 +100,7 @@ describe('export', () => {
     });
   });
 
-  test('anciens réglages exportés complétés', async () => {
+  test('anciens réglages exportés convertis (forme actuelle)', async () => {
     const s = creerStockageMemoire();
     await s.ecrire('reglages', CLE_REGLAGES, { theme: 'clair', verifierErreurs: true });
     assert.deepEqual((await lireDonnees(s)).reglages, { ...REGLAGES_PAR_DEFAUT, theme: 'clair', verifierErreurs: true });
@@ -109,7 +109,7 @@ describe('export', () => {
   test('fichier : format, version, date', () => {
     const f = construireExport(donneesExemple, new Date(DATE));
     assert.equal(f.format, 'sac2riz-export');
-    assert.equal(f.version, 1);
+    assert.equal(f.version, 2);
     assert.equal(f.exporteLe, DATE);
   });
 });
@@ -127,6 +127,34 @@ describe('import : fichier valide', () => {
     const cible = creerStockageMemoire();
     await cible.remplacerDonnees(resultat.donnees);
     assert.deepEqual(await lireDonnees(cible), donneesExemple);
+  });
+
+  test('fichier n° 1 (avant l’étape 6a) : réglages à plat convertis, choix conservés', () => {
+    const resultat = analyserImport(
+      fichier((f, d) => {
+        f['version'] = 1;
+        d['reglages'] = { theme: 'clair', verifierErreurs: true, miseEnEvidence: false, retraitAutoNotes: false, nombreAuDepart: true };
+      }),
+      LOGIQUES,
+    );
+    assert.ok(resultat.ok);
+    assert.deepEqual(resultat.donnees.reglages, {
+      theme: 'clair',
+      verifierErreurs: true,
+      miseEnEvidence: false,
+      jeux: { 'sudoku-classique': { retraitAutoNotes: false }, 'chiffres-cases': { nombreAuDepart: true } },
+    });
+  });
+
+  test('fichier n° 2 : une valeur de réglage de jeu d’un autre type est ignorée', () => {
+    const resultat = analyserImport(
+      fichier((_f, d) => {
+        d['reglages'] = { ...REGLAGES_PAR_DEFAUT, jeux: { 'sudoku-classique': { retraitAutoNotes: false, autre: 'texte' } } };
+      }),
+      LOGIQUES,
+    );
+    assert.ok(resultat.ok);
+    assert.deepEqual(resultat.donnees.reglages.jeux, { 'sudoku-classique': { retraitAutoNotes: false } });
   });
 
   test('sauvegarde sans partie en cours ni statistiques', () => {
@@ -156,7 +184,7 @@ describe('import : fichiers refusés', () => {
   });
 
   test('version plus récente ou inconnue', () => {
-    assert.match(refuse(fichier((f) => (f['version'] = 2))), /version plus récente/);
+    assert.match(refuse(fichier((f) => (f['version'] = 3))), /version plus récente/);
     assert.match(refuse(fichier((f) => (f['version'] = 0))), /Version de sauvegarde inconnue/);
     assert.match(refuse(fichier((f) => (f['version'] = '1'))), /Version de sauvegarde inconnue/);
   });
@@ -166,9 +194,13 @@ describe('import : fichiers refusés', () => {
     assert.match(refuse(fichier((f) => (f['donnees'] = []))), /incomplète/);
   });
 
-  test('réglages abîmés (y compris une ancienne forme incomplète)', () => {
+  test('réglages abîmés, ou d’une forme qui ne correspond pas à la version du fichier', () => {
     assert.match(refuse(fichier((_f, d) => (d['reglages'] = { theme: 'violet' }))), /réglages/);
+    // N° 2 : forme à plat refusée ; valeurs des jeux qui ne sont pas des objets refusées
     assert.match(refuse(fichier((_f, d) => (d['reglages'] = { theme: 'clair', verifierErreurs: true }))), /réglages/);
+    assert.match(refuse(fichier((_f, d) => (d['reglages'] = { ...REGLAGES_PAR_DEFAUT, jeux: { x: 1 } }))), /réglages/);
+    // N° 1 : forme actuelle refusée
+    assert.match(refuse(fichier((f) => (f['version'] = 1))), /réglages/);
   });
 
   test('parties : abîmée, jeu inconnu, deux pour le même jeu', () => {

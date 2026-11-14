@@ -13,6 +13,7 @@ import {
   estPartieSauvegardee,
   estPuzzle,
   estReglages,
+  estReglagesBruts,
   estReglagesEnregistres,
   estStatsJeu,
 } from '../../src/utils/gardes-sauvegarde.ts';
@@ -90,14 +91,31 @@ describe('gardes des données conservées', () => {
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'theme', 'violet')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'verifierErreurs', 'oui')), false);
     assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 1)), false);
-    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'nombreAuDepart', 'non')), false);
-    assert.equal(estReglages({ theme: 'clair', verifierErreurs: true }), false, "forme de l'étape 3b : incomplète");
+    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'jeux', [])), false);
+    assert.equal(estReglages(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': { option: 'oui' } })), false);
+    assert.ok(estReglages(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': { option: true } })));
+    assert.equal(estReglages({ theme: 'clair', verifierErreurs: true }), false, "forme de l'étape 3b : à convertir");
+    assert.equal(
+      estReglages({ theme: 'clair', verifierErreurs: true, miseEnEvidence: true, retraitAutoNotes: true, nombreAuDepart: false }),
+      false,
+      'forme à plat des étapes 4b à 5 : à convertir',
+    );
   });
 
-  test("estReglagesEnregistres : forme actuelle ou forme de l'étape 3b", () => {
+  test('estReglagesBruts : forme actuelle, valeurs des jeux quelconques (triées à la lecture)', () => {
+    assert.ok(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': { option: 'oui', autre: true } })));
+    assert.equal(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'jeux', { 'jeu-a': 3 })), false);
+    assert.equal(estReglagesBruts(avec(REGLAGES_PAR_DEFAUT, 'miseEnEvidence', 'oui')), false);
+  });
+
+  test('estReglagesEnregistres : forme actuelle ou anciennes formes à plat', () => {
     assert.ok(estReglagesEnregistres(REGLAGES_PAR_DEFAUT));
     assert.ok(estReglagesEnregistres({ theme: 'sombre', verifierErreurs: false }));
+    assert.ok(
+      estReglagesEnregistres({ theme: 'sombre', verifierErreurs: false, miseEnEvidence: true, retraitAutoNotes: true, nombreAuDepart: true }),
+    );
     assert.equal(estReglagesEnregistres({ theme: 'sombre' }), false);
+    assert.equal(estReglagesEnregistres(avec(REGLAGES_PAR_DEFAUT, 'jeux', null)), false, 'jeux présent mais abîmé');
   });
 
   test('estEntreeReserve : le puzzle doit être du jeu et du niveau annoncés', () => {

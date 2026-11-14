@@ -24,7 +24,34 @@ export type GenerationNiveau =
   | { readonly mode: 'pack' }
   | { readonly mode: 'worker'; readonly budgetFondMs: number };
 
-/** Description d'un jeu (affichée sur l'écran d'accueil). */
+/**
+ * Réglage propre à un jeu, déclaré dans MetaJeu.reglages : le socle l'affiche dans la section du jeu
+ * de l'écran des réglages, l'enregistre et transmet sa valeur au jeu (ValeursReglagesJeu).
+ * Un seul type pour l'instant, « interrupteur » (oui / non) ; le champ type permettra d'en ajouter.
+ */
+export type ReglageJeu = {
+  /** Identifiant en camelCase, unique dans le jeu (clé d'enregistrement : ne plus le changer). */
+  readonly id: string;
+  readonly type: 'interrupteur';
+  /** Titre affiché (« Retrait automatique des notes »). */
+  readonly libelle: string;
+  /** Phrase d'explication sous le titre. */
+  readonly detail: string;
+  readonly defaut: boolean;
+  /**
+   * Vrai si le réglage change les données d'une NOUVELLE partie : le socle appelle alors
+   * LogiqueJeu.preparer dans le worker quand il est activé (sinon, jamais).
+   */
+  readonly preparation: boolean;
+};
+
+/**
+ * Valeurs des réglages d'un jeu (clé = ReglageJeu.id). Le socle transmet toujours TOUS les réglages
+ * déclarés, complétés par leur valeur par défaut ; lire une valeur avec estActif (utils/reglages-jeu.ts).
+ */
+export type ValeursReglagesJeu = { readonly [id: string]: boolean };
+
+/** Description d'un jeu (affichée sur l'accueil et la fiche du jeu). */
 export type MetaJeu = {
   /** Identifiant unique en kebab-case, identique au nom du dossier dans src/games/. */
   readonly id: string;
@@ -36,6 +63,19 @@ export type MetaJeu = {
   readonly versionFormat: number;
   /** Réglages de génération des niveaux qui s'écartent du fonctionnement par défaut ({} sinon). */
   readonly generation: Readonly<Partial<Record<Niveau, GenerationNiveau>>>;
+  /** Réglages propres au jeu, dans l'ordre d'affichage ([] si aucun). */
+  readonly reglages: readonly ReglageJeu[];
+};
+
+/**
+ * Contenu de la fiche d'un jeu (fichier fiche.ts : « export const fiche = … »), en plus du nom et de
+ * la description de MetaJeu. Code pur (les données sont vérifiées par les gardes du jeu dans les tests).
+ */
+export type FicheJeu<D extends Json, E extends Json> = {
+  /** Règles expliquées simplement : une phrase par point, dans l'ordre de lecture. */
+  readonly regles: readonly string[];
+  /** Grille d'exemple, en partie remplie, montrée en aperçu quand aucune partie n'est en cours. */
+  readonly exemple: { readonly donnees: D; readonly etat: E };
 };
 
 /** Une grille à résoudre, entièrement sérialisable. */
@@ -97,18 +137,6 @@ export type Indice<A extends Json> = {
   readonly action: A;
 };
 
-/** Réglages du joueur qui changent les actions produites par le jeu. */
-export type OptionsJeu = {
-  /** Poser un chiffre retire cette note des cases qui voient la case. */
-  readonly retraitAutoNotes: boolean;
-};
-
-/** Réglages du joueur qui changent les données d'une NOUVELLE partie (voir LogiqueJeu.preparer). */
-export type OptionsDepart = {
-  /** Une grille sans aucun élément donné au départ en reçoit un (chiffres casés : un nombre pré-placé). */
-  readonly nombreAuDepart: boolean;
-};
-
 /**
  * Partie logique d'un jeu. Toutes les fonctions sont PURES : elles ne modifient
  * jamais leurs arguments et renvoient de nouvelles valeurs.
@@ -125,12 +153,13 @@ export interface LogiqueJeu<D extends Json, E extends Json, A extends Json> {
   noter(donnees: D): Notation | null;
 
   /**
-   * Données d'une NOUVELLE partie, ajustées selon les réglages du joueur (aide au départ…).
+   * Données d'une NOUVELLE partie, ajustées selon les réglages du jeu (aide au départ…).
    * Renvoie l'objet reçu tel quel s'il n'y a rien à changer (jeu sans objet : (d) => d).
-   * Appelé dans le worker (peut noter la grille plusieurs fois) ; jamais sur une partie en cours.
+   * Appelé dans le worker (peut noter la grille plusieurs fois), seulement si un réglage
+   * « preparation » est activé ; jamais sur une partie en cours.
    * Les données renvoyées doivent garder une solution unique.
    */
-  preparer(donnees: D, options: OptionsDepart): D;
+  preparer(donnees: D, reglages: ValeursReglagesJeu): D;
 
   /** État de saisie au début d'une partie. */
   etatInitial(donnees: D): E;
@@ -144,8 +173,8 @@ export interface LogiqueJeu<D extends Json, E extends Json, A extends Json> {
   /** Vrai quand la grille est entièrement et correctement remplie. */
   estTerminee(etat: E, donnees: D): boolean;
 
-  /** Prochain coup conseillé, ou null s'il n'y en a pas. */
-  indice(etat: E, donnees: D, options: OptionsJeu): Indice<A> | null;
+  /** Prochain coup conseillé (selon les réglages du jeu), ou null s'il n'y en a pas. */
+  indice(etat: E, donnees: D, reglages: ValeursReglagesJeu): Indice<A> | null;
 
   /** Nom affiché d'une technique (Notation.techniqueMax), pour l'écran de fin de partie. */
   nomTechnique(id: string): string;
