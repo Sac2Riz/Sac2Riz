@@ -40,8 +40,8 @@ export type EtatCases = {
 /**
  * A : une action du joueur.
  * - placer : pose un nombre ENTIER de la liste dans un emplacement de même longueur.
- *   Si ce nombre était déjà posé ailleurs, il y est retiré (déplacement) ; les nombres croisés
- *   qui le contredisent sont retirés (voir consequencesPlacement dans regles.ts) ;
+ *   Si ce nombre était déjà posé ailleurs, il y est retiré (déplacement). S'il contredit un nombre
+ *   croisé déjà posé, l'action est sans effet (voir consequencesPlacement dans regles.ts) ;
  * - effacer : vide un emplacement (jamais un pré-placé).
  */
 export type ActionCases =

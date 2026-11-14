@@ -4,8 +4,8 @@
 // ensuite via afficher(). Toute la logique des touchers est dans interaction.ts (code pur, testé).
 //
 // Affichage : emplacement sélectionné en surbrillance (ou, nombre d'abord, ses emplacements cibles),
-// chiffres des pré-placés en gras, erreurs en rouge, signal bref sur les cases d'un nombre déplacé
-// ou retiré. Indice affiché (1er temps) : cases de l'emplacement sur fond ambré avec ses chiffres en
+// chiffres des pré-placés en gras, erreurs en rouge, signal bref sur les cases quittées par un nombre
+// déplacé, clignotement des cases en conflit quand une pose est refusée. Indice affiché (1er temps) : cases de l'emplacement sur fond ambré avec ses chiffres en
 // vert, emplacements qui justifient la déduction en fond léger ; la sélection est alors suspendue.
 // Liste : groupée par longueur, le groupe de la sélection en tête et surligné ; nombres utilisés
 // barrés (toujours touchables : les placer ailleurs les déplace), verrouillés s'ils sont pré-placés.
@@ -15,7 +15,6 @@ import type { AffichageVue, ContexteVue, InstanceVue, VueJeu, ZonesVue } from '.
 import {
   actionEffacer,
   AUCUNE,
-  casesASignaler,
   casesEnEvidence,
   groupesListe,
   longueurSelection,
@@ -26,13 +25,14 @@ import {
   type GroupeListe,
   type Reaction,
   type Selection,
+  type Signal,
 } from './interaction.ts';
 import { structureDe } from './probleme.ts';
 import { chiffresDesCases } from './regles.ts';
 import { NOIRE, type ActionCases, type DonneesCases, type EtatCases } from './types.ts';
 
-/** Durée du signal sur les cases d'un nombre déplacé ou retiré (voir l'animation dans style.css). */
-const DUREE_SIGNAL_MS = 900;
+/** Durée des signaux (voir les animations dans style.css) : nombre déplacé, pose refusée (3 pulsations). */
+const DUREE_SIGNAL_MS: Readonly<Record<Signal['type'], number>> = { deplacement: 900, conflit: 1050 };
 
 /** Déplacements au clavier (flèches) : [lignes, colonnes]. */
 const FLECHES: Readonly<Record<string, readonly [number, number]>> = {
@@ -107,7 +107,9 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
   let selection: Selection = AUCUNE;
   let dernier: AffichageVue<DonneesCases, EtatCases> | null = null;
   let plateau: { plateau: HTMLElement; cases: (HTMLButtonElement | null)[] } | null = null;
-  let signal: ReadonlySet<number> = new Set();
+  let signal: { readonly type: Signal['type']; readonly cases: ReadonlySet<number> } | null = null;
+  /** Vrai juste après un nouveau signal : l'animation doit repartir de zéro (même cases qu'avant). */
+  let signalNeuf = false;
   let minuterieSignal: ReturnType<typeof setTimeout> | null = null;
   let longueurAffichee: number | null = null;
 
@@ -115,25 +117,26 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
   liste.setAttribute('aria-label', 'Nombres à placer');
   zoneListe.append(liste);
 
+  function montrerSignal(s: Signal): void {
+    signal = { type: s.type, cases: new Set(s.cases) };
+    signalNeuf = true;
+    if (minuterieSignal !== null) clearTimeout(minuterieSignal);
+    minuterieSignal = setTimeout(() => {
+      signal = null;
+      minuterieSignal = null;
+      dessiner();
+    }, DUREE_SIGNAL_MS[s.type]);
+  }
+
+  /**
+   * Applique un toucher. Une pose acceptée est jouée tout de suite (le socle enregistre le coup,
+   * sauvegarde et contrôle la fin de partie, puis rappelle afficher()) et la sélection est levée.
+   */
   function reagir(r: Reaction): void {
     selection = r.selection;
-    if (r.action === null || dernier === null) {
-      dessiner();
-      return;
-    }
-    // Signal calculé AVANT de jouer (l'état d'après ne dit plus ce qui a été retiré)
-    const cases = casesASignaler(dernier.etat, dernier.donnees, r.action);
-    if (cases.length > 0) {
-      signal = new Set(cases);
-      if (minuterieSignal !== null) clearTimeout(minuterieSignal);
-      minuterieSignal = setTimeout(() => {
-        signal = new Set();
-        minuterieSignal = null;
-        dessiner();
-      }, DUREE_SIGNAL_MS);
-    }
-    contexte.jouer(r.action); // le socle rappelle afficher()
-    dessiner(); // si l'action était sans effet, afficher() n'est pas rappelé
+    if (r.signal !== null) montrerSignal(r.signal);
+    if (r.action !== null) contexte.jouer(r.action);
+    dessiner(); // sans action (ou action sans effet), afficher() n'est pas rappelé
   }
 
   /** Toucher dans la zone de la grille : une case blanche, sinon une « zone vide » (noire, marge). */
@@ -186,7 +189,14 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
       c.toggle('est-selection', evidence.selection.has(cellule));
       c.toggle('est-touchee', cellule === touchee);
       c.toggle('est-cible', evidence.cibles.has(cellule));
-      c.toggle('est-signal', signal.has(cellule));
+      const signalee = signal !== null && signal.cases.has(cellule);
+      if (signalee && signalNeuf) {
+        // Relance l'animation même si la case clignotait déjà (deux refus de suite)
+        c.remove('est-signal', 'est-conflit');
+        void b.offsetWidth;
+      }
+      c.toggle('est-signal', signalee && signal?.type === 'deplacement');
+      c.toggle('est-conflit', signalee && signal?.type === 'conflit');
       c.toggle('est-indice', motif.has(cellule));
       c.toggle('est-zone-indice', zonesIndice.has(cellule));
       c.toggle('est-a-placer', place !== undefined && chiffre === null);
@@ -197,6 +207,7 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
       b.setAttribute('aria-selected', String(evidence.selection.has(cellule)));
     });
 
+    signalNeuf = false;
     dessinerListe(liste, groupesListe(selection, etat, donnees));
     // Nouvelle longueur visée : le groupe mis en avant (en tête) redevient visible
     const longueur = longueurSelection(selection, donnees);

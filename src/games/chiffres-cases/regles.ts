@@ -5,24 +5,26 @@
 // - le nombre doit être dans la liste et avoir la longueur de l'emplacement ; un emplacement
 //   pré-placé ne change jamais ;
 // - s'il était déjà posé ailleurs, il y est retiré (DÉPLACEMENT) ;
-// - les nombres qui le croisent et le contredisent (chiffre différent dans une case commune) sont
-//   RETIRÉS. La vue les signale brièvement : consequencesPlacement les lui donne AVANT de jouer
-//   l'action. Un pré-placé contredit rend le placement impossible.
+// - s'il contredit un nombre qui le croise (chiffre différent dans une case commune), pré-placé ou
+//   non, il n'est PAS posé : l'état ne change pas (le nombre croisé n'est jamais retiré). La vue fait
+//   clignoter les cases en conflit : consequencesPlacement les lui donne AVANT de jouer l'action.
+//   L'indice n'est jamais refusé : il signale d'abord les nombres faux, puis ne pose que des nombres
+//   de la solution, qui ne contredisent aucun nombre juste.
 
 import { structureDe } from './probleme.ts';
 import type { DonneesCases, EtatCases } from './types.ts';
 
 /** Ce que produirait le placement d'un nombre (la vue s'en sert pour son signal visuel). */
 export type ConsequencesPlacement = {
-  /** Faux si le placement est refusé (nombre hors liste, mauvaise longueur, pré-placé en jeu…). */
+  /** Faux si le placement est refusé (nombre hors liste, mauvaise longueur, conflit, pré-placé en jeu…). */
   readonly possible: boolean;
   /** Emplacement d'où le nombre est déplacé, ou null. */
   readonly deplaceDepuis: number | null;
-  /** Emplacements dont le nombre est retiré parce qu'il contredisait le nouveau. */
-  readonly retires: readonly number[];
+  /** Cases communes où un nombre croisé déjà posé a un autre chiffre (placement alors refusé). */
+  readonly conflits: readonly number[];
 };
 
-const IMPOSSIBLE: ConsequencesPlacement = { possible: false, deplaceDepuis: null, retires: [] };
+const IMPOSSIBLE: ConsequencesPlacement = { possible: false, deplaceDepuis: null, conflits: [] };
 
 /** Emplacements pré-placés (ensemble). */
 function preplaces(donnees: DonneesCases): ReadonlySet<number> {
@@ -44,23 +46,24 @@ export function consequencesPlacement(
   if (etat.places[emplacement] === nombre) return IMPOSSIBLE; // déjà là : rien à faire
   const ailleurs = etat.places.findIndex((n, i) => n === nombre && i !== emplacement);
   if (ailleurs >= 0 && fixes.has(ailleurs)) return IMPOSSIBLE; // un nombre donné ne se déplace pas
-  const retires: number[] = [];
+  // Le nombre déplacé quitte son ancien emplacement : il ne compte pas comme nombre croisé
+  const conflits: number[] = [];
   for (const cr of p.grille.croisements[emplacement] ?? []) {
     const autre = etat.places[cr.autre] ?? null;
     if (autre === null || cr.autre === ailleurs || autre[cr.positionAutre] === nombre[cr.position]) continue;
-    if (fixes.has(cr.autre)) return IMPOSSIBLE;
-    retires.push(cr.autre);
+    const cellule = e.cellules[cr.position];
+    if (cellule !== undefined) conflits.push(cellule);
   }
-  return { possible: true, deplaceDepuis: ailleurs >= 0 ? ailleurs : null, retires };
+  if (conflits.length > 0) return { possible: false, deplaceDepuis: null, conflits };
+  return { possible: true, deplaceDepuis: ailleurs >= 0 ? ailleurs : null, conflits: [] };
 }
 
 /** Place un nombre (état inchangé, même objet, si le placement est impossible ou sans effet). */
 export function placerNombre(etat: EtatCases, donnees: DonneesCases, emplacement: number, nombre: string): EtatCases {
   const c = consequencesPlacement(etat, donnees, emplacement, nombre);
   if (!c.possible) return etat;
-  const vides = new Set([...c.retires, ...(c.deplaceDepuis === null ? [] : [c.deplaceDepuis])]);
   return {
-    places: etat.places.map((n, i) => (i === emplacement ? nombre : vides.has(i) ? null : n)),
+    places: etat.places.map((n, i) => (i === emplacement ? nombre : i === c.deplaceDepuis ? null : n)),
   };
 }
 

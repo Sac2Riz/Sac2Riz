@@ -19,7 +19,8 @@
   --couleur-trait-fin: #c9d0da;
   --couleur-trait-epais: #3b4656;
   /* Cases noires (grilles à cases noires : chiffres casés…) */
-  --couleur-case-noire: #3b4656;
+  /* Cases noires des chiffres casés : le fond de l'appli (la grille se lit par les cases blanches) */
+  --couleur-case-noire: var(--couleur-fond);
   /* Mises en évidence de la grille : zone (ligne, colonne, bloc), chiffres identiques, case choisie */
   --couleur-zone: #e6ecf4;
   --couleur-meme: #cddcf1;
@@ -62,7 +63,6 @@
     --couleur-bordure: #313b49;
     --couleur-trait-fin: #2c3542;
     --couleur-trait-epais: #8896aa;
-    --couleur-case-noire: #0b0f14;
     --couleur-zone: #222c39;
     --couleur-meme: #283a54;
     --couleur-selection: #2f4b73;
@@ -89,7 +89,6 @@
   --couleur-bordure: #313b49;
   --couleur-trait-fin: #2c3542;
   --couleur-trait-epais: #8896aa;
-  --couleur-case-noire: #0b0f14;
   --couleur-zone: #222c39;
   --couleur-meme: #283a54;
   --couleur-selection: #2f4b73;

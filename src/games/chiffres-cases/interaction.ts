@@ -10,11 +10,15 @@
 //    évidence les emplacements vides de sa longueur (les « cibles ») ; toucher une case d'une cible
 //    y place le nombre. Toucher à nouveau le nombre, ou une zone vide (case noire, marge), annule.
 //    Toucher une autre case revient à la façon 1 (son emplacement est sélectionné).
-// Un nombre barré (déjà utilisé) se touche comme les autres : le placer ailleurs le déplace. Un
-// nombre posé dans un emplacement pré-placé est verrouillé. Un pré-placé n'est jamais sélectionné.
+// Une pose est définitive dès le toucher qui la fait : l'action est jouée et la sélection levée.
+// Un nombre qui contredit un nombre croisé déjà posé n'est pas posé : rien ne change, la sélection
+// reste, et les cases en conflit clignotent (signal « conflit »).
+// Un nombre barré (déjà utilisé) se touche comme les autres : le placer ailleurs le déplace (ses
+// anciennes cases sont signalées brièvement). Un nombre posé dans un emplacement pré-placé est
+// verrouillé. Un pré-placé n'est jamais sélectionné.
 
 import { structureDe } from './probleme.ts';
-import { consequencesPlacement, nombresUtilises, type ConsequencesPlacement } from './regles.ts';
+import { consequencesPlacement, nombresUtilises } from './regles.ts';
 import type { ActionCases, DonneesCases, EtatCases } from './types.ts';
 
 export type Selection =
@@ -25,11 +29,49 @@ export type Selection =
 
 export const AUCUNE: Selection = { type: 'aucune' };
 
-/** Résultat d'un toucher : nouvelle sélection et, éventuellement, une action à jouer. */
+/**
+ * Signal visuel bref sur des cases :
+ * - deplacement : cases quittées par un nombre déplacé (pose acceptée) ;
+ * - conflit : cases où le nombre croisé contredit le nombre refusé (pose refusée).
+ */
+export type Signal = {
+  readonly type: 'deplacement' | 'conflit';
+  readonly cases: readonly number[];
+};
+
+/** Résultat d'un toucher : nouvelle sélection, action à jouer (ou null) et signal à montrer (ou null). */
 export type Reaction = {
   readonly selection: Selection;
   readonly action: ActionCases | null;
+  readonly signal: Signal | null;
 };
+
+/** Toucher sans effet sur l'état. */
+function selectionSeule(selection: Selection): Reaction {
+  return { selection, action: null, signal: null };
+}
+
+/**
+ * Pose demandée d'un nombre dans un emplacement. Acceptée : l'action est jouée tout de suite et la
+ * sélection levée. Refusée pour conflit : rien n'est joué, la sélection reste, les cases en conflit
+ * sont signalées. Autre refus (déjà là, verrouillé…) : sans effet.
+ */
+export function poser(selection: Selection, etat: EtatCases, donnees: DonneesCases, emplacement: number, nombre: string): Reaction {
+  const c = consequencesPlacement(etat, donnees, emplacement, nombre);
+  if (!c.possible) {
+    return { selection, action: null, signal: c.conflits.length > 0 ? { type: 'conflit', cases: c.conflits } : null };
+  }
+  const { grille } = structureDe(donnees).probleme;
+  // Cases quittées par le nombre déplacé (celles qu'il occupe à nouveau ne sont pas signalées)
+  const nouvelles = new Set(grille.emplacements[emplacement]?.cellules ?? []);
+  const quittees =
+    c.deplaceDepuis === null ? [] : (grille.emplacements[c.deplaceDepuis]?.cellules ?? []).filter((cel) => !nouvelles.has(cel));
+  return {
+    selection: AUCUNE,
+    action: { type: 'placer', emplacement, nombre },
+    signal: quittees.length > 0 ? { type: 'deplacement', cases: quittees } : null,
+  };
+}
 
 /** Emplacements modifiables (non pré-placés) qui passent par une case, l'horizontal d'abord. */
 function emplacementsModifiables(donnees: DonneesCases, cellule: number): number[] {
@@ -59,37 +101,32 @@ export function estVerrouille(etat: EtatCases, donnees: DonneesCases, nombre: st
 /** Toucher une case (ou une case noire, ou la marge : cellule = null). */
 export function toucherCase(selection: Selection, etat: EtatCases, donnees: DonneesCases, cellule: number | null): Reaction {
   const possibles = cellule === null ? [] : emplacementsModifiables(donnees, cellule);
-  if (cellule === null || possibles.length === 0) return { selection: AUCUNE, action: null };
+  if (cellule === null || possibles.length === 0) return selectionSeule(AUCUNE);
 
   if (selection.type === 'nombre') {
     const cibles = new Set(emplacementsCibles(etat, donnees, selection.nombre));
     const cible = possibles.find((id) => cibles.has(id));
-    if (cible !== undefined) {
-      return {
-        selection: { type: 'emplacement', emplacement: cible, cellule },
-        action: { type: 'placer', emplacement: cible, nombre: selection.nombre },
-      };
-    }
+    if (cible !== undefined) return poser(selection, etat, donnees, cible, selection.nombre);
   }
 
   // Même case touchée à nouveau : emplacement suivant (vertical ↔ horizontal)
   const meme = selection.type === 'emplacement' && selection.cellule === cellule;
   const rang = meme ? (possibles.indexOf(selection.emplacement) + 1) % possibles.length : 0;
-  return { selection: { type: 'emplacement', emplacement: possibles[rang] ?? possibles[0] ?? 0, cellule }, action: null };
+  return selectionSeule({ type: 'emplacement', emplacement: possibles[rang] ?? possibles[0] ?? 0, cellule });
 }
 
 /** Toucher un nombre de la liste. */
 export function toucherNombre(selection: Selection, etat: EtatCases, donnees: DonneesCases, nombre: string): Reaction {
-  if (estVerrouille(etat, donnees, nombre)) return { selection, action: null };
+  if (estVerrouille(etat, donnees, nombre)) return selectionSeule(selection);
   if (selection.type === 'emplacement') {
     const e = structureDe(donnees).probleme.grille.emplacements[selection.emplacement];
     if (e === undefined || e.cellules.length !== nombre.length || etat.places[selection.emplacement] === nombre) {
-      return { selection, action: null }; // autre longueur (estompé) ou déjà là : sans effet
+      return selectionSeule(selection); // autre longueur (estompé) ou déjà là : sans effet
     }
-    return { selection, action: { type: 'placer', emplacement: selection.emplacement, nombre } };
+    return poser(selection, etat, donnees, selection.emplacement, nombre);
   }
-  if (selection.type === 'nombre' && selection.nombre === nombre) return { selection: AUCUNE, action: null };
-  return { selection: { type: 'nombre', nombre }, action: null };
+  if (selection.type === 'nombre' && selection.nombre === nombre) return selectionSeule(AUCUNE);
+  return selectionSeule({ type: 'nombre', nombre });
 }
 
 /** Bouton « Effacer » : vide l'emplacement sélectionné, ou celui du nombre sélectionné. */
@@ -178,22 +215,6 @@ export function casesEnEvidence(
   if (selection.type === 'emplacement') return { selection: cellulesDe([selection.emplacement]), cibles: new Set() };
   if (selection.type === 'nombre') return { selection: new Set(), cibles: cellulesDe(emplacementsCibles(etat, donnees, selection.nombre)) };
   return { selection: new Set(), cibles: new Set() };
-}
-
-/** Emplacements à signaler brièvement après un placement : nombre déplacé et nombres croisés retirés. */
-export function emplacementsASignaler(c: ConsequencesPlacement): number[] {
-  if (!c.possible) return [];
-  return [...(c.deplaceDepuis === null ? [] : [c.deplaceDepuis]), ...c.retires];
-}
-
-/** Cases à signaler avant de jouer une action (vides si l'action n'en retire aucun autre nombre). */
-export function casesASignaler(etat: EtatCases, donnees: DonneesCases, action: ActionCases): number[] {
-  if (action.type !== 'placer') return [];
-  const { grille } = structureDe(donnees).probleme;
-  const nouvelles = new Set(grille.emplacements[action.emplacement]?.cellules ?? []);
-  const ids = emplacementsASignaler(consequencesPlacement(etat, donnees, action.emplacement, action.nombre));
-  // Les cases reprises par le nouveau nombre ne sont pas « retirées » : on ne les signale pas
-  return [...new Set(ids.flatMap((id) => grille.emplacements[id]?.cellules ?? []))].filter((c) => !nouvelles.has(c));
 }
 
 /**

@@ -2,6 +2,9 @@
    Couleurs : variables de thème (src/styles/theme.css), direction « Ardoise ».
    Grille : le socle la place dans un conteneur dimensionné (container-type: size) ; elle y prend
    la plus grande taille possible en gardant ses proportions (--l colonnes, --h lignes).
+   Cases noires : couleur du fond de l'appli (--couleur-case-noire), elles se fondent dans la page ;
+   la forme de la grille est dessinée par le contour des cases blanches (ombre de 1 px qui remplit
+   l'espace de 1 px entre deux cases).
    Liste : dans la zone du pavé que le socle confie à la vue (elle défile si besoin). */
 
 .chiffres-cases-grille {
@@ -14,10 +17,8 @@
   grid-template-columns: repeat(var(--l), minmax(0, 1fr));
   grid-template-rows: repeat(var(--h), minmax(0, 1fr));
   gap: 1px;
-  padding: 2px;
-  background: var(--couleur-trait-epais);
-  border-radius: 6px;
-  overflow: hidden;
+  padding: 1px;
+  background: var(--couleur-case-noire);
 }
 
 .chiffres-cases-noire {
@@ -34,6 +35,7 @@
   border: 0;
   border-radius: 0;
   background: var(--couleur-case);
+  box-shadow: 0 0 0 1px var(--couleur-trait-epais);
   color: var(--couleur-saisie);
   font-size: calc(62cqi / var(--l));
   font-weight: 400;
@@ -83,20 +85,41 @@
 .chiffres-cases-case.est-indice { background: var(--couleur-indice-fond); }
 .chiffres-cases-case.est-a-placer { color: var(--couleur-place); font-weight: 700; }
 
-/* Signal bref : cases d'un nombre déplacé ou retiré par le dernier placement */
+/* Signal bref : cases quittées par un nombre déplacé (0,9 s) */
 .chiffres-cases-case.est-signal {
   animation: chiffres-cases-signal 0.9s ease-out;
 }
 
+/* Pose refusée : les cases en conflit clignotent (3 pulsations, ~1 s) */
+.chiffres-cases-case.est-conflit {
+  animation: chiffres-cases-conflit 0.35s ease-in-out 3;
+}
+
+/* Le contour de 1 px (forme de la grille) est gardé sous l'anneau ambré */
 @keyframes chiffres-cases-signal {
-  0%, 40% { background: var(--couleur-indice-fond); box-shadow: inset 0 0 0 3px var(--couleur-indice); }
-  100% { background: var(--couleur-case); box-shadow: inset 0 0 0 3px transparent; }
+  0%, 40% {
+    background: var(--couleur-indice-fond);
+    box-shadow: 0 0 0 1px var(--couleur-trait-epais), inset 0 0 0 3px var(--couleur-indice);
+  }
+  100% {
+    background: var(--couleur-case);
+    box-shadow: 0 0 0 1px var(--couleur-trait-epais), inset 0 0 0 3px transparent;
+  }
+}
+
+@keyframes chiffres-cases-conflit {
+  0%, 100% { box-shadow: 0 0 0 1px var(--couleur-trait-epais), inset 0 0 0 3px transparent; }
+  50% {
+    background: var(--couleur-indice-fond);
+    box-shadow: 0 0 0 1px var(--couleur-trait-epais), inset 0 0 0 3px var(--couleur-indice);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chiffres-cases-case.est-signal {
+  .chiffres-cases-case.est-signal,
+  .chiffres-cases-case.est-conflit {
     animation: none;
-    box-shadow: inset 0 0 0 3px var(--couleur-indice);
+    box-shadow: 0 0 0 1px var(--couleur-trait-epais), inset 0 0 0 3px var(--couleur-indice);
   }
 }
 

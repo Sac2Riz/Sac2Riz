@@ -122,8 +122,8 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
 - Module `src/games/chiffres-cases/` (non enregistré dans le registre avant la 4b) : modèle de grille
   (emplacements déduits des cases noires, liste des nombres déduite de la solution), D/E/A, gardes.
 - Actions : `placer` (nombre entier dans un emplacement ; **décisions de l'utilisateur** : un nombre déjà
-  posé ailleurs est déplacé ; un nombre croisé contradictoire est retiré, avec un court signal visuel en 4b
-  fourni par `consequencesPlacement`) et `effacer`. Nombres utilisés (à barrer), erreurs, fin de partie.
+  posé ailleurs est déplacé ; un nombre croisé contradictoire était retiré — **remplacé après la 4b** : la
+  pose est refusée, voir ci-dessous) et `effacer`. Nombres utilisés (à barrer), erreurs, fin de partie.
 - Générateur : motif symétrique et connexe, chiffres au hasard, « marche » de petites modifications vers
   les grilles dures, pré-placés selon le niveau ; solution unique prouvée par la résolution logique.
 - Solveur logique « humain » (une technique par fichier), notation (niveau + force), indices en deux temps
@@ -158,6 +158,16 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
   complète lisibles, sélection, nombre d'abord, signal, indice, pause, deux « Continuer » ; sudoku inchangé.
 - Vérifié : compteur des touches et « Remplir les notes » bien retirés depuis la 3c ; `restants` gardé
   (estompe une touche épuisée).
+- **Corrections après les essais sur tablette (demandées par l'utilisateur)** :
+  - cases noires de la couleur du fond de l'appli (`--couleur-case-noire: var(--couleur-fond)`) ; la grille
+    se lit par le contour des cases blanches, en clair et en sombre ;
+  - pose définitive dès le toucher qui la fait, dans les deux façons de jouer : la sélection est levée
+    (elle restait active, et le nombre posé apparaissait « choisi » au lieu de barré : la pose semblait
+    attendre une validation, alors qu'elle était déjà jouée et sauvegardée) ;
+  - un nombre qui contredit un nombre croisé (pré-placé ou non) **n'est plus posé** et le nombre croisé
+    n'est plus retiré : les cases en conflit clignotent (3 pulsations, ~1 s) ; un déplacement en conflit
+    laisse le nombre à son ancien emplacement. Indice inchangé : il ne propose jamais de pose en conflit.
+  - Tests : interaction (24 tests), règles ; 445 tests. Vérifié dans Edge (portrait, paysage, clair, sombre).
 
 ## Étape 5 — PWA, sauvegarde externe, déploiement
 - Service worker : mise en cache de tous les fichiers, 100 % hors ligne, mise à jour propre.

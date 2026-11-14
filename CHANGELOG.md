@@ -2,6 +2,26 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 4b, corrections] — Chiffres casés : après les essais sur tablette — 2026-11-14
+
+### Modifié
+- Cases noires de la couleur exacte du fond de l'appli : `--couleur-case-noire` pointe sur
+  `var(--couleur-fond)` (suit le thème). La forme de la grille est dessinée par le contour de 1 px des cases
+  blanches (`--couleur-trait-epais`), lisible en clair et en sombre.
+- Pose définitive dès le toucher qui place le nombre (emplacement d'abord comme nombre d'abord) : la
+  sélection est levée. Cause : la pose était bien jouée et sauvegardée tout de suite, mais la sélection
+  restait active, l'emplacement surligné et le nombre posé affiché « choisi » (fond plein) au lieu de
+  barré ; il fallait toucher ailleurs pour voir la pose « validée ».
+- Un nombre qui contredit un nombre croisé déjà posé (pré-placé ou non) **n'est plus posé** ; le nombre
+  croisé n'est plus retiré. Rien ne change (le nombre reste disponible, la sélection reste) et les cases en
+  conflit clignotent (signal ambré, 3 pulsations, ~1 s). Même règle pour un déplacement : en cas de conflit,
+  le nombre reste à son ancien emplacement. Un déplacement compatible ne change pas (cases quittées
+  signalées).
+- `consequencesPlacement` : `conflits` (cases en conflit) remplace `retires`. `interaction.ts` :
+  `Reaction.signal` (`deplacement` | `conflit`) et `poser` remplacent `casesASignaler`.
+- L'indice n'est pas modifié et n'entre pas en conflit avec la règle : il signale d'abord les nombres faux,
+  puis ne pose que des nombres de la solution.
+
 ## [Étape 4b] — Chiffres casés : interface et intégration — 2026-11-14
 
 ### Ajouté

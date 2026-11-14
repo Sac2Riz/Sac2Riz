@@ -98,5 +98,6 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - ✅ Étape 4a — Chiffres casés, logique pure : modèle, règles, générateur, solveur (10 techniques),
   notation, indices, packs Expert/Diabolique ; `MetaJeu.generation` (niveau servi par son pack, budget de fond).
 - ✅ Étape 4b — Chiffres casés jouables (registre, vue, liste groupée, nombre d'abord, signal) ; contrat de
-  vue : `monter(zones, contexte)` (zone du pavé confiée à la vue) et `outilsMasques`.
+  vue : `monter(zones, contexte)` (zone du pavé confiée à la vue) et `outilsMasques`. Corrigé après essais :
+  cases noires = fond de l'appli, pose en un toucher (sélection levée), pose refusée en cas de conflit.
 - ⏭️ Prochaine : **Étape 5** — PWA, sauvegarde externe, déploiement.

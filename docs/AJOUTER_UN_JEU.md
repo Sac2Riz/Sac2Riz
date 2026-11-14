@@ -131,12 +131,18 @@ d'une autre nature apporte tout dans son dossier, sans toucher au socle :
 - **Logique des touchers à part** : la vue ne fait que dessiner et transmettre les touchers ; ce que produit
   chaque toucher (nouvelle sélection, action à jouer, éléments à mettre en évidence) est calculé par des
   fonctions pures (`chiffres-cases/interaction.ts`), testées sous Node comme le reste du jeu.
-- **Signal visuel d'une conséquence** : quand une action en modifie d'autres (nombre déplacé, nombres
-  croisés retirés), la logique fournit une fonction qui les décrit **avant** l'action
-  (`consequencesPlacement`) ; la vue la consulte juste avant `contexte.jouer` et anime brièvement les
-  cases concernées (sans animation si `prefers-reduced-motion`).
+- **Pose en un seul toucher** : le toucher qui pose joue l'action tout de suite (le socle enregistre le
+  coup, sauvegarde et contrôle la fin) **et lève la sélection**. Une sélection qui reste active après la
+  pose fait croire à un aperçu à confirmer (correction de la 4b).
+- **Refus expliqué** : un coup interdit par les règles (ici : nombre qui contredit un nombre croisé) est
+  sans effet dans `appliquer` ; la logique fournit une fonction qui le dit **avant** l'action, avec la
+  raison (`consequencesPlacement` : cases en conflit, ou cases quittées par un nombre déplacé).
+  `interaction.ts` en tire un signal (`Reaction.signal`) que la vue anime brièvement : clignotement des
+  cases en conflit, ou signal des cases quittées (contour fixe si `prefers-reduced-motion`). Vérifier que
+  l'indice ne propose jamais un coup refusé (le test du contrat joue des parties entières par les indices).
 - **Grille non carrée** : la vue donne à sa grille les proportions `--l / --h` et la largeur
-  `min(100cqw, 100cqh × l / h)` ; couleur des cases noires : `--couleur-case-noire`.
+  `min(100cqw, 100cqh × l / h)`. Cases noires : `--couleur-case-noire`, qui pointe sur le fond de l'appli
+  (`var(--couleur-fond)`) ; la forme de la grille est dessinée par le contour des cases blanches.
 
 ## Si le format d'un jeu change plus tard
 

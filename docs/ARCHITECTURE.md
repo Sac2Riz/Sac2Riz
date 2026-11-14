@@ -285,9 +285,9 @@ src/games/chiffres-cases/
 │                        A = placer un nombre entier dans un emplacement | effacer un emplacement
 ├─ grille.ts             emplacements (≥ 2 cases) déduits des noires, croisements, connexité, symétrie, noms
 ├─ probleme.ts           liste des nombres (triée par longueur puis valeur) ; structureDe(D) en cache (WeakMap)
-├─ regles.ts             règles du joueur : déplacement d'un nombre déjà posé, retrait des nombres croisés
-│                        contradictoires (consequencesPlacement : signal visuel de la 4b), nombres utilisés,
-│                        erreurs, fin de partie ; un pré-placé n'est jamais modifié
+├─ regles.ts             règles du joueur : déplacement d'un nombre déjà posé ; pose REFUSÉE si le nombre
+│                        contredit un nombre croisé (consequencesPlacement : cases en conflit, pour la vue) ;
+│                        nombres utilisés, erreurs, fin de partie ; un pré-placé n'est jamais modifié
 ├─ solveur/              état { affectes, candidats } ; une technique par fichier (techniques/) ; familles/
 │                        croisement (partagée par les 3 croisements) ; hypotheses.ts (Diabolique, impasse bornée)
 ├─ backtracking.ts       compte les solutions (unicité)
@@ -297,9 +297,10 @@ src/games/chiffres-cases/
 ├─ gardes.ts, logique.ts, packs.ts, packs/
 ├─ interaction.ts        touchers (pur) : emplacement d'abord (horizontal puis vertical au second toucher) ou
 │                        nombre d'abord (cibles = emplacements vides de sa longueur), liste groupée (groupe
-│                        visé en tête, barrés, verrouillés, estompés), Effacer, cases à signaler, flèches
-├─ vue.ts, style.css     grille à cases noires (proportions --l / --h), liste dans la zone du pavé, signal
-│                        bref (consequencesPlacement) ; index.ts (point d'entrée du registre)
+│                        visé en tête, barrés, verrouillés, estompés), pose en un toucher (sélection levée),
+│                        refus en cas de conflit, signal (déplacement / conflit), Effacer, flèches
+├─ vue.ts, style.css     grille (proportions --l / --h ; cases noires = fond de l'appli, contour des cases
+│                        blanches), liste dans la zone du pavé, animations des signaux ; index.ts (registre)
 ```
 
 Tests : `tests/games/chiffres-cases/` (une technique par fichier dans `techniques/`) ; tests longs

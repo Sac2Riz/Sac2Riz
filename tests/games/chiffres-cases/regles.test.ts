@@ -1,4 +1,4 @@
-// Tests des règles du joueur aux chiffres casés (placer, déplacer, retirer, effacer, erreurs, fin).
+// Tests des règles du joueur aux chiffres casés (placer, déplacer, conflits, effacer, erreurs, fin).
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { logique } from '../../../src/games/chiffres-cases/logique.ts';
@@ -42,16 +42,31 @@ describe('chiffres casés : règles du joueur', () => {
   test('un nombre déjà posé ailleurs est déplacé', () => {
     const { donnees } = structureA();
     const etat = jouer(logique.etatInitial(donnees), donnees, placer(H1, '146'));
-    assert.deepEqual(consequencesPlacement(etat, donnees, V1, '146'), { possible: true, deplaceDepuis: H1, retires: [] });
+    assert.deepEqual(consequencesPlacement(etat, donnees, V1, '146'), { possible: true, deplaceDepuis: H1, conflits: [] });
     assert.deepEqual(jouer(etat, donnees, placer(V1, '146')).places, [null, '146', null, null]);
   });
 
-  test('un nombre croisé qui contredit le nouveau est retiré (et signalé à la vue)', () => {
+  test("un nombre qui contredit un nombre croisé n'est pas posé ; le nombre croisé reste (cases en conflit données)", () => {
     const { donnees } = structureA();
     const etat = jouer(logique.etatInitial(donnees), donnees, placer(H1, '123'), placer(H3, '678'));
-    // 358 en vertical L1C1 : « 3 » contredit le « 1 » de 123 en L1C1, « 8 » contredit le « 6 » de 678 en L3C1
-    assert.deepEqual(consequencesPlacement(etat, donnees, V1, '358'), { possible: true, deplaceDepuis: null, retires: [H1, H3] });
-    assert.deepEqual(jouer(etat, donnees, placer(V1, '358')).places, [null, '358', null, null]);
+    // 358 en vertical L1C1 : « 3 » contredit le « 1 » de 123 en L1C1 (case 0), « 8 » contredit le « 6 »
+    // de 678 en L3C1 (case 6)
+    assert.deepEqual(consequencesPlacement(etat, donnees, V1, '358'), { possible: false, deplaceDepuis: null, conflits: [0, 6] });
+    assert.equal(logique.appliquer(etat, placer(V1, '358'), donnees), etat);
+    // 146 concorde avec les deux : il est posé
+    assert.deepEqual(jouer(etat, donnees, placer(V1, '146')).places, ['123', '146', null, '678']);
+  });
+
+  test('un nombre déplacé vers un emplacement en conflit reste à son ancien emplacement', () => {
+    const { donnees } = structureA();
+    // 123 en H1, 146 en H3 : déplacer 146 en V1 est compatible (« 1 » en L1C1 ; H3 est quitté)…
+    const etat = jouer(logique.etatInitial(donnees), donnees, placer(H1, '123'), placer(H3, '146'));
+    assert.deepEqual(jouer(etat, donnees, placer(V1, '146')).places, ['123', '146', null, null]);
+    // …mais pas 358, posé en H3, qui contredirait 123 en L1C1
+    const avec358 = jouer(logique.etatInitial(donnees), donnees, placer(H1, '123'), placer(H3, '358'));
+    assert.deepEqual(avec358.places, ['123', null, null, '358']);
+    assert.deepEqual(consequencesPlacement(avec358, donnees, V1, '358'), { possible: false, deplaceDepuis: null, conflits: [0] });
+    assert.equal(logique.appliquer(avec358, placer(V1, '358'), donnees), avec358);
   });
 
   test('un pré-placé ne bouge jamais : ni effacé, ni remplacé, ni contredit, ni déplacé', () => {
@@ -65,7 +80,7 @@ describe('chiffres casés : règles du joueur', () => {
     ]) {
       assert.equal(logique.appliquer(etat, action, donnees), etat);
     }
-    assert.equal(consequencesPlacement(etat, donnees, V1, '358').possible, false);
+    assert.deepEqual(consequencesPlacement(etat, donnees, V1, '358'), { possible: false, deplaceDepuis: null, conflits: [0] });
   });
 
   test('effacer un emplacement ; effacer un emplacement vide est sans effet', () => {
