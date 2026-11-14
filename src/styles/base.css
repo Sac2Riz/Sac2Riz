@@ -92,7 +92,7 @@ button:disabled {
   text-align: center;
 }
 
-/* Menu (Statistiques, Réglages) : en haut à droite sur un écran large, sous le titre sinon */
+/* Menu (Statistiques, [Mettre à jour], Réglages) : en haut à droite sur un écran large, sous le titre sinon */
 .accueil-menu {
   display: flex;
   flex-wrap: wrap;
@@ -110,7 +110,8 @@ button:disabled {
   background: transparent;
 }
 
-@media (min-width: 40rem) {
+/* Assez large pour le titre centré ET les trois boutons à droite (Statistiques, Mettre à jour, Réglages) */
+@media (min-width: 60rem) {
   .accueil-menu {
     position: absolute;
     top: 0;
@@ -1045,32 +1046,125 @@ button:disabled {
   }
 }
 
-/* ---------- Bandeau « Nouvelle version disponible » (étape 5) ---------- */
+/* ---------- Bouton « Mettre à jour » et sa fenêtre ----------
+   Le bouton n'apparaît qu'avec une nouvelle version prête, à côté de Réglages (accueil, fiche,
+   partie). Petit point d'accent pour qu'on le remarque, sans clignoter. */
 
-.bandeau-maj {
-  position: fixed;
-  left: 50%;
-  bottom: max(var(--espace-2), env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 20;
+.bouton-maj[hidden] {
+  display: none;
+}
+
+.bouton-maj {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-color: var(--couleur-accent);
+  color: var(--couleur-accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bouton-maj-point {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--couleur-accent);
+  box-shadow: 0 0 0 2px var(--couleur-fond);
+}
+
+/* Barre de la partie, colonne étroite du paysage : l'icône seule (le libellé reste lu par l'aria-label) */
+@media (orientation: landscape) {
+  .partie-barre .bouton-maj-libelle {
+    display: none;
+  }
+
+  .partie-barre .bouton-maj {
+    padding: 0;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+}
+
+/* Barre des écrans secondaires : outils à droite (Mettre à jour, Réglages) */
+.ecran-barre-outils {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--espace-1);
-  max-width: calc(100vw - 2 * var(--espace-2));
-  padding: var(--espace-1) var(--espace-1) var(--espace-1) var(--espace-2);
-  background: var(--couleur-surface);
-  border: 1px solid var(--couleur-bordure);
-  border-radius: calc(var(--rayon) * 1.5);
-  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 20%);
+}
+
+.dialogue-maj {
+  width: min(34rem, calc(100vw - 2rem));
+  max-width: none;
+}
+
+.maj-contenu {
+  display: grid;
+  gap: var(--espace-2);
+}
+
+.maj-versions {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.maj-version {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espace-2);
+}
+
+.maj-version dt {
+  color: var(--couleur-texte-doux);
+}
+
+.maj-version dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.maj-rubrique {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.maj-rubrique-titre {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--couleur-accent);
+}
+
+.maj-groupe-titre {
+  margin: 0.25rem 0 0;
   font-size: 1rem;
-  animation: apparaitre 0.2s ease-out both;
 }
 
-.bandeau-maj-texte {
-  flex: 1;
+.maj-liste {
+  margin: 0.25rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.25rem;
 }
 
-.bandeau-maj-bouton {
-  padding: 0.4rem 0.9rem;
-  white-space: nowrap;
+.maj-texte {
+  margin: 0;
+}
+
+.maj-etat:empty {
+  display: none;
+}
+
+.maj-etat {
+  margin: 0;
+  font-weight: 600;
+  color: var(--couleur-accent);
 }

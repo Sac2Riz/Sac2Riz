@@ -1,0 +1,34 @@
+{
+  "versions": [
+    {
+      "id": "2026-11-14-mise-a-jour",
+      "date": "2026-11-14",
+      "titre": "Des mises à jour plus claires",
+      "nouveautes": [
+        "Quand une nouvelle version est prête, un bouton « Mettre à jour » apparaît à côté des réglages.",
+        "Avant de mettre à jour, une fenêtre montre les nouveautés et rappelle que vos parties, vos statistiques et vos réglages sont gardés.",
+        "Les réglages s'ouvrent aussi depuis la fiche de chaque jeu."
+      ]
+    },
+    {
+      "id": "2026-11-14-accueil-cartes",
+      "date": "2026-11-14",
+      "titre": "Un accueil en cartes",
+      "nouveautes": [
+        "L'accueil présente les jeux en cartes, avec un aperçu de la grille : votre partie en cours, ou un exemple."
+      ]
+    },
+    {
+      "id": "2026-11-14-fiches",
+      "date": "2026-11-14",
+      "titre": "Une fiche pour chaque jeu",
+      "nouveautes": [
+        "Toucher un jeu ouvre sa fiche : les règles, un aperçu, la reprise de votre partie et le choix du niveau.",
+        "Chaque niveau indique sa force, par exemple « Moyen · Force 5-6 », et la force exacte de la grille s'affiche pendant la partie et à la fin.",
+        "Les réglages sont rangés en trois parties : l'appli, tous les jeux, et chaque jeu.",
+        "Le bouton retour d'Android ramène de la partie à la fiche du jeu, puis à l'accueil.",
+        "La date de la version de l'appli est indiquée dans les réglages."
+      ]
+    }
+  ]
+}

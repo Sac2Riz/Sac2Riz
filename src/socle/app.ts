@@ -60,6 +60,11 @@ export type OptionsApp = {
   readonly donnees: ActionsDonnees;
   /** Version de l'appli mise en forme (« 14/11/2026 17:30 · a1b2c3d4 »), pour les réglages. */
   readonly version: Promise<string>;
+  /**
+   * Nouveau bouton « Mettre à jour » (socle/pwa/annonce-mise-a-jour.ts), placé à côté de chaque
+   * bouton Réglages ; masqué tant qu'aucune nouvelle version n'est prête.
+   */
+  readonly boutonMiseAJour: () => HTMLElement;
 };
 
 /** Ce que l'appli expose à main.ts. */
@@ -185,6 +190,7 @@ export function demarrerApp(o: OptionsApp): App {
       ouvrir: (id) => void enSecurite(() => ouvrirFiche(id)),
       statistiques: () => void enSecurite(() => ouvrirStats(null)),
       reglages: () => void afficherReglages(o.jeux.map((m) => m.meta)),
+      boutonMiseAJour: o.boutonMiseAJour,
     });
     // Aperçus dessinés dès que chaque jeu est chargé (l'accueil s'affiche sans les attendre)
     for (const { module, partie } of jeux) {
@@ -234,6 +240,8 @@ export function demarrerApp(o: OptionsApp): App {
       continuer: () => void enSecurite(() => continuer(id)),
       nouvelle: (niveau) => void enSecurite(() => nouvelle(id, niveau)),
       statistiques: () => void enSecurite(() => ouvrirStats(id)),
+      reglages: () => void afficherReglages(o.jeux.map((m) => m.meta)),
+      boutonMiseAJour: o.boutonMiseAJour,
       retour,
     });
   }
@@ -277,6 +285,7 @@ export function demarrerApp(o: OptionsApp): App {
       partie,
       reglages: () => reglagesVue(reglages, meta),
       ouvrirReglages: () => afficherReglages([meta]),
+      boutonMiseAJour: o.boutonMiseAJour,
       parties: o.parties,
       maintenant,
       retour,

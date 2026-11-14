@@ -59,8 +59,9 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   `src/moteur/notation.ts` : **incrémenter `VERSION_NOTATION`** si un seuil ou une technique change, puis `npm run packs`.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
 - PWA : `src/service-worker.ts` (racine de `dist/`) ; liste des fichiers et version **écrites automatiquement**
-  par `npm run build` (`scripts/manifeste-precache.ts`). Mise à jour proposée par un bandeau, **jamais de
-  rechargement automatique** (`src/socle/pwa/`). Export/import : `src/socle/donnees/`, écriture atomique
+  par `npm run build` (`scripts/manifeste-precache.ts`). Mise à jour proposée par un bouton « Mettre à jour »
+  (à côté de Réglages) et une fenêtre de confirmation avec les nouveautés (`public/nouveautes.json`), **jamais
+  de rechargement automatique** (`src/socle/pwa/`). Export/import : `src/socle/donnees/`, écriture atomique
   `Stockage.remplacerDonnees`. Déploiement : `.github/workflows/deployer.yml` (push sur `main`).
 - `MetaJeu.generation` : un niveau peut être servi uniquement par son pack (`{ mode: 'pack' }`) ou avoir un
   budget de génération de fond plus long (`{ mode: 'worker', budgetFondMs }`).
@@ -86,6 +87,11 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
 - **Une étape à la fois** ([docs/ROADMAP.md](docs/ROADMAP.md)) ; attendre le feu vert de l'utilisateur avant la suivante.
 - Fin d'étape : `npm run check` vert → mettre à jour **CLAUDE.md** (état), **docs/ROADMAP.md**, **CHANGELOG.md** → commit clair.
 - Commit uniquement si `npm run check` passe.
+- **Nouveautés pour le joueur** : à chaque modification VISIBLE pour le joueur, ajouter une ligne dans
+  `public/nouveautes.json`, **dans le même commit** (en français simple, sans détail technique ; nouveau groupe
+  `{ id: "AAAA-MM-JJ-sujet", date, titre, nouveautes }` en TÊTE de liste pour une nouvelle mise en ligne, ou
+  ligne ajoutée au groupe en tête s'il n'a pas encore été poussé ; ne jamais changer l'`id` d'un groupe publié).
+  Correction interne, documentation, tests : rien à ajouter. Le CHANGELOG reste le journal technique.
 - **Historique Git** : ne jamais le réécrire (`commit --amend`, `rebase`, `reset`, `push --force`…) sans avoir
   d'abord demandé l'autorisation à l'utilisateur en expliquant pourquoi. Et **jamais** sur un commit déjà
   poussé sur GitHub. Pour corriger un commit, en faire un nouveau.
@@ -119,5 +125,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   Par jeu), réglages propres déclarés par chaque jeu (`MetaJeu.reglages`), migration des anciens réglages ;
   version = date du build (figée par les sources, `scripts/date-build.ts`) + empreinte ; retour d'Android
   partie → fiche → accueil (`socle/navigation.ts`).
+- ✅ Mises à jour : bouton « Mettre à jour » à côté de Réglages et fenêtre de confirmation (versions,
+  nouveautés lues dans la nouvelle version, ce qui est conservé / supprimé) ; nouveautés pour le joueur dans
+  `public/nouveautes.json`.
 - ⏭️ Prochaine : étape 6b (7 directions de design proposées comme thèmes), puis 6c (finalisation), puis
   variantes et nouveaux jeux.

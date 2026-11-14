@@ -34,7 +34,7 @@ export function estInfosVersion(valeur: unknown): valeur is InfosVersion {
   return typeof version === 'string' && version.length > 0 && typeof date === 'string' && !Number.isNaN(Date.parse(date));
 }
 
-/** Message de la page vers le service worker en attente : « prends la main » (clic sur Recharger). */
+/** Message de la page vers le service worker en attente : « prends la main » (« Mettre à jour » confirmé par le joueur). */
 export type MessageVersServiceWorker = { readonly type: 'activer' };
 
 /** Préfixe des caches de l'appli (un cache par version : « sac2riz-<version> »). */

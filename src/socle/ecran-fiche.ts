@@ -2,7 +2,8 @@
 // Contenu : nom et description (MetaJeu), aperçu en petit (la partie en cours, sinon la grille
 // d'exemple de la fiche du jeu, dessinées par VueJeu.apercu, non jouables), « Continuer » (niveau,
 // force exacte, temps) si une partie est en cours, « Nouvelle partie » avec le choix du niveau,
-// les règles (FicheJeu.regles) et l'accès aux statistiques du jeu.
+// les règles (FicheJeu.regles) et l'accès aux statistiques du jeu ; en haut à droite, « Réglages » (et
+// « Mettre à jour » quand une nouvelle version est prête).
 // Tout le contenu propre au jeu vient de son module (meta.ts, fiche.ts, vue.apercu) : le socle ne
 // connaît aucun jeu. L'écran ne décide de rien : il appelle les actions de l'appli (app.ts).
 
@@ -34,6 +35,9 @@ export type ActionsFiche = {
   readonly continuer: () => void;
   readonly nouvelle: (niveau: Niveau) => void;
   readonly statistiques: () => void;
+  readonly reglages: () => void;
+  /** Bouton « Mettre à jour » (visible seulement quand une nouvelle version est prête). */
+  readonly boutonMiseAJour: () => HTMLElement;
   readonly retour: () => void;
 };
 
@@ -93,7 +97,10 @@ function sectionRegles({ fiche }: OptionsFiche): HTMLElement {
 export function afficherFiche(conteneur: HTMLElement, o: OptionsFiche, actions: ActionsFiche): void {
   const ecran = creer('div', 'ecran-fiche');
   const barre = creer('header', 'ecran-barre');
-  barre.append(boutonIcone('bouton-icone', '←', 'Retour à l\'accueil', actions.retour), creer('h1', 'ecran-titre', o.meta.nom));
+  const titre = creer('h1', 'ecran-titre', o.meta.nom);
+  const outils = creer('div', 'ecran-barre-outils');
+  outils.append(actions.boutonMiseAJour(), boutonIcone('bouton-icone', '⚙', 'Réglages', actions.reglages));
+  barre.append(boutonIcone('bouton-icone', '←', 'Retour à l\'accueil', actions.retour), titre, outils);
 
   const presentation = creer('div', 'fiche-presentation');
   presentation.append(creer('p', 'fiche-description', o.meta.description), sectionJouer(o, actions));

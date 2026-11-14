@@ -3,7 +3,8 @@
 // aperçu du jeu en lecture seule (la partie en cours, sinon la grille d'exemple, dessiné ensuite par
 // l'appli avec VueJeu.apercu), le nom, la description courte et la pastille « Partie en cours ».
 // Toute la carte se touche : elle ouvre la fiche du jeu (ecran-fiche.ts).
-// En haut, « Statistiques » (tous les jeux) et « Réglages ». L'écran ne décide de rien : il appelle
+// En haut, « Statistiques » (tous les jeux), « Mettre à jour » (seulement quand une nouvelle version
+// est prête) et « Réglages ». L'écran ne décide de rien : il appelle
 // les actions fournies par l'appli (app.ts).
 
 import type { PartieSauvegardee } from '../types/sauvegarde.ts';
@@ -20,6 +21,8 @@ export type ActionsAccueil = {
   readonly ouvrir: (jeu: string) => void;
   readonly statistiques: () => void;
   readonly reglages: () => void;
+  /** Bouton « Mettre à jour » (visible seulement quand une nouvelle version est prête). */
+  readonly boutonMiseAJour: () => HTMLElement;
 };
 
 /** Boutons « Statistiques » et « Réglages » de l'en-tête. */
@@ -31,7 +34,7 @@ function menu(actions: ActionsAccueil): HTMLElement {
     b.append(creer('span', 'icone', icone), creer('span', '', libelle));
     return b;
   };
-  nav.append(lien('📊', 'Statistiques', actions.statistiques), lien('⚙', 'Réglages', actions.reglages));
+  nav.append(lien('📊', 'Statistiques', actions.statistiques), actions.boutonMiseAJour(), lien('⚙', 'Réglages', actions.reglages));
   return nav;
 }
 

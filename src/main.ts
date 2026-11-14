@@ -8,7 +8,8 @@ import { creerClientNavigateur } from './socle/calculs.ts';
 import { creerActionsDonnees } from './socle/donnees/actions-donnees.ts';
 import { journalConsole } from './socle/environnement.ts';
 import { creerServicePacks } from './socle/packs.ts';
-import { afficherBandeauMiseAJour } from './socle/pwa/bandeau-mise-a-jour.ts';
+import { creerAnnonceMiseAJour } from './socle/pwa/annonce-mise-a-jour.ts';
+import { lecteurCachesNavigateur, lireInfosMiseAJour } from './socle/pwa/infos-mise-a-jour.ts';
 import { suivreMisesAJour } from './socle/pwa/mise-a-jour.ts';
 import { creerServiceReserve } from './socle/reserve.ts';
 import { creerServiceParties } from './socle/service-parties.ts';
@@ -17,6 +18,7 @@ import { creerStockageMemoire } from './socle/stockage/memoire.ts';
 import { CLE_REGLAGES, type Stockage } from './socle/stockage/stockage.ts';
 import { normaliserReglages } from './socle/reglages.ts';
 import { lireVersion, texteVersion } from './socle/pwa/version.ts';
+import { estFichierNouveautes, FICHIER_NOUVEAUTES } from './types/nouveautes.ts';
 import { appliquerTheme } from './socle/theme.ts';
 import { surveillerVisibilite } from './socle/visibilite.ts';
 import { creerAlea, graineAleatoire } from './utils/alea.ts';
@@ -60,6 +62,27 @@ async function demarrer(): Promise<void> {
   // n'attend jamais derrière une longue génération de fond du premier
   const clientPartie = creerClientNavigateur();
 
+  // Fichiers de la version installée (servis par le cache hors ligne) ; absents avec npm run dev
+  const chargerJson = async (url: URL): Promise<unknown> => {
+    const reponse = await fetch(url, { cache: 'no-cache' });
+    if (!reponse.ok) return null;
+    const valeur: unknown = await reponse.json();
+    return valeur;
+  };
+  const versionActuelle = lireVersion(chargerJson, document.baseURI);
+
+  // Bouton « Mettre à jour » (à côté de Réglages), visible seulement quand une version est prête ;
+  // sa fenêtre lit la nouvelle version dans son cache (déjà téléchargée : marche hors ligne)
+  const annonce = creerAnnonceMiseAJour(async () => {
+    const nouveautes = await chargerJson(new URL(`./${FICHIER_NOUVEAUTES}`, document.baseURI)).catch(() => null);
+    return lireInfosMiseAJour({
+      caches: lecteurCachesNavigateur(caches),
+      base: document.baseURI,
+      actuelle: await versionActuelle,
+      nouveautesActuelles: estFichierNouveautes(nouveautes) ? nouveautes : null,
+    });
+  });
+
   const app = demarrerApp({
     racine,
     jeux,
@@ -70,13 +93,9 @@ async function demarrer(): Promise<void> {
     enregistrerReglages: (r) => stockage.ecrire('reglages', CLE_REGLAGES, r),
     // Redémarrage demandé par le joueur après un import (bouton « Redémarrer »)
     donnees: creerActionsDonnees({ stockage, jeux, redemarrer: () => location.reload() }),
-    // version.json écrit par le build (servi par le cache hors ligne) ; absent avec npm run dev
-    version: lireVersion(async (url) => {
-      const reponse = await fetch(url, { cache: 'no-cache' });
-      if (!reponse.ok) return null;
-      const valeur: unknown = await reponse.json();
-      return valeur;
-    }, document.baseURI).then(texteVersion),
+    // version.json écrit par le build
+    version: versionActuelle.then(texteVersion),
+    boutonMiseAJour: annonce.bouton,
   });
 
   // Remplit la réserve en arrière-plan (dans le worker) pour des démarrages instantanés
@@ -88,7 +107,7 @@ async function demarrer(): Promise<void> {
     const suivi = await suivreMisesAJour({
       conteneur: navigator.serviceWorker,
       url: './service-worker.js',
-      signaler: afficherBandeauMiseAJour,
+      signaler: annonce.proposer,
       avantRechargement: app.sauvegarder,
       recharger: () => location.reload(),
       maintenant: Date.now,

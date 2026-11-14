@@ -2,6 +2,30 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 6a, complément] — Bouton « Mettre à jour » et nouveautés — 2026-11-14
+
+### Ajouté
+- **Bouton « Mettre à jour »** (`socle/pwa/annonce-mise-a-jour.ts`) à côté du bouton Réglages, partout où il
+  est affiché (accueil, fiche d'un jeu — qui reçoit aussi un bouton Réglages —, partie), visible seulement
+  quand une nouvelle version est prête ; petit point d'accent discret.
+- **Fenêtre de confirmation** (`socle/pwa/fenetre-mise-a-jour.ts`) : versions installée et nouvelle (date et
+  heure), nouveautés, ce qui va se passer, ce qui est conservé, ce qui est supprimé ; « Mettre à jour » /
+  « Annuler ».
+- **Nouveautés pour le joueur** : `public/nouveautes.json` (`src/types/nouveautes.ts`), rédigées pour l'étape
+  6a, l'accueil en cartes et ce bouton. Lues dans le cache de la nouvelle version, déjà téléchargée
+  (`socle/pwa/infos-mise-a-jour.ts`, pur) : seulement les groupes absents de la version installée, du plus
+  récent au plus ancien ; rien si aucune nouveauté visible. Règle dans CLAUDE.md : une ligne par
+  modification visible, dans le même commit.
+- Tests : fichier des nouveautés (format, identifiants, ordre, vocabulaire), choix des nouveautés, lecture de
+  la nouvelle version dans un faux cache (539 tests). Vérifié dans Edge : vraie mise à jour simulée (version A
+  puis B), bouton apparu sans rechargement, fenêtre, Annuler, Mettre à jour (ancien cache supprimé, partie
+  conservée), en paysage et portrait.
+
+### Modifié
+- Plus de bandeau « Nouvelle version disponible » ni de bouton « Plus tard » (`bandeau-mise-a-jour.ts` retiré).
+  Le mécanisme ne change pas : jamais de rechargement sans le feu vert du joueur.
+- Accueil : le menu passe sous le titre en dessous de 60rem de large (il recouvrait le titre avec trois boutons).
+
 ## [Étape 6a, correction] — Workflow de déploiement — 2026-11-14
 
 ### Corrigé

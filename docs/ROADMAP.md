@@ -230,6 +230,10 @@ Second jeu, test de l'architecture : il s'ajoute en suivant docs/AJOUTER_UN_JEU.
 - **Correction** : workflow de déploiement illisible depuis la 6a (« : » dans un libellé non cité) ;
   vérification des workflows ajoutée à `npm run check` (`npm run workflows`, sans dépendance).
 
+- **Mises à jour** (demande de l'utilisateur) : bouton « Mettre à jour » à côté de Réglages au lieu du
+  bandeau, fenêtre de confirmation (versions, nouveautés, ce qui est conservé / supprimé) ; nouveautés pour le
+  joueur dans `public/nouveautes.json`, lues dans la nouvelle version déjà téléchargée (hors ligne).
+
 ### Étape 6b — Directions de design
 - 7 directions de design proposées comme **thèmes** sur la vraie appli, pour que l'utilisateur choisisse.
 

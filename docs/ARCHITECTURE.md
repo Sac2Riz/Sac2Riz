@@ -139,7 +139,9 @@ src/socle/
 ├─ donnees/           export / import (étape 5) : export.ts (lecture, fichier, nom daté),
 │                     import.ts (analyse complète, pur), actions-donnees.ts (téléchargement, dialogues)
 └─ pwa/               mise-a-jour.ts (enregistrement du service worker, nouvelle version signalée,
-                      jamais de rechargement sans clic), bandeau-mise-a-jour.ts,
+                      jamais de rechargement sans clic), annonce-mise-a-jour.ts (bouton « Mettre à
+                      jour »), fenetre-mise-a-jour.ts (confirmation), infos-mise-a-jour.ts (versions et
+                      nouveautés lues dans le cache de la nouvelle version, pur),
                       version.ts (version et date du build affichées dans les réglages, étape 6a)
 ```
 
@@ -547,8 +549,23 @@ et reproductibilité vérifiées dans `tests/games/chiffres-cases/packs.long.ts`
   de fausse mise à jour). La GitHub Action récupère tout l'historique (`fetch-depth: 0`) pour cela.
 - **Côté page** (`socle/pwa/mise-a-jour.ts`, testé avec de faux objets) : nouvelle version signalée si elle
   attend au démarrage ou quand elle passe à « installed » alors qu'une version contrôle la page (jamais à
-  la première installation) → bandeau (Recharger / Plus tard). Recharger : `App.sauvegarder()` (partie en
-  cours, chrono compris), message `activer`, rechargement au `controllerchange` — uniquement après ce clic.
+  la première installation) → **bouton « Mettre à jour »** (`annonce-mise-a-jour.ts`) : chaque écran en crée
+  un à côté de son bouton Réglages (accueil, fiche d'un jeu, partie ; libellé masqué dans la barre étroite de
+  la partie en paysage), masqué tant qu'aucune version n'est prête, affiché partout dès qu'elle l'est (petit
+  point d'accent, pas de clignotement). Plus de bandeau ni de « Plus tard ». Le toucher ouvre une **fenêtre de
+  confirmation** (`fenetre-mise-a-jour.ts`) : versions installée et nouvelle (date et heure), nouveautés, ce
+  qui va se passer, ce qui est conservé (parties, statistiques, réglages), ce qui est supprimé (seulement les
+  fichiers de l'ancienne version) ; « Mettre à jour » / « Annuler ». Mettre à jour : `App.sauvegarder()`
+  (partie en cours, chrono compris), message `activer`, rechargement au `controllerchange` — uniquement
+  après ce feu vert.
+- **Nouveautés** (`public/nouveautes.json`, `FichierNouveautes` dans `src/types/nouveautes.ts`) : groupes
+  `{ id, date, titre, nouveautes }` du plus récent au plus ancien, en français simple pour le joueur (distinct
+  du CHANGELOG). Copié dans `dist/` et mis en cache avec chaque version. La fenêtre lit `version.json` et
+  `nouveautes.json` **dans le cache de la nouvelle version** (déjà téléchargée : marche hors ligne ; cache
+  `sac2riz-*` autre que celui de la version installée, le plus récent) et montre les groupes absents du
+  fichier de la version installée (`nouveautesDepuis`) : plusieurs versions publiées depuis → toutes leurs
+  nouveautés ; aucune nouveauté visible → pas de rubrique. Ce code est celui de la version INSTALLÉE : il
+  sert à partir de la mise à jour suivant celle qui l'apporte.
   `verifier()` relance la recherche au retour au premier plan, au plus une fois par heure.
 - **Test local** : `npm run apercu` (build + serveur) ; localhost est un contexte sécurisé, le service
   worker y fonctionne. Sur le réseau local (`http://192.168…`), non : le test sur tablette se fait en ligne.

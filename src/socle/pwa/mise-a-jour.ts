@@ -2,7 +2,8 @@
 // version quand elle est prête, SANS JAMAIS RECHARGER D'ELLE-MÊME.
 //
 // Une nouvelle version est « en attente » quand son service worker est installé (fichiers en
-// cache) alors qu'une version contrôle déjà la page. On la signale (bandeau) :
+// cache) alors qu'une version contrôle déjà la page. On la signale (bouton « Mettre à jour » à côté
+// de Réglages, annonce-mise-a-jour.ts, puis fenêtre de confirmation) :
 //  - au démarrage, si elle attendait déjà (registration.waiting) ;
 //  - plus tard, quand le navigateur la découvre (updatefound → état « installed »).
 // Le navigateur vérifie les mises à jour à chaque ouverture ; verifier() le lui redemande quand

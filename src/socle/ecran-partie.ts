@@ -46,6 +46,8 @@ export type OptionsEcranPartie = {
   readonly reglages: () => ReglagesVue;
   /** Ouvre l'écran des réglages ; se résout à sa fermeture. */
   readonly ouvrirReglages: () => Promise<void>;
+  /** Bouton « Mettre à jour », placé à côté de Réglages (visible seulement quand une version est prête). */
+  readonly boutonMiseAJour: () => HTMLElement;
   readonly parties: ServiceParties;
   /** Bouton « ← » : retour à la fiche du jeu (l'appli appelle ensuite fermer()). */
   readonly retour: () => void;
@@ -87,7 +89,7 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   chrono.setAttribute('role', 'timer');
   const reglages = boutonIcone('bouton-icone', '⚙', 'Réglages', () => void ouvrirReglages());
   const pause = boutonIcone('bouton-icone', '❙❙', 'Mettre en pause', () => basculerPause());
-  barre.append(retour, titre, chrono, reglages, pause);
+  barre.append(retour, titre, chrono, o.boutonMiseAJour(), reglages, pause);
 
   const zoneGrille = creer('div', 'partie-grille');
   const voilePause = creer('div', 'partie-pause');

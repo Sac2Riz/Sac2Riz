@@ -8,8 +8,8 @@
 //  1. install  : tous les fichiers de la version sont mis en cache (« sac2riz-<version> »).
 //                Si un seul échoue, l'installation est abandonnée et l'ancienne version reste.
 //  2. attente  : une nouvelle version installée NE PREND PAS la main d'elle-même ; la page
-//                affiche « Nouvelle version disponible » et attend le clic du joueur.
-//  3. message « activer » (clic sur Recharger) → skipWaiting() → activate : les caches des
+//                affiche le bouton « Mettre à jour » et attend le feu vert du joueur.
+//  3. message « activer » (« Mettre à jour » confirmé dans sa fenêtre) → skipWaiting() → activate : les caches des
 //                anciennes versions sont supprimés ; la page se recharge sur la nouvelle version.
 // Le service worker ne touche jamais à IndexedDB : parties, statistiques, réglages et réserve
 // sont conservés d'une version à l'autre.
