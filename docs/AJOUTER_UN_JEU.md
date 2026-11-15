@@ -4,7 +4,7 @@ Ajouter un jeu ne demande **aucune modification du socle** : un nouveau dossier 
 
 Trois jeux ont suivi ce guide : le sudoku classique (famille sudoku, moteur commun), les chiffres
 casés (étape 4, jeu sans régions, avec son propre solveur) et le Tectonic (étape 7, moteur commun étendu
-d'un domaine par case). Les sections « Jeu hors de la famille sudoku » et « Jeu de la famille sudoku qui
+d'un domaine par case, pavé qui grise les chiffres impossibles). Les sections « Jeu hors de la famille sudoku » et « Jeu de la famille sudoku qui
 n'est pas un sudoku » ci-dessous rassemblent ce que ces deux jeux ont appris.
 
 ## 1. Choisir l'identifiant
@@ -86,7 +86,28 @@ Copier `src/games/_modele/` vers `src/games/<id>/`, puis supprimer `LISEZMOI.md`
      simple : réutiliser la fonction qui crée le plateau de `monter` et n'y écrire que les chiffres.
      Exemples : `sudoku-classique/vue.ts`, `chiffres-cases/vue.ts` (grille seule, sans la liste).
    - `restants` donne le nombre de fois où chaque valeur du pavé commun peut encore être posée (ou `null`) :
-     la touche est estompée à 0, aucun nombre n'est affiché. Avec un pavé personnalisé, renvoyer `null`.
+     la touche est estompée à 0 (elle reste active), aucun nombre n'est affiché. Avec un pavé personnalisé,
+     renvoyer `null`.
+   - **Chiffres impossibles dans la case sélectionnée** (étape 7b) : l'instance renvoyée par `monter` fournit
+     `valeursPossibles()`, les valeurs du pavé commun qui ont un sens **dans la sélection actuelle**. Le socle
+     **grise et désactive** les autres touches (cadre pointillé) et ignore leur saisie au clavier.
+     ```ts
+     valeursPossibles() {
+       // null = aucune restriction (rien de sélectionné, ou toutes les cases acceptent toutes les valeurs)
+       return dernier === null ? null : valeursPossibles(dernier.donnees, selection);
+     },
+     ```
+     - Renvoyer `null` si toutes les cases acceptent toutes les valeurs (sudoku), ou si le pavé est
+       personnalisé (chiffres casés). Renvoyer `[]` pour tout griser (Tectonic : case donnée).
+     - La sélection appartient à la vue, et changer de case ne joue aucune action : la vue appelle
+       **`contexte.selectionChangee()`** à chaque changement de sélection (toucher, flèches) pour que le socle
+       relise `valeursPossibles()`. Il la relit aussi après chaque `afficher`.
+     - La réponse ne dépend que des **règles fixes** de la case (taille de sa zone, case donnée…), jamais des
+       chiffres posés autour : sinon le pavé donnerait la solution, comme un indice gratuit.
+     - Le calcul de la réponse va dans un fichier pur du jeu, testé sous Node (Tectonic :
+       `valeursPossibles` dans `tectonic/interaction.ts`). L'état des touches est calculé par le socle
+       (`socle/pave.ts`, testé).
+     - Le pavé commun a une colonne par valeur (`--nb-touches`) : 9 touches au sudoku, 5 au Tectonic.
    - La grille doit remplir `zones.grille` (`container-type: size` : utiliser `min(100cqw, 100cqh)` pour
      une grille carrée).
 5. **`fiche.ts`** (étape 6a) : le contenu de la **fiche du jeu**, `export const fiche: FicheJeu<D, E>`
@@ -216,6 +237,24 @@ moteur même s'il n'a ni lignes ni colonnes :
 - **Tests** : le test de sûreté du moteur (`verifierGrille` de `tests/moteur/logique/surete-commun.ts`)
   accepte la liste de techniques du jeu ; les sudokus doivent rester inchangés (tests existants, packs
   re-notés à l'identique, `npm run test:long`).
+
+## Interface d'une grille à zones (leçons du Tectonic, étape 7b)
+
+- **Bordures de zones** : la grille est une grille CSS **sans espace** entre les cases ; un calque SVG posé
+  dessus (`pointer-events: none`) trace les traits fins (dans une zone) puis les traits épais (entre deux
+  zones), un segment par côté de case (`tectonic/interaction.ts`, `traits`). `vector-effect:
+  non-scaling-stroke` garde les épaisseurs en pixels d'écran quelle que soit la taille de la grille, et
+  `stroke-linecap: square` remplit les angles. Le cadre est le fond du plateau (`--grille-cadre`), comme au
+  sudoku.
+- **Épaisseurs et couleurs** : `--grille-trait-case` / `--couleur-trait-fin` pour les traits fins,
+  `--grille-trait-zone` / `--couleur-trait-epais` pour les zones (`--grille-trait-zone` = trait de bloc du
+  style + 1 px). Le test des contrastes vérifie, dans les 12 variantes, que le trait épais se distingue du
+  trait fin et des mises en évidence (3:1) et qu'il est au moins deux fois plus large.
+- **Notes** : rangées selon le plus grand chiffre possible (Tectonic : 5 chiffres sur 3 × 2, bien plus grands
+  que les 3 × 3 du sudoku). Tailles de police en `cqi` divisées par le nombre de colonnes (`--l`) : elles
+  suivent la taille des cases, de 6 × 6 à 10 × 10.
+- **Contour de la sélection** en retrait des traits épais (`inset` ≥ moitié du trait de zone), sinon le calque
+  le recouvre.
 
 ## Si le format d'un jeu change plus tard
 

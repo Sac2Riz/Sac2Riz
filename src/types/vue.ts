@@ -23,6 +23,12 @@ export interface ContexteVue<A extends Json> {
   reglages(): ReglagesVue;
   /** Vrai si le mode notes est actif. */
   modeNotes(): boolean;
+  /**
+   * À appeler quand la sélection de la vue change sans qu'une action soit jouée (toucher d'une
+   * case, flèches) : le socle relit alors InstanceVue.valeursPossibles() pour mettre le pavé à jour.
+   * Sans effet utile si la vue renvoie toujours null.
+   */
+  selectionChangee(): void;
 }
 
 /** Ce que la vue doit dessiner. */
@@ -43,6 +49,15 @@ export interface InstanceVue<D extends Json, E extends Json> {
   saisir(valeur: string): void;
   /** Bouton « effacer » du socle. */
   effacer(): void;
+  /**
+   * Pavé commun : valeurs qui ont un sens dans la sélection actuelle (ex. Tectonic : 1 à 3 dans une
+   * zone de 3 cases ; [] sur une case donnée). Les autres touches sont grisées et désactivées, et leur
+   * saisie au clavier est ignorée. null = aucune restriction (rien de sélectionné, jeu sans
+   * restriction, pavé personnalisé). Ne dépend que des règles fixes de la case, jamais de la
+   * position des autres chiffres (ce serait un indice). Relu après chaque afficher() et après
+   * ContexteVue.selectionChangee().
+   */
+  valeursPossibles(): readonly string[] | null;
   /** Retire la vue de la page et libère ses écouteurs. */
   detruire(): void;
 }

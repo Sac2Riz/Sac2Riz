@@ -69,6 +69,9 @@
   --grille-cadre: 2px;
   --grille-trait-bloc: 2px;
   --grille-trait-case: 1px;
+  /* Bordures de zone (Tectonic) : un pixel de plus que les traits de bloc du style, car les zones
+     sont l'information principale de la grille (un style peut la redéfinir) */
+  --grille-trait-zone: calc(var(--grille-trait-bloc) + 1px);
   /* Cartes et fenêtres : épaisseur de bordure, ombre */
   --carte-bordure: 1px;
   --carte-ombre: none;

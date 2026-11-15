@@ -47,6 +47,10 @@ function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionMod
     effacer() {
       if (selection !== null) contexte.jouer({ type: 'effacer', cellule: selection });
     },
+    // Valeurs du pavé qui ont un sens dans la case sélectionnée (les autres touches sont grisées),
+    // ou null si toutes les cases acceptent toutes les valeurs. Si la réponse dépend de la
+    // sélection, appeler contexte.selectionChangee() à chaque changement de sélection (voir Tectonic).
+    valeursPossibles: () => null,
     detruire() {
       ligne.remove();
     },

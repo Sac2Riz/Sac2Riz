@@ -2,6 +2,28 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par étape.
 
+## [Étape 7b] — Tectonic jouable — 2026-11-15
+
+### Ajouté
+- **Contrat de vue** : `InstanceVue.valeursPossibles()` et `ContexteVue.selectionChangee()` : le pavé commun
+  grise et désactive les valeurs sans objet dans la case sélectionnée (classe `est-impossible`, cadre
+  pointillé), saisie au clavier ignorée. `src/socle/pave.ts` (`etatsTouches`, `saisieAdmise`, pur).
+- **Tectonic jouable** : `interaction.ts` (valeurs possibles, mise en évidence zone + cases qui touchent,
+  action des touches, flèches, tracé des traits), `vue.ts` (grille + calque SVG des traits, notes 3 × 2,
+  aperçu), `style.css`, `fiche.ts` (règles, autres noms, définition de « se voient », exemple 6 × 6),
+  `index.ts` ; ligne dans `registre.ts`.
+- Variable de thème `--grille-trait-zone` (trait de bloc + 1 px).
+- Nouveauté pour le joueur `2026-11-15-tectonic`.
+- Tests : `tests/socle/pave.test.ts`, `tests/games/tectonic/interaction.test.ts` ; contrastes des bordures de
+  zone (trait épais ≥ 3:1 sur le trait fin, la zone et la sélection ; largeur ≥ 2 × trait fin) dans les
+  12 variantes (711 tests).
+
+### Modifié
+- Écran de partie : état des touches calculé par `pave.ts`, relu à chaque changement de sélection ; le pavé
+  a une colonne par valeur (`--nb-touches`, 9 par défaut).
+- Sudoku, chiffres casés, modèle : `valeursPossibles: () => null`.
+- BBS ANSI sombre : `--couleur-trait-epais` `#5555ff` → `#7777ff` (trop proche du trait fin : 2,62:1).
+
 ## [Étape 7a] — Tectonic : logique pure — 2026-11-14
 
 ### Ajouté

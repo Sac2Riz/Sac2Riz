@@ -31,7 +31,16 @@ const PAIRES: readonly (readonly [string, string, number])[] = [
   ['texte', 'selection', 4.5], ['saisie', 'selection', 4.5], ['note', 'selection', 4.5],
   ['erreur', 'case', 4.5], ['erreur', 'erreur-fond', 4.5], ['place', 'case', 4.5], ['indice', 'indice-fond', 4.5],
   ['accent', 'zone', 3], ['accent', 'selection', 3], ['trait-epais', 'case', 3],
+  // Bordures de zone (Tectonic) : le trait épais se distingue nettement du trait fin et reste visible
+  // à côté d'une case mise en évidence (seuils validés par l'utilisateur à l'étape 7b)
+  ['trait-epais', 'trait-fin', 3], ['trait-epais', 'zone', 3], ['trait-epais', 'selection', 3],
 ];
+
+/** Largeur en pixels d'une variable de forme (« 2px »), ou null. */
+function pixels(valeur: string | undefined): number | null {
+  const m = /^(\d+(?:\.\d+)?)px$/.exec(valeur?.trim() ?? '');
+  return m === null ? null : Number(m[1]);
+}
 
 describe("styles de l'appli", () => {
   test('6 styles, Rétro par défaut ; chacun a un nom', () => {
@@ -110,6 +119,13 @@ describe("styles de l'appli", () => {
           assert.deepEqual(echecs, []);
         });
       }
+
+      test('trait épais au moins deux fois plus large que le trait fin', () => {
+        const epais = pixels(variables.get('--grille-trait-bloc') ?? ARDOISE.get('--grille-trait-bloc'));
+        const fin = pixels(variables.get('--grille-trait-case') ?? ARDOISE.get('--grille-trait-case'));
+        assert.ok(epais !== null && fin !== null, 'largeurs des traits en px attendues');
+        assert.ok(epais >= 2 * fin, `trait épais ${epais}px < 2 × trait fin ${fin}px`);
+      });
 
       test('une icône dessinée pour chaque nom, et chaque dessin utilisé', () => {
         const css = readFileSync(id === 'ardoise' ? 'src/styles/icones.css' : feuille(id), 'utf8');

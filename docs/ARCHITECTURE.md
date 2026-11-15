@@ -193,6 +193,7 @@ src/socle/
 ├─ ecran-fiche.ts     fiche d'un jeu : aperçu, Continuer, nouvelle partie, règles (étape 6a)
 ├─ ecran-partie.ts    écran de partie : barre, grille du jeu, outils (dont Indice),
 │                     pavé, bandeau de l'indice, chrono, sauvegarde, clavier
+├─ pave.ts            état des touches du pavé commun : épuisée, impossible, désactivée (pur, étape 7b)
 ├─ ecran-reglages.ts  fenêtre des réglages en trois sections (étapes 3c, 6a)
 ├─ ecran-stats.ts     écran des statistiques par jeu et par niveau, tous les jeux ou un seul (étapes 3c, 6a)
 ├─ ecran-fin.ts       écran de fin de partie (étape 3c)
@@ -329,16 +330,25 @@ Le worker enveloppe le résultat de `generer` dans un `Puzzle` (`jeu`, `graine`,
   `[]` pour le sudoku, `['notes']` pour les chiffres casés.
 - `monter(zones, contexte)` avec `zones = { grille, pave }` (`pave` : zone du pavé confiée à la vue si le
   pavé est personnalisé, sinon `null`) → `InstanceVue` : `afficher({ etat, donnees, erreurs, indice })` (`indice` =
-  marques à dessiner, ou `null`), `saisir(valeur)`, `effacer()`, `detruire()`.
+  marques à dessiner, ou `null`), `saisir(valeur)`, `effacer()`, `valeursPossibles()`, `detruire()`.
 - `apercu(conteneur, { donnees, etat })` (étape 6a) : la grille **en lecture seule** pour la fiche du jeu
   (aucun écouteur ; le socle rend le conteneur inerte, le dimensionne avec `container-type: size` et le
   vide ensuite).
-- `contexte` : `jouer(action)`, `modeNotes()`, `reglages()` — une **fonction** : les réglages peuvent changer
+- `contexte` : `jouer(action)`, `modeNotes()`, `selectionChangee()`, `reglages()` — une **fonction** : les réglages peuvent changer
   pendant la partie, la vue les relit à chaque affichage. `ReglagesVue` = `{ verifierErreurs,
   miseEnEvidence, jeu }` (`jeu` : valeurs des réglages propres au jeu).
   Le conteneur est dimensionné par le socle (`container-type: size`).
 - `restants(etat, donnees)` : pour le pavé commun, nombre de fois où chaque valeur peut encore être posée,
-  ou `null`. Le socle n'affiche pas ce nombre : il s'en sert seulement pour **estomper** une touche à 0.
+  ou `null`. Le socle n'affiche pas ce nombre : il s'en sert seulement pour **estomper** une touche à 0
+  (elle reste active).
+- **Chiffres impossibles** (étape 7b) : `instance.valeursPossibles()` donne les valeurs du pavé commun qui ont
+  un sens dans la sélection actuelle (Tectonic : 1 à N dans une zone de N cases, `[]` sur une case donnée),
+  ou `null` (aucune restriction : rien de sélectionné, sudoku, pavé personnalisé). Les autres touches sont
+  **grisées et désactivées** (classe `est-impossible`, cadre pointillé), et leur saisie au clavier est
+  ignorée. La sélection appartient à la vue : quand elle change sans action jouée, la vue appelle
+  `contexte.selectionChangee()` et le socle relit `valeursPossibles()` (il la relit aussi après chaque
+  affichage). Calcul de l'état des touches : `socle/pave.ts` (pur, testé). La réponse ne dépend que des règles
+  fixes de la case, jamais des chiffres voisins : le pavé ne doit pas devenir un indice.
 - La vue ne modifie jamais l'état : elle appelle `contexte.jouer(action)` ; le socle rappelle `afficher`.
 - Elle charge son CSS avec `chargerFeuilleDeStyle(new URL('./style.css', import.meta.url))`.
 
@@ -397,10 +407,10 @@ Tests : `tests/games/chiffres-cases/` (une technique par fichier dans `technique
 `surete.long.ts` (sûreté du solveur, contrat des niveaux lents) et `packs.long.ts`. Bench :
 `npm run bench -- --jeu=chiffres-cases [--niveau=<id>]`. Détail de la difficulté : docs/DIFFICULTE.md.
 
-## Tectonic (étape 7a) — `src/games/tectonic/`
+## Tectonic (étapes 7a et 7b) — `src/games/tectonic/`
 
 Troisième jeu, de la famille des grilles à contraintes : il **réutilise le moteur** (`src/moteur/`), étendu
-d'un domaine par case. Vue et intégration au registre : étape 7b.
+d'un domaine par case (7a). Vue, fiche et intégration au registre : étape 7b.
 
 - **Modélisation** : chaque zone est une région d'unicité de forme `zone` (N cases, domaine 1 à N : région
   complète) ; chaque **carré 2×2** est une région d'unicité de forme `carre` (deux cases qui se touchent, même
@@ -421,9 +431,15 @@ src/games/tectonic/
 ├─ notation.ts           niveau + force (VERSION_NOTATION_TECTONIC, SEUILS_FORCE_TECTONIC)
 ├─ indice.ts             indices en deux temps (chiffre faux d'abord, puis étape du solveur), comme au sudoku
 ├─ gardes.ts, logique.ts règles (chiffre hors zone refusé, retrait des notes zone + voisines), gardes strictes
+├─ interaction.ts        touchers, en fonctions pures (7b) : valeursPossibles (pavé), casesEnEvidence (zone +
+│                        cases qui touchent), actionSaisie, deplacer (flèches), traits (tracé fins / épais)
+├─ vue.ts, style.css     grille sans espace + calque SVG des traits (fins dans une zone, épais entre zones :
+│                        --grille-trait-zone, en pixels d'écran) ; notes sur 3 × 2 ; pavé commun 1 à 5
+├─ fiche.ts, index.ts    règles (autres noms, définition de « se voient »), exemple 6 × 6 ; point d'entrée
 ```
 
-Tests : `tests/games/tectonic/` ; test long `surete.long.ts`. Bench : `npm run bench -- --jeu=tectonic`.
+Tests : `tests/games/tectonic/` (dont `interaction.test.ts`) ; tests longs `surete.long.ts`, `packs.long.ts`.
+Bench : `npm run bench -- --jeu=tectonic`.
 
 ## Moteur de contraintes (famille sudoku, étapes 1-2)
 

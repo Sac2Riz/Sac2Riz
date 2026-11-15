@@ -47,7 +47,14 @@ pixel art 12 × 12 (BBS ANSI) et 16 × 16 (MS-DOS), formes pleines et rondes (R�
   12 variantes :
   - texte, chiffres donnés et saisis, notes, erreurs et indices ≥ 4,5:1, sur la case et sur chaque mise
     en évidence ;
-  - traits de bloc et notes en accent ≥ 3:1.
+  - traits de bloc et notes en accent ≥ 3:1 ;
+  - bordures de zone du Tectonic (étape 7b, seuils validés par l'utilisateur) : trait épais ≥ 3:1 sur le
+    trait fin, sur la zone mise en évidence et sur la case sélectionnée ; trait épais au moins deux fois plus
+    large que le trait fin. BBS ANSI sombre a reçu un trait épais plus clair (`#7777ff` au lieu de
+    `#5555ff`, mesuré à 2,62:1 sur le trait fin).
+- **Pavé commun** : une touche épuisée est estompée ; une touche impossible dans la case sélectionnée
+  (étape 7b) est désactivée, sans fond, avec un cadre pointillé `--couleur-bordure`, dans tous les styles
+  (y compris MS-DOS, dont les touches n'ont d'ordinaire pas de cadre).
 - **Effets** : seulement sur l'accueil et la fiche d'un jeu, **jamais pendant une partie** ; coupés si
   le système demande de réduire les animations. ASCII génératif : ~8 images/s, arrêt quand l'appli est en
   arrière-plan, image fixe si les animations sont réduites.
@@ -66,8 +73,9 @@ pixel art 12 × 12 (BBS ANSI) et 16 × 16 (MS-DOS), formes pleines et rondes (R�
 - **Variables** (`src/styles/theme.css`, valeurs d'Ardoise, qui servent de secours aux autres styles) :
   - couleurs, `--couleur-decor-1/2/3`, `--couleur-halo` ;
   - polices (`--police`, `--police-titre`, `--police-chiffres`, `--police-notes`), graisses, échelles ;
-  - formes de la grille (`--grille-rayon`, `--grille-cadre`, `--grille-trait-bloc`, `--grille-trait-case`)
-    et des cartes (`--carte-bordure`, `--carte-ombre`).
+  - formes de la grille (`--grille-rayon`, `--grille-cadre`, `--grille-trait-bloc`, `--grille-trait-case`,
+    `--grille-trait-zone` = trait de bloc + 1 px, pour les bordures de zone du Tectonic) et des cartes
+    (`--carte-bordure`, `--carte-ombre`).
 
   Les `style.css` des jeux n'utilisent que ces variables : **aucune règle de style ne vise une classe de
   jeu**.

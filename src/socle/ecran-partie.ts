@@ -1,7 +1,9 @@
 // ÉCRAN DE PARTIE (commun à tous les jeux) : barre du haut (retour, niveau et force, chrono, réglages,
 // pause), grille du jeu (sa vue), outils (notes, effacer, annuler, rétablir, indice ; le jeu peut
 // en masquer : VueJeu.outilsMasques) et pavé : le pavé commun (une touche est estompée quand sa
-// valeur ne peut plus être posée), ou une zone confiée à la vue (pavé « personnalise »).
+// valeur ne peut plus être posée, grisée et désactivée quand elle est sans objet dans la case
+// sélectionnée : InstanceVue.valeursPossibles, voir pave.ts), ou une zone confiée à la vue
+// (pavé « personnalise »).
 //
 // L'état de la partie est une valeur « Partie » (partie.ts, code pur) remplacée à chaque
 // changement ; après chaque action, elle est redessinée et SAUVEGARDÉE.
@@ -21,6 +23,7 @@ import { boutonIcone, bouton, changerIcone, creer, icone } from './dom.ts';
 import type { NomIcone } from './icones.ts';
 import { formaterTemps, libelleForce } from './format.ts';
 import { outilsAffiches, type Outil } from './outils.ts';
+import { etatsTouches, saisieAdmise } from './pave.ts';
 import {
   annuler,
   changerPause,
@@ -121,6 +124,8 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   const pave = creer('div', 'partie-pave');
   const pavePersonnalise = vue.pave.type === 'personnalise';
   const touches = new Map<string, HTMLButtonElement>();
+  const valeursPave: readonly string[] = vue.pave.type === 'commun' ? vue.pave.valeurs : [];
+  pave.style.setProperty('--nb-touches', String(valeursPave.length));
   if (vue.pave.type === 'commun') {
     for (const valeur of vue.pave.valeurs) {
       const touche = bouton('touche', '', () => saisir(valeur));
@@ -155,8 +160,14 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     jouer: (action) => changer(jouer(logique, partie, action, o.maintenant())),
     reglages: o.reglages,
     modeNotes: () => modeNotes,
+    // Ignoré pendant monter() (l'instance n'existe pas encore ; le premier dessin suit)
+    selectionChangee: () => {
+      if (monte && !ferme) dessinerPave();
+    },
   };
+  let monte = false;
   const instance = vue.monter({ grille: zoneGrille, pave: pavePersonnalise ? pave : null }, contexte);
+  monte = true;
   zoneGrille.append(voilePause);
 
   function outil(nom: NomIcone, libelle: string, action: () => void): HTMLButtonElement {
@@ -182,19 +193,35 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     appliquer.textContent = indice.libelleAction;
   }
 
+  /**
+   * Touches du pavé commun : estompées si leur valeur est épuisée, grisées et désactivées si elle est
+   * sans objet dans la case sélectionnée, désactivées en pause. Appelé aussi quand la sélection change.
+   */
+  function dessinerPave(): void {
+    if (touches.size === 0) return;
+    const etats = etatsTouches({
+      valeurs: valeursPave,
+      restants: vue.restants(partie.etat, partie.puzzle.donnees),
+      possibles: instance.valeursPossibles(),
+      bloque: enPause() || partie.terminee,
+    });
+    for (const t of etats) {
+      const touche = touches.get(t.valeur);
+      if (touche === undefined) continue;
+      touche.classList.toggle('est-epuisee', t.epuisee);
+      touche.classList.toggle('est-impossible', t.impossible);
+      touche.disabled = t.desactivee;
+      touche.setAttribute('aria-label', t.libelle);
+    }
+  }
+
   function dessiner(): void {
     const { etat } = partie;
     const donnees = partie.puzzle.donnees;
     const erreurs = o.reglages().verifierErreurs ? logique.erreurs(etat, donnees) : [];
     instance.afficher({ etat, donnees, erreurs, indice: indice === null ? null : indice.marques });
 
-    // Touche estompée quand sa valeur ne peut plus être posée (aucun nombre affiché)
-    const restants = vue.restants(etat, donnees);
-    for (const [valeur, touche] of touches) {
-      const epuisee = restants !== null && (restants[valeur] ?? 0) === 0;
-      touche.classList.toggle('est-epuisee', epuisee);
-      touche.setAttribute('aria-label', epuisee ? `${valeur}, déjà posé partout` : valeur);
-    }
+    dessinerPave();
 
     const bloque = enPause() || partie.terminee;
     outilNotes.setAttribute('aria-pressed', String(modeNotes));
@@ -208,7 +235,6 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
     const n = partie.indicesUtilises;
     compteurIndices.textContent = n > 0 ? String(n) : '';
     outilIndice.setAttribute('aria-label', n > 0 ? `Indice (${n} utilisé${n > 1 ? 's' : ''})` : 'Indice');
-    for (const touche of touches.values()) touche.disabled = bloque;
     pave.inert = bloque; // pavé personnalisé : la vue n'a pas à gérer la pause elle-même
     pause.disabled = partie.terminee;
     pause.setAttribute('aria-label', enPause() ? 'Reprendre' : 'Mettre en pause');
@@ -241,7 +267,8 @@ export function afficherPartie(o: OptionsEcranPartie): EcranPartie {
   }
 
   function saisir(valeur: string): void {
-    if (!enPause() && !partie.terminee) instance.saisir(valeur);
+    if (enPause() || partie.terminee || !saisieAdmise(valeur, valeursPave, instance.valeursPossibles())) return;
+    instance.saisir(valeur);
   }
 
   function basculerPause(): void {

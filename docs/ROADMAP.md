@@ -320,16 +320,27 @@ case, sans changer le sudoku ni sa notation.
   `tests/moteur/domaines.test.ts`) ; tests longs `surete.long.ts` (sûreté du solveur, grilles brutes,
   niveaux lents) et `packs.long.ts`.
 
-### Étape 7b — Interface et intégration
-- `vue.ts` (zones en bordures épaisses, d'après `bordures`), `style.css`, `fiche.ts` (règles ; Suguru et
-  Number Blocks cités), ligne dans `registre.ts`, ligne dans `nouveautes.json`.
-- **Décision de l'utilisateur** : le pavé commun grise les chiffres impossibles pour la case sélectionnée,
-  grâce à une **extension générique du contrat de vue** (ce besoin reviendra avec d'autres jeux), à
-  expliquer avant de la faire ; données déjà prêtes en 7a (`valeursAutorisees`).
-- **Décision de l'utilisateur** (option A) : les explications des techniques reprises du sudoku disent
-  « voit » ; la fiche du jeu définit ce mot en une phrase (« deux cases se voient quand elles se touchent
-  ou sont dans la même zone »), sans modifier le moteur.
-- `index.ts` avec `chargerPack` (déjà écrit dans `packs.ts`).
+### ✅ Étape 7b — Interface et intégration
+- **Extension générique du contrat de vue** (conception validée par l'utilisateur avant d'être codée) :
+  `InstanceVue.valeursPossibles()` (valeurs du pavé commun qui ont un sens dans la sélection, `null` = aucune
+  restriction) et `ContexteVue.selectionChangee()` (la vue signale un changement de sélection). Le socle
+  grise et désactive les autres touches, et ignore leur saisie au clavier (`socle/pave.ts`, pur et testé).
+  Sudoku et chiffres casés : `null`, rien ne change. **Décisions de l'utilisateur** : case donnée → tout le
+  pavé grisé ; sans sélection → pavé normal. Pavé à une colonne par valeur (`--nb-touches`).
+- **Vue** (`vue.ts`, `interaction.ts` pur, `style.css`) : grille sans espace et calque SVG des traits (fins
+  dans une zone, épais entre zones, en pixels d'écran) ; notes sur 3 × 2 ; pavé 1 à 5 ; mise en évidence de
+  la zone et des cases qui touchent la sélection, et des chiffres identiques ; notes, effacer, annuler /
+  rétablir, erreurs, indices (zones et carrés concernés), chrono, sauvegarde, statistiques et fin : socle.
+- **Bordures de zone** : `--grille-trait-zone` = trait de bloc du style + 1 px (**décision de l'utilisateur**).
+  Test des contrastes étendu dans les 12 variantes : trait épais ≥ 3:1 sur le trait fin, la zone mise en
+  évidence et la case sélectionnée, et au moins deux fois plus large que le trait fin (seuils choisis par
+  l'utilisateur sur mesures) ; BBS ANSI sombre : trait épais éclairci (`#7777ff`, 2,62 → 3,72:1).
+- **Fiche** : règles simples, autres noms (Suguru, Number Blocks), définition de « se voient » (option A de
+  la 7a), exemple 6 × 6 Débutant en partie rempli. Registre : une ligne ; nouveauté pour le joueur.
+- Mesuré dans Edge (tablette simulée 1280 × 800 et 800 × 1280) : cases de la grille Diabolique 10 × 10 à
+  76 px en paysage et 74 px en portrait ; captures dans `captures/etape-7b/` (non versionné).
+- Tests (678 → 711) : `tests/socle/pave.test.ts`, `tests/games/tectonic/interaction.test.ts`, contrastes des
+  bordures ; le test du registre vérifie le contrat complet du Tectonic.
 
 ## Étapes suivantes — Variantes et nouveaux jeux
 - Sudoku 6x6 et 4x4, diagonal, irrégulier, Killer, Windoku.

@@ -23,7 +23,8 @@
   --couleur-sur-accent: light-dark(#ffffff, #000000);
   --couleur-bordure: light-dark(#0000aa, #5555ff);
   --couleur-trait-fin: light-dark(#b8b8e0, #2a2a5a);
-  --couleur-trait-epais: light-dark(#0000aa, #5555ff);
+  /* Sombre : bleu ANSI éclairci (#5555ff trop proche du trait fin pour les bordures de zone du Tectonic) */
+  --couleur-trait-epais: light-dark(#0000aa, #7777ff);
   --couleur-zone: light-dark(#eef0ff, #10103a);
   --couleur-meme: light-dark(#dcdcff, #3a0a4a);
   --couleur-selection: light-dark(#f6cdf2, #55005a);

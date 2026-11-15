@@ -273,6 +273,8 @@ function monter(zones: ZonesVue, contexte: ContexteVue<ActionCases>): InstanceVu
     saisir() {
       // Pas de pavé commun : les nombres se touchent dans la liste
     },
+    // Pas de pavé commun : rien à griser
+    valeursPossibles: () => null,
     effacer() {
       if (dernier === null) return;
       const action = actionEffacer(selection, dernier.etat, dernier.donnees);

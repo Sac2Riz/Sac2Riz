@@ -60,6 +60,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   Chiffres casés : solveur et notation propres (`src/games/chiffres-cases/`, `VERSION_NOTATION_CASES`).
   Tectonic : moteur commun avec un domaine par case et sa propre liste de techniques (`src/games/tectonic/`,
   `VERSION_NOTATION_TECTONIC`).
+- Pavé commun : une vue peut griser les valeurs sans objet dans la case sélectionnée
+  (`InstanceVue.valeursPossibles`, à relire après `ContexteVue.selectionChangee`) → [docs/AJOUTER_UN_JEU.md](docs/AJOUTER_UN_JEU.md).
 - Design : **6 styles au choix** (réglage « Style », Rétro par défaut) : `<html data-style>` + une feuille par
   style (`src/styles/visuels/`, Ardoise = `theme.css`), liste dans `src/types/style.ts` **et** `public/demarrage.js`
   (script classique qui pose le style avant le premier rendu, d'après une copie locale ; IndexedDB = référence).
@@ -148,5 +150,8 @@ Débute avec Git et TypeScript, travaille sous Windows 11 dans VS Code.
   `noterEtapes` ; sudoku inchangé), 4 techniques complémentaires, module `src/games/tectonic/` (construction
   conjointe zones + chiffres, génération, notation `VERSION_NOTATION_TECTONIC`, indices, packs Difficile /
   Expert / Diabolique), non enregistré au registre.
-- ⏭️ Prochaine : étape 7b — Tectonic jouable (vue, extension générique du contrat de vue pour griser le
-  pavé, fiche, registre) ; voir [docs/ROADMAP.md](docs/ROADMAP.md).
+- ✅ Étape 7b — Tectonic jouable et enregistré : contrat de vue étendu (`InstanceVue.valeursPossibles`,
+  `ContexteVue.selectionChangee` : le pavé commun grise les chiffres impossibles dans la case sélectionnée,
+  `socle/pave.ts`) ; vue à calque SVG des traits (`--grille-trait-zone`), fiche, test des contrastes étendu
+  aux bordures de zone.
+- ⏭️ Prochaine : à décider avec l'utilisateur (variantes de sudoku, Kakuro…) ; voir [docs/ROADMAP.md](docs/ROADMAP.md).

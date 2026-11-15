@@ -534,7 +534,8 @@ h4 {
 .partie-pave {
   grid-area: pave;
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  /* Une colonne par touche (--nb-touches, posé par le socle : 9 au sudoku, 5 au Tectonic) */
+  grid-template-columns: repeat(var(--nb-touches, 9), minmax(0, 1fr));
   gap: 0.4rem;
 }
 
@@ -557,6 +558,16 @@ h4 {
 
 .touche.est-epuisee .touche-valeur {
   opacity: 0.3;
+}
+
+/* Valeur sans objet dans la case sélectionnée (InstanceVue.valeursPossibles) : désactivée
+   (button:disabled l'estompe déjà), fond retiré et cadre pointillé, dans tous les styles (MS-DOS
+   retire d'ordinaire le cadre des touches) : la touche reste visible mais se distingue d'une touche
+   épuisée ou de la pause. Sélecteur plus précis que ceux des styles, pour primer sur eux. */
+:root[data-style] .touche.est-impossible {
+  border: 2px dashed var(--couleur-bordure);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Mode notes : chiffres du pavé plus petits, dans la couleur d'accent */

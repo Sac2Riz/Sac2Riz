@@ -1,6 +1,16 @@
 {
   "versions": [
     {
+      "id": "2026-11-15-tectonic",
+      "date": "2026-11-15",
+      "titre": "Nouveau jeu : le Tectonic",
+      "nouveautes": [
+        "Nouveau jeu : le Tectonic (aussi appelé Suguru). La grille est découpée en zones : une zone de 3 cases reçoit les chiffres 1, 2 et 3, et deux cases qui se touchent, même en diagonale, ont toujours des chiffres différents. Six niveaux, de Débutant à Diabolique.",
+        "Dans le Tectonic, le pavé grise les chiffres qui ne peuvent pas aller dans la case choisie : 4 et 5 dans une zone de 3 cases, par exemple.",
+        "Un réglage propre au Tectonic retire automatiquement un chiffre posé des notes de sa zone et des cases qui la touchent."
+      ]
+    },
+    {
       "id": "2026-11-14-styles",
       "date": "2026-11-14",
       "titre": "Choisissez le style de l'appli",

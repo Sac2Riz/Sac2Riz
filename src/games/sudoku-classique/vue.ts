@@ -202,6 +202,8 @@ function monter({ grille: conteneur }: ZonesVue, contexte: ContexteVue<ActionSud
     effacer() {
       if (selection !== null) contexte.jouer({ type: 'effacer', cellule: selection });
     },
+    // Toute case accepte les 9 chiffres : le pavé n'est jamais restreint
+    valeursPossibles: () => null,
     detruire() {
       document.removeEventListener('keydown', auClavier);
       plateau.remove();
